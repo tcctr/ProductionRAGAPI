@@ -26,7 +26,7 @@ question ──embed──▶ nearest chunks ───────────�
 | Header-aware chunking | Done |
 | pgvector schema | Done |
 | Embedding and ingestion | Done |
-| Evaluation question set | Planned |
+| Evaluation question set and retrieval eval | Done |
 | FastAPI `/ingest` and `/query` | Planned |
 | Hybrid search, reranking | Planned |
 | Auth, rate limiting, caching | Planned |
@@ -45,6 +45,30 @@ question ──embed──▶ nearest chunks ───────────�
 **Task prefixes.** nomic-embed-text is trained with instructions: documents are embedded as `search_document: …` and questions as `search_query: …`. Omitting them measurably hurts retrieval.
 
 **One database.** pgvector keeps vectors, metadata and full-text search in Postgres. Chunks carry `version` and `doc_type` directly, so filtered searches need no join. An HNSW index serves vector search and a GIN index on a generated `tsvector` column serves keyword search, which hybrid search will combine. A `content_hash` per chunk lets re-ingestion skip unchanged text.
+
+## Evaluation
+
+100 hand-written questions in `data/eval/questions.jsonl`, labeled with the pages that answer them:
+
+| Category | n | Tests |
+|---|---|---|
+| direct / identifier | 24 | Basic lookup and exact function names |
+| paraphrase | 28 | User wording that differs from the docs' wording |
+| version_specific | 16 | "In PostgreSQL 17, …": only that version's page counts |
+| version_diff | 14 | "Which version added …" |
+| cross_page | 10 | Answers spread across several pages |
+| unanswerable | 8 | Topics outside the corpus, for later "I don't know" handling |
+
+Labels are page-level (`18:sql-merge.html`) so they survive re-chunking. Every label carries a quote that `validate_questions.py` checks against the corpus; version questions also carry quotes that must be *absent* from the versions lacking the feature.
+
+Baseline (plain vector search, top 10, 92 answerable questions):
+
+| Configuration | hit@1 | hit@5 | hit@10 | MRR |
+|---|---|---|---|---|
+| Vector search | 0.66 | 0.83 | 0.88 | 0.721 |
+| + version filter | 0.67 | 0.83 | 0.88 | 0.736 |
+
+Paraphrased questions are the weak spot (hit@5 0.64), along with exact function names that resemble other words (`date_trunc` retrieves `TRUNCATE`), which hybrid search and reranking target next. Top-1 similarity barely separates answerable questions (median 0.756) from unanswerable ones (median 0.711), so a similarity threshold alone won't detect out-of-scope questions.
 
 ## Setup
 
@@ -79,6 +103,10 @@ python chunk_docs.py
 
 # 3. Load pages and chunks into Postgres and embed them
 python embed_ingest.py
+
+# 4. Check eval labels, then measure retrieval (results saved in data/eval/results/)
+python validate_questions.py
+python eval_retrieval.py [--filter-version] [--show-misses]
 ```
 
 | Script | Main options |
@@ -93,6 +121,9 @@ python embed_ingest.py
 fetch_parse_docs.py   crawl postgresql.org and convert pages to markdown
 chunk_docs.py         split pages into embedding-sized chunks
 embed_ingest.py       load into Postgres and embed chunks
+validate_questions.py check eval labels against the corpus
+eval_retrieval.py     retrieval metrics (hit@k, MRR) on the eval set
+data/eval/            eval questions and saved results
 db/schema.sql         tables and indexes
 docker-compose.yml    Postgres + pgvector
 data/parsed/          parsed corpus (docs.jsonl)
