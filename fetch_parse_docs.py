@@ -73,6 +73,7 @@ def parse_page(html: str) -> tuple[str, str]:
     title = heading.get_text(" ", strip=True) if heading else ""
     if not title and soup.title:
         title = soup.title.get_text(strip=True)
+    title = re.sub(r"\s*#$", "", title.replace("\xa0", " "))  # drop the "#" anchor link
     text = markdownify(str(content), heading_style="ATX")
     text = text.replace("\xa0", " ")
     text = re.sub(r"[ \t]+\n", "\n", text)

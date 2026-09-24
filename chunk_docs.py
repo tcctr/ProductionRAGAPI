@@ -25,7 +25,7 @@ import hashlib
 import json
 import re
 from collections import Counter, defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 from tokenizers import Tokenizer
@@ -46,12 +46,6 @@ class Block:
     path: tuple[str, ...]
     anchor: str | None
     starts_section: bool = False
-
-
-@dataclass
-class Chunk:
-    blocks: list[Block] = field(default_factory=list)
-    tokens: int = 0
 
 
 class TokenCounter:
@@ -203,7 +197,7 @@ def breadcrumb(version: str, section_title: str, path: tuple[str, ...]) -> str:
 
 def chunk_record(rec: dict, count, target: int, max_tokens: int) -> list[dict]:
     version = rec["version"]
-    title = re.sub(r"\s*#\s*$", "", rec["section_title"]).replace("\xa0", " ")  # "9.3. Math Functions #" -> "9.3. Math Functions"
+    title = rec["section_title"]
     blocks = to_blocks(rec["text"], title)
 
     def budget_for(path: tuple[str, ...]) -> int:
