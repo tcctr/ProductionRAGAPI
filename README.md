@@ -25,7 +25,7 @@ question ──embed──▶ nearest chunks ───────────�
 | Docs crawler and markdown parser | Done |
 | Header-aware chunking | Done |
 | pgvector schema | Done |
-| Embedding and ingestion | In progress |
+| Embedding and ingestion | Done |
 | Evaluation question set | Planned |
 | FastAPI `/ingest` and `/query` | Planned |
 | Hybrid search, reranking | Planned |
@@ -38,7 +38,9 @@ question ──embed──▶ nearest chunks ───────────�
 
 **Breadcrumbs.** Every chunk starts with a line like `PostgreSQL 18 > CREATE INDEX > Parameters`. A chunk from the middle of a page would otherwise not say which command or which version it belongs to, and version confusion is the main risk with this corpus. The same text is shown to the LLM, so it also knows where each passage comes from.
 
-**Exact token budget.** Chunks are measured with the embedding model's own tokenizer, including the `search_document: ` task prefix and special tokens, and capped at 512 tokens: the default batch size of llama.cpp's embedding server.
+**Exact token budget.** Chunks are measured with the embedding model's own tokenizer, including the `search_document: ` task prefix and special tokens, and capped at 512 tokens: the default batch size of llama.cpp's embedding server. The Hugging Face tokenizer collapses any word over 100 characters (such as a hex hash) into a single `[UNK]` token while llama.cpp splits it, which undercounted three chunks by up to 84 tokens; the limit is raised so counts match llama.cpp's `/tokenize` exactly for every chunk.
+
+**Incremental ingestion.** Pages and chunks are upserted by stable IDs (`18:sql-createindex.html#3`). A chunk whose content hash changed loses its vector; only chunks without a vector from the current model are embedded, in batches committed one at a time, so an interrupted run resumes and a repeated run does nothing. Embedding the full corpus takes about 70 seconds on a laptop.
 
 **Task prefixes.** nomic-embed-text is trained with instructions: documents are embedded as `search_document: …` and questions as `search_query: …`. Omitting them measurably hurts retrieval.
 
@@ -57,7 +59,7 @@ pip install -r requirements.txt
 Download the embedding model ([nomic-ai/nomic-embed-text-v1.5-GGUF](https://huggingface.co/nomic-ai/nomic-embed-text-v1.5-GGUF), file `nomic-embed-text-v1.5.Q8_0.gguf`) into the repo root and start the embedding server:
 
 ```bash
-llama-server -m nomic-embed-text-v1.5.Q8_0.gguf --embeddings --port 8081
+llama-server -m nomic-embed-text-v1.5.Q8_0.gguf --embedding --port 8081
 ```
 
 Start the database (listens on host port 5433; the schema is applied on first start):
@@ -74,18 +76,23 @@ python fetch_parse_docs.py --contact you@example.com
 
 # 2. Split pages into chunks -> data/chunks/chunks.jsonl
 python chunk_docs.py
+
+# 3. Load pages and chunks into Postgres and embed them
+python embed_ingest.py
 ```
 
 | Script | Main options |
 |---|---|
 | `fetch_parse_docs.py` | `--versions 16 17 18`, `--delay 1.0`, `--raw-dir`, `--out` |
 | `chunk_docs.py` | `--target 450`, `--max-tokens 512`, `--in`, `--out` |
+| `embed_ingest.py` | `--batch-size 32`, `--test-query`; env `DATABASE_URL`, `EMBED_URL`, `EMBED_MODEL` |
 
 ## Repository layout
 
 ```
 fetch_parse_docs.py   crawl postgresql.org and convert pages to markdown
 chunk_docs.py         split pages into embedding-sized chunks
+embed_ingest.py       load into Postgres and embed chunks
 db/schema.sql         tables and indexes
 docker-compose.yml    Postgres + pgvector
 data/parsed/          parsed corpus (docs.jsonl)
