@@ -1,10 +1,9 @@
-<<<<<<< HEAD
-venv/
-__pycache__/
-*.pyc
+# Project
 data/raw/
-.env
-=======
+data/chunks/
+*.gguf
+.DS_Store
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -223,4 +222,3 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
->>>>>>> aec2ab8c235bbadd4d4e9d9a973222082aed5f68
