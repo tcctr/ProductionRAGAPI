@@ -53,6 +53,9 @@ class TokenCounter:
 
     def __init__(self) -> None:
         self.tok = Tokenizer.from_pretrained(TOKENIZER)
+        # HF WordPiece turns words over 100 chars (e.g. hex hashes) into one [UNK];
+        # llama.cpp splits them into many tokens. Match llama.cpp.
+        self.tok.model.max_input_chars_per_word = 10**6
         # [CLS] + [SEP] + prefix
         self.overhead = 2 + len(self.tok.encode(DOC_PREFIX, add_special_tokens=False).ids)
 
