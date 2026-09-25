@@ -125,18 +125,20 @@ def main() -> None:
                 print(f"  {q['id']} [{q['category']}] {q['question']}\n      got: {', '.join(r['retrieved'][:3])}")
 
     commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip()
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    # Milliseconds so back-to-back runs get distinct names; "x" below refuses to overwrite regardless.
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S.%f")[:-3] + "Z"
     args.out_dir.mkdir(parents=True, exist_ok=True)
     path = args.out_dir / f"{stamp}.json"
-    path.write_text(json.dumps({
-        "timestamp": stamp, "git_commit": commit, "embed_model": EMBED_MODEL,
-        "k": args.k, "filter_version": args.filter_version, "dedup": args.dedup,
-        "overall": overall,
-        "by_category": {c: score(rs) for c, rs in by_cat.items()},
-        "by_doc_type": {d: score(rs) for d, rs in by_type.items()},
-        "cross_page_coverage": mean(cross) if cross else None,
-        "questions": results, "unanswerable": unanswerable,
-    }, indent=2) + "\n")
+    with path.open("x", encoding="utf-8") as f:
+        f.write(json.dumps({
+            "timestamp": stamp, "git_commit": commit, "embed_model": EMBED_MODEL,
+            "k": args.k, "filter_version": args.filter_version, "dedup": args.dedup,
+            "overall": overall,
+            "by_category": {c: score(rs) for c, rs in by_cat.items()},
+            "by_doc_type": {d: score(rs) for d, rs in by_type.items()},
+            "cross_page_coverage": mean(cross) if cross else None,
+            "questions": results, "unanswerable": unanswerable,
+        }, indent=2) + "\n")
     print(f"\nsaved {path}")
 
 
