@@ -1,0 +1,1959 @@
+{
+  "timestamp": "20260925T144653Z",
+  "git_commit": "8060f37",
+  "embed_model": "nomic-embed-text-v1.5.Q8_0",
+  "k": 10,
+  "filter_version": false,
+  "dedup": true,
+  "overall": {
+    "n": 92,
+    "hit@1": 0.6630434782608695,
+    "hit@5": 0.8804347826086957,
+    "hit@10": 0.8913043478260869,
+    "mrr": 0.7486714975845411
+  },
+  "by_category": {
+    "direct": {
+      "n": 13,
+      "hit@1": 0.7692307692307693,
+      "hit@5": 0.9230769230769231,
+      "hit@10": 0.9230769230769231,
+      "mrr": 0.8461538461538461
+    },
+    "paraphrase": {
+      "n": 28,
+      "hit@1": 0.42857142857142855,
+      "hit@5": 0.7857142857142857,
+      "hit@10": 0.8214285714285714,
+      "mrr": 0.5706349206349206
+    },
+    "identifier": {
+      "n": 11,
+      "hit@1": 0.8181818181818182,
+      "hit@5": 0.9090909090909091,
+      "hit@10": 0.9090909090909091,
+      "mrr": 0.8636363636363636
+    },
+    "version_specific": {
+      "n": 16,
+      "hit@1": 0.625,
+      "hit@5": 1.0,
+      "hit@10": 1.0,
+      "mrr": 0.7625
+    },
+    "version_diff": {
+      "n": 14,
+      "hit@1": 0.7142857142857143,
+      "hit@5": 0.7857142857142857,
+      "hit@10": 0.7857142857142857,
+      "mrr": 0.7285714285714285
+    },
+    "cross_page": {
+      "n": 10,
+      "hit@1": 1.0,
+      "hit@5": 1.0,
+      "hit@10": 1.0,
+      "mrr": 1.0
+    }
+  },
+  "by_doc_type": {
+    "sql_command": {
+      "n": 35,
+      "hit@1": 0.7142857142857143,
+      "hit@5": 0.9428571428571428,
+      "hit@10": 0.9428571428571428,
+      "mrr": 0.7933333333333333
+    },
+    "functions": {
+      "n": 35,
+      "hit@1": 0.6,
+      "hit@5": 0.7714285714285715,
+      "hit@10": 0.8,
+      "mrr": 0.6698412698412698
+    },
+    "indexes_perf": {
+      "n": 22,
+      "hit@1": 0.6818181818181818,
+      "hit@5": 0.9545454545454546,
+      "hit@10": 0.9545454545454546,
+      "mrr": 0.8030303030303031
+    }
+  },
+  "cross_page_coverage": 0.8666666666666667,
+  "questions": [
+    {
+      "id": "q001",
+      "category": "direct",
+      "doc_type": "sql_command",
+      "rank": null,
+      "top_similarity": 0.6165092542626812,
+      "coverage": 0.0,
+      "retrieved": [
+        "17:sql-createpolicy.html",
+        "18:sql-createpolicy.html",
+        "17:sql-createpolicy.html",
+        "17:sql-createpolicy.html",
+        "16:sql-createpolicy.html",
+        "17:sql-createpolicy.html",
+        "18:sql-copy.html",
+        "17:sql-insert.html",
+        "18:sql-delete.html",
+        "17:functions-event-triggers.html"
+      ]
+    },
+    {
+      "id": "q002",
+      "category": "paraphrase",
+      "doc_type": "sql_command",
+      "rank": 1,
+      "top_similarity": 0.7672533760293343,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:sql-createindex.html",
+        "17:indexes-intro.html",
+        "18:indexes-intro.html",
+        "16:indexes-intro.html",
+        "17:sql-createindex.html",
+        "17:populate.html",
+        "17:sql-createindex.html",
+        "17:indexes-index-only-scans.html",
+        "17:sql-reindex.html",
+        "17:sql-createindex.html"
+      ]
+    },
+    {
+      "id": "q003",
+      "category": "direct",
+      "doc_type": "sql_command",
+      "rank": 1,
+      "top_similarity": 0.7439459187968352,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:sql-vacuum.html",
+        "17:sql-vacuum.html",
+        "16:sql-vacuum.html",
+        "16:sql-vacuum.html",
+        "18:sql-vacuum.html",
+        "17:sql-vacuum.html",
+        "18:sql-vacuum.html",
+        "17:sql-vacuum.html",
+        "18:sql-vacuum.html",
+        "17:sql-vacuum.html"
+      ]
+    },
+    {
+      "id": "q004",
+      "category": "identifier",
+      "doc_type": "sql_command",
+      "rank": 1,
+      "top_similarity": 0.7872735984758392,
+      "coverage": 1.0,
+      "retrieved": [
+        "18:sql-truncate.html",
+        "17:sql-truncate.html",
+        "18:sql-truncate.html",
+        "18:sql-truncate.html",
+        "18:sql-reset.html",
+        "18:sql-vacuum.html",
+        "16:sql-reset.html",
+        "17:sql-altertable.html",
+        "17:functions-admin.html",
+        "16:functions-admin.html"
+      ]
+    },
+    {
+      "id": "q005",
+      "category": "paraphrase",
+      "doc_type": "sql_command",
+      "rank": 1,
+      "top_similarity": 0.6726420527078584,
+      "coverage": 1.0,
+      "retrieved": [
+        "18:sql-insert.html",
+        "18:sql-insert.html",
+        "17:sql-altertable.html",
+        "17:sql-insert.html",
+        "18:sql-insert.html",
+        "18:sql-altertable.html",
+        "17:sql-insert.html",
+        "18:sql-altertable.html",
+        "18:populate.html",
+        "18:sql-createtable.html"
+      ]
+    },
+    {
+      "id": "q006",
+      "category": "identifier",
+      "doc_type": "sql_command",
+      "rank": 1,
+      "top_similarity": 0.7497671693424697,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:sql-select.html",
+        "17:sql-select.html",
+        "17:sql-select.html",
+        "17:using-explain.html",
+        "17:planner-stats.html",
+        "17:sql-altertable.html",
+        "17:sql-select.html",
+        "17:sql-select.html",
+        "17:sql-select.html",
+        "17:sql-select.html"
+      ]
+    },
+    {
+      "id": "q007",
+      "category": "paraphrase",
+      "doc_type": "sql_command",
+      "rank": 5,
+      "top_similarity": 0.7745904229947632,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:sql-lock.html",
+        "17:sql-lock.html",
+        "16:sql-lock.html",
+        "17:sql-lock.html",
+        "17:sql-select.html",
+        "17:sql-lock.html",
+        "18:sql-select.html",
+        "16:sql-select.html",
+        "17:sql-set-transaction.html",
+        "17:sql-select.html"
+      ]
+    },
+    {
+      "id": "q008",
+      "category": "paraphrase",
+      "doc_type": "sql_command",
+      "rank": null,
+      "top_similarity": 0.6573747600689686,
+      "coverage": 0.0,
+      "retrieved": [
+        "17:functions-json.html",
+        "17:functions-json.html",
+        "17:functions-json.html",
+        "17:functions-json.html",
+        "16:functions-json.html",
+        "18:functions-json.html",
+        "17:functions-json.html",
+        "16:functions-json.html",
+        "16:functions-json.html",
+        "17:functions-json.html"
+      ]
+    },
+    {
+      "id": "q009",
+      "category": "direct",
+      "doc_type": "sql_command",
+      "rank": 2,
+      "top_similarity": 0.6789902235281201,
+      "coverage": 1.0,
+      "retrieved": [
+        "16:sql-altertable.html",
+        "16:sql-createtable.html",
+        "17:sql-createtable.html",
+        "18:sql-altertable.html",
+        "17:sql-createsequence.html",
+        "18:sql-altertable.html",
+        "16:sql-altertable.html",
+        "16:sql-altersequence.html",
+        "16:sql-altertable.html",
+        "16:sql-truncate.html"
+      ]
+    },
+    {
+      "id": "q010",
+      "category": "paraphrase",
+      "doc_type": "sql_command",
+      "rank": 1,
+      "top_similarity": 0.7143322399656642,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:sql-createtable.html",
+        "18:sql-createtable.html",
+        "17:sql-createtable.html",
+        "16:sql-createtable.html",
+        "16:sql-createtable.html",
+        "17:functions-window.html",
+        "16:functions-window.html",
+        "18:functions-window.html",
+        "17:sql-createtable.html",
+        "17:sql-createtable.html"
+      ]
+    },
+    {
+      "id": "q011",
+      "category": "paraphrase",
+      "doc_type": "sql_command",
+      "rank": 1,
+      "top_similarity": 0.7538869899016414,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:sql-altertable.html",
+        "16:sql-altertable.html",
+        "18:sql-altertable.html",
+        "18:sql-altertable.html",
+        "17:populate.html",
+        "17:sql-altertable.html",
+        "16:sql-altertable.html",
+        "17:populate.html",
+        "17:sql-altertable.html",
+        "16:populate.html"
+      ]
+    },
+    {
+      "id": "q012",
+      "category": "identifier",
+      "doc_type": "sql_command",
+      "rank": 1,
+      "top_similarity": 0.7560994625091606,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:sql-reindex.html",
+        "16:sql-reindex.html",
+        "17:sql-reindex.html",
+        "18:sql-reindex.html",
+        "17:sql-reindex.html",
+        "16:sql-reindex.html",
+        "17:sql-reindex.html",
+        "16:sql-reindex.html",
+        "18:sql-reindex.html",
+        "18:sql-reindex.html"
+      ]
+    },
+    {
+      "id": "q013",
+      "category": "paraphrase",
+      "doc_type": "sql_command",
+      "rank": 1,
+      "top_similarity": 0.7361564636230469,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:using-explain.html",
+        "16:using-explain.html",
+        "17:using-explain.html",
+        "16:using-explain.html",
+        "17:using-explain.html",
+        "17:using-explain.html",
+        "16:using-explain.html",
+        "17:using-explain.html",
+        "17:sql-explain.html",
+        "18:using-explain.html"
+      ]
+    },
+    {
+      "id": "q014",
+      "category": "paraphrase",
+      "doc_type": "sql_command",
+      "rank": 1,
+      "top_similarity": 0.6842500394955363,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:populate.html",
+        "17:sql-copy.html",
+        "18:sql-copy.html",
+        "16:populate.html",
+        "16:sql-copy.html",
+        "16:populate.html",
+        "16:sql-copy.html",
+        "17:sql-copy.html",
+        "18:sql-copy.html",
+        "16:sql-cluster.html"
+      ]
+    },
+    {
+      "id": "q015",
+      "category": "identifier",
+      "doc_type": "sql_command",
+      "rank": 1,
+      "top_similarity": 0.8582224761380256,
+      "coverage": 1.0,
+      "retrieved": [
+        "18:sql-refreshmaterializedview.html",
+        "16:sql-refreshmaterializedview.html",
+        "16:sql-refreshmaterializedview.html",
+        "18:sql-refreshmaterializedview.html",
+        "18:sql-altermaterializedview.html",
+        "18:sql-creatematerializedview.html",
+        "18:sql-dropmaterializedview.html",
+        "16:sql-dropmaterializedview.html",
+        "18:sql-altersubscription.html",
+        "17:sql-altersubscription.html"
+      ]
+    },
+    {
+      "id": "q016",
+      "category": "paraphrase",
+      "doc_type": "sql_command",
+      "rank": 1,
+      "top_similarity": 0.6473445279012201,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:sql-createtrigger.html",
+        "18:sql-createtable.html",
+        "18:sql-insert.html",
+        "18:populate.html",
+        "17:functions-trigger.html",
+        "18:functions-trigger.html",
+        "17:sql-insert.html",
+        "16:functions-trigger.html",
+        "17:sql-insert.html",
+        "17:sql-createtable.html"
+      ]
+    },
+    {
+      "id": "q017",
+      "category": "paraphrase",
+      "doc_type": "sql_command",
+      "rank": 2,
+      "top_similarity": 0.6348865467445244,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:sql-createfunction.html",
+        "17:sql-do.html",
+        "17:functions-sequence.html",
+        "16:functions-sequence.html",
+        "17:sql-createfunction.html",
+        "16:sql-createfunction.html",
+        "18:functions-sequence.html",
+        "16:sql-createfunction.html",
+        "17:sql-createsequence.html",
+        "17:sql-createfunction.html"
+      ]
+    },
+    {
+      "id": "q018",
+      "category": "direct",
+      "doc_type": "sql_command",
+      "rank": 2,
+      "top_similarity": 0.7782927387444004,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:sql-altertable.html",
+        "17:sql-createpolicy.html",
+        "18:sql-createpolicy.html",
+        "16:sql-createpolicy.html",
+        "17:sql-droppolicy.html",
+        "17:sql-createpolicy.html",
+        "18:sql-createpolicy.html",
+        "17:sql-createpolicy.html",
+        "16:sql-createpolicy.html",
+        "16:sql-createpolicy.html"
+      ]
+    },
+    {
+      "id": "q019",
+      "category": "paraphrase",
+      "doc_type": "functions",
+      "rank": 2,
+      "top_similarity": 0.709613340520075,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:functions-window.html",
+        "16:functions-conditional.html",
+        "17:sql-createaggregate.html",
+        "16:sql-createaggregate.html",
+        "17:sql-createtable.html",
+        "17:functions-json.html",
+        "18:functions-json.html",
+        "17:sql-alterfunction.html",
+        "16:functions-json.html",
+        "16:sql-createfunction.html"
+      ]
+    },
+    {
+      "id": "q020",
+      "category": "identifier",
+      "doc_type": "functions",
+      "rank": 1,
+      "top_similarity": 0.7689066070969949,
+      "coverage": 1.0,
+      "retrieved": [
+        "18:functions-conditional.html",
+        "18:sql-alterfunction.html",
+        "17:functions-json.html",
+        "18:sql-createfunction.html",
+        "18:functions-json.html",
+        "16:sql-createfunction.html",
+        "16:sql-copy.html",
+        "18:functions-string.html",
+        "18:functions-comparison.html",
+        "16:functions-string.html"
+      ]
+    },
+    {
+      "id": "q021",
+      "category": "paraphrase",
+      "doc_type": "functions",
+      "rank": 1,
+      "top_similarity": 0.7297962581868479,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:functions-formatting.html",
+        "16:functions-datetime.html",
+        "17:functions-datetime.html",
+        "16:functions-datetime.html",
+        "17:functions-formatting.html",
+        "18:functions-datetime.html",
+        "17:functions-formatting.html",
+        "16:functions-datetime.html",
+        "17:functions-datetime.html",
+        "17:functions-formatting.html"
+      ]
+    },
+    {
+      "id": "q022",
+      "category": "identifier",
+      "doc_type": "functions",
+      "rank": null,
+      "top_similarity": 0.7035273909568787,
+      "coverage": 0.0,
+      "retrieved": [
+        "17:sql-truncate.html",
+        "17:sql-truncate.html",
+        "17:sql-truncate.html",
+        "18:sql-vacuum.html",
+        "16:sql-truncate.html",
+        "17:sql-createtrigger.html",
+        "17:sql-vacuum.html",
+        "16:sql-vacuum.html",
+        "17:sql-delete.html",
+        "17:sql-createtrigger.html"
+      ]
+    },
+    {
+      "id": "q023",
+      "category": "paraphrase",
+      "doc_type": "functions",
+      "rank": 1,
+      "top_similarity": 0.7184701729732661,
+      "coverage": 1.0,
+      "retrieved": [
+        "18:functions-datetime.html",
+        "18:functions-datetime.html",
+        "17:functions-datetime.html",
+        "18:functions-formatting.html",
+        "18:functions-datetime.html",
+        "17:functions-datetime.html",
+        "17:functions-datetime.html",
+        "17:functions-datetime.html",
+        "18:functions-datetime.html",
+        "18:functions-datetime.html"
+      ]
+    },
+    {
+      "id": "q024",
+      "category": "paraphrase",
+      "doc_type": "functions",
+      "rank": 1,
+      "top_similarity": 0.6582089466390354,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:functions-aggregate.html",
+        "18:functions-aggregate.html",
+        "17:sql-select.html",
+        "16:functions-aggregate.html",
+        "17:sql-merge.html",
+        "17:sql-merge.html",
+        "17:indexes-bitmap-scans.html",
+        "16:sql-copy.html",
+        "17:sql-merge.html",
+        "17:sql-select.html"
+      ]
+    },
+    {
+      "id": "q025",
+      "category": "paraphrase",
+      "doc_type": "functions",
+      "rank": 4,
+      "top_similarity": 0.7220297505286116,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:functions-aggregate.html",
+        "16:functions-aggregate.html",
+        "18:functions-aggregate.html",
+        "17:functions-window.html",
+        "18:functions-window.html",
+        "16:functions-window.html",
+        "18:functions-aggregate.html",
+        "17:functions-aggregate.html",
+        "16:functions-aggregate.html",
+        "17:sql-select.html"
+      ]
+    },
+    {
+      "id": "q026",
+      "category": "identifier",
+      "doc_type": "functions",
+      "rank": 1,
+      "top_similarity": 0.754523538187848,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:functions-json.html",
+        "18:functions-json.html",
+        "17:functions-json.html",
+        "17:functions-json.html",
+        "18:functions-json.html",
+        "18:functions-json.html",
+        "18:functions-json.html",
+        "17:functions-json.html",
+        "17:functions-json.html",
+        "18:functions-json.html"
+      ]
+    },
+    {
+      "id": "q027",
+      "category": "identifier",
+      "doc_type": "functions",
+      "rank": 1,
+      "top_similarity": 0.6976501816869215,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:functions-json.html",
+        "18:functions-json.html",
+        "17:functions-json.html",
+        "18:functions-json.html",
+        "17:functions-json.html",
+        "18:functions-json.html",
+        "17:functions-json.html",
+        "18:functions-json.html",
+        "17:functions-json.html",
+        "18:functions-json.html"
+      ]
+    },
+    {
+      "id": "q028",
+      "category": "identifier",
+      "doc_type": "functions",
+      "rank": 1,
+      "top_similarity": 0.73988655330103,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:functions-json.html",
+        "18:functions-json.html",
+        "16:functions-json.html",
+        "17:functions-json.html",
+        "18:functions-json.html",
+        "16:functions-json.html",
+        "18:functions-json.html",
+        "17:functions-json.html",
+        "17:functions-json.html",
+        "17:functions-json.html"
+      ]
+    },
+    {
+      "id": "q029",
+      "category": "paraphrase",
+      "doc_type": "functions",
+      "rank": 1,
+      "top_similarity": 0.734894529885381,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:functions-json.html",
+        "18:functions-json.html",
+        "17:functions-json.html",
+        "18:functions-json.html",
+        "17:functions-json.html",
+        "18:functions-json.html",
+        "17:functions-json.html",
+        "17:functions-json.html",
+        "18:functions-json.html",
+        "18:functions-json.html"
+      ]
+    },
+    {
+      "id": "q030",
+      "category": "paraphrase",
+      "doc_type": "functions",
+      "rank": 1,
+      "top_similarity": 0.7115464806556702,
+      "coverage": 1.0,
+      "retrieved": [
+        "18:functions-matching.html",
+        "17:functions-matching.html",
+        "18:functions-matching.html",
+        "17:functions-matching.html",
+        "17:functions-matching.html",
+        "17:functions-matching.html",
+        "18:functions-matching.html",
+        "17:functions-matching.html",
+        "16:functions-json.html",
+        "17:functions-json.html"
+      ]
+    },
+    {
+      "id": "q031",
+      "category": "paraphrase",
+      "doc_type": "functions",
+      "rank": null,
+      "top_similarity": 0.673347791832427,
+      "coverage": 0.0,
+      "retrieved": [
+        "16:functions-formatting.html",
+        "17:functions-formatting.html",
+        "16:functions-datetime.html",
+        "16:functions-formatting.html",
+        "18:functions-formatting.html",
+        "18:functions-datetime.html",
+        "18:functions-datetime.html",
+        "17:sql-createstatistics.html",
+        "17:functions-datetime.html",
+        "16:functions-formatting.html"
+      ]
+    },
+    {
+      "id": "q032",
+      "category": "paraphrase",
+      "doc_type": "functions",
+      "rank": 4,
+      "top_similarity": 0.7038405294608439,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:sql-altersequence.html",
+        "18:sql-altersequence.html",
+        "18:sql-createsequence.html",
+        "17:functions-sequence.html",
+        "18:functions-sequence.html",
+        "16:functions-sequence.html",
+        "17:functions-sequence.html",
+        "16:functions-sequence.html",
+        "17:functions-sequence.html",
+        "18:functions-sequence.html"
+      ]
+    },
+    {
+      "id": "q033",
+      "category": "paraphrase",
+      "doc_type": "functions",
+      "rank": null,
+      "top_similarity": 0.7059721806603968,
+      "coverage": 0.0,
+      "retrieved": [
+        "17:sql-cluster.html",
+        "16:using-explain.html",
+        "17:sql-createindex.html",
+        "17:planner-stats.html",
+        "18:sql-createindex.html",
+        "17:using-explain.html",
+        "18:planner-stats.html",
+        "16:sql-createindex.html",
+        "16:planner-stats.html",
+        "17:populate.html"
+      ]
+    },
+    {
+      "id": "q034",
+      "category": "paraphrase",
+      "doc_type": "functions",
+      "rank": 9,
+      "top_similarity": 0.6330520480619737,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:populate.html",
+        "17:functions-trigger.html",
+        "17:functions-info.html",
+        "16:functions-info.html",
+        "17:sql-reindex.html",
+        "18:sql-altersubscription.html",
+        "18:functions-info.html",
+        "17:functions-info.html",
+        "17:functions-admin.html",
+        "18:functions-admin.html"
+      ]
+    },
+    {
+      "id": "q035",
+      "category": "paraphrase",
+      "doc_type": "functions",
+      "rank": null,
+      "top_similarity": 0.6955845174541794,
+      "coverage": 0.0,
+      "retrieved": [
+        "18:functions-math.html",
+        "16:sql-alterindex.html",
+        "16:functions-math.html",
+        "16:functions-math.html",
+        "16:functions-math.html",
+        "16:functions-math.html",
+        "18:functions-math.html",
+        "18:functions-math.html",
+        "16:planner-stats.html",
+        "16:functions-math.html"
+      ]
+    },
+    {
+      "id": "q036",
+      "category": "identifier",
+      "doc_type": "functions",
+      "rank": 2,
+      "top_similarity": 0.6909568905830432,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:sql-select.html",
+        "17:functions-comparison.html",
+        "17:sql-select.html",
+        "17:functions-comparison.html",
+        "17:functions-comparisons.html",
+        "17:functions-string.html",
+        "17:sql-select.html",
+        "17:functions-comparisons.html",
+        "18:functions-comparisons.html",
+        "16:functions-comparisons.html"
+      ]
+    },
+    {
+      "id": "q037",
+      "category": "paraphrase",
+      "doc_type": "indexes_perf",
+      "rank": 3,
+      "top_similarity": 0.7824178078672712,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:indexes-ordering.html",
+        "17:indexes-ordering.html",
+        "16:indexes-types.html",
+        "16:indexes-partial.html",
+        "17:indexes-intro.html",
+        "16:indexes-multicolumn.html",
+        "18:indexes-types.html",
+        "16:sql-createindex.html",
+        "17:indexes-types.html",
+        "17:sql-createindex.html"
+      ]
+    },
+    {
+      "id": "q038",
+      "category": "direct",
+      "doc_type": "indexes_perf",
+      "rank": 1,
+      "top_similarity": 0.7901272898836685,
+      "coverage": 1.0,
+      "retrieved": [
+        "16:indexes-types.html",
+        "17:indexes-types.html",
+        "18:indexes-types.html",
+        "16:indexes-multicolumn.html",
+        "18:indexes-multicolumn.html",
+        "17:functions-admin.html",
+        "18:functions-admin.html",
+        "16:functions-admin.html",
+        "17:sql-createindex.html",
+        "18:sql-createindex.html"
+      ]
+    },
+    {
+      "id": "q039",
+      "category": "direct",
+      "doc_type": "indexes_perf",
+      "rank": 1,
+      "top_similarity": 0.790521216957498,
+      "coverage": 1.0,
+      "retrieved": [
+        "16:indexes-types.html",
+        "17:indexes-types.html",
+        "18:indexes-types.html",
+        "18:sql-createindex.html",
+        "17:sql-createindex.html",
+        "16:sql-createindex.html",
+        "17:functions-admin.html",
+        "18:functions-admin.html",
+        "16:functions-admin.html",
+        "18:indexes-multicolumn.html"
+      ]
+    },
+    {
+      "id": "q040",
+      "category": "direct",
+      "doc_type": "indexes_perf",
+      "rank": 1,
+      "top_similarity": 0.7917926547465524,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:indexes-multicolumn.html",
+        "17:indexes-multicolumn.html",
+        "17:indexes-ordering.html",
+        "18:indexes-multicolumn.html",
+        "18:indexes-multicolumn.html",
+        "17:indexes-multicolumn.html",
+        "18:indexes-multicolumn.html",
+        "17:indexes-ordering.html",
+        "16:sql-createindex.html",
+        "17:sql-createindex.html"
+      ]
+    },
+    {
+      "id": "q041",
+      "category": "paraphrase",
+      "doc_type": "indexes_perf",
+      "rank": 2,
+      "top_similarity": 0.7644775229069672,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:sql-select.html",
+        "17:indexes-ordering.html",
+        "16:using-explain.html",
+        "17:indexes-ordering.html",
+        "18:using-explain.html",
+        "18:indexes-multicolumn.html",
+        "18:indexes-multicolumn.html",
+        "16:indexes-multicolumn.html",
+        "17:indexes-intro.html",
+        "16:indexes-intro.html"
+      ]
+    },
+    {
+      "id": "q042",
+      "category": "direct",
+      "doc_type": "indexes_perf",
+      "rank": 1,
+      "top_similarity": 0.8528114811423957,
+      "coverage": 1.0,
+      "retrieved": [
+        "18:indexes-bitmap-scans.html",
+        "18:indexes-bitmap-scans.html",
+        "16:indexes-bitmap-scans.html",
+        "16:indexes-partial.html",
+        "18:indexes-partial.html",
+        "16:indexes-multicolumn.html",
+        "16:indexes-collations.html",
+        "18:indexes-intro.html",
+        "16:indexes-intro.html",
+        "18:indexes-multicolumn.html"
+      ]
+    },
+    {
+      "id": "q043",
+      "category": "paraphrase",
+      "doc_type": "indexes_perf",
+      "rank": 3,
+      "top_similarity": 0.657999575138092,
+      "coverage": 1.0,
+      "retrieved": [
+        "18:indexes-index-only-scans.html",
+        "18:indexes-index-only-scans.html",
+        "18:indexes-partial.html",
+        "18:indexes-index-only-scans.html",
+        "18:indexes-partial.html",
+        "18:indexes-index-only-scans.html",
+        "18:functions-admin.html",
+        "18:sql-createindex.html",
+        "17:functions-admin.html",
+        "18:indexes-index-only-scans.html"
+      ]
+    },
+    {
+      "id": "q044",
+      "category": "paraphrase",
+      "doc_type": "indexes_perf",
+      "rank": 2,
+      "top_similarity": 0.6770571672039383,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:indexes-index-only-scans.html",
+        "17:indexes-expressional.html",
+        "16:indexes-expressional.html",
+        "18:indexes-expressional.html",
+        "17:indexes-index-only-scans.html",
+        "17:indexes-index-only-scans.html",
+        "17:sql-createindex.html",
+        "17:sql-createindex.html",
+        "16:sql-createindex.html",
+        "18:sql-createindex.html"
+      ]
+    },
+    {
+      "id": "q045",
+      "category": "direct",
+      "doc_type": "indexes_perf",
+      "rank": 1,
+      "top_similarity": 0.8005195618295204,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:indexes-index-only-scans.html",
+        "17:indexes-index-only-scans.html",
+        "17:indexes-index-only-scans.html",
+        "17:indexes-index-only-scans.html",
+        "17:indexes-index-only-scans.html",
+        "17:indexes-index-only-scans.html",
+        "17:sql-createindex.html",
+        "17:indexes-index-only-scans.html",
+        "17:indexes-examine.html",
+        "18:indexes-multicolumn.html"
+      ]
+    },
+    {
+      "id": "q046",
+      "category": "paraphrase",
+      "doc_type": "indexes_perf",
+      "rank": null,
+      "top_similarity": 0.684367419871758,
+      "coverage": 0.0,
+      "retrieved": [
+        "16:indexes-index-only-scans.html",
+        "18:sql-createdatabase.html",
+        "16:sql-createdatabase.html",
+        "18:sql-createdatabase.html",
+        "17:sql-createdatabase.html",
+        "16:sql-createdatabase.html",
+        "16:indexes-index-only-scans.html",
+        "16:indexes-index-only-scans.html",
+        "16:indexes-partial.html",
+        "18:sql-createdatabase.html"
+      ]
+    },
+    {
+      "id": "q047",
+      "category": "direct",
+      "doc_type": "indexes_perf",
+      "rank": 1,
+      "top_similarity": 0.7671561102364143,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:indexes-examine.html",
+        "16:indexes-examine.html",
+        "17:indexes-examine.html",
+        "16:indexes-examine.html",
+        "17:functions-info.html",
+        "18:functions-info.html",
+        "16:functions-info.html",
+        "17:indexes-intro.html",
+        "17:indexes-index-only-scans.html",
+        "17:sql-createindex.html"
+      ]
+    },
+    {
+      "id": "q048",
+      "category": "direct",
+      "doc_type": "indexes_perf",
+      "rank": 1,
+      "top_similarity": 0.8280354780011683,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:planner-stats.html",
+        "16:planner-stats.html",
+        "18:planner-stats.html",
+        "16:planner-stats.html",
+        "17:planner-stats.html",
+        "18:planner-stats.html",
+        "17:sql-createstatistics.html",
+        "17:using-explain.html",
+        "17:indexes-examine.html",
+        "17:using-explain.html"
+      ]
+    },
+    {
+      "id": "q049",
+      "category": "identifier",
+      "doc_type": "indexes_perf",
+      "rank": 1,
+      "top_similarity": 0.7898029088973999,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:explicit-joins.html",
+        "18:explicit-joins.html",
+        "18:explicit-joins.html",
+        "17:using-explain.html",
+        "17:using-explain.html",
+        "17:explicit-joins.html",
+        "17:sql-select.html",
+        "17:sql-createaggregate.html",
+        "17:sql-createaggregate.html",
+        "18:explicit-joins.html"
+      ]
+    },
+    {
+      "id": "q050",
+      "category": "direct",
+      "doc_type": "indexes_perf",
+      "rank": 1,
+      "top_similarity": 0.8855783539037428,
+      "coverage": 1.0,
+      "retrieved": [
+        "16:non-durability.html",
+        "16:populate.html",
+        "16:populate.html",
+        "16:populate.html",
+        "16:populate.html",
+        "16:functions-trigger.html",
+        "18:sql-createindex.html",
+        "16:sql-createindex.html",
+        "17:sql-createindex.html",
+        "18:sql-update.html"
+      ]
+    },
+    {
+      "id": "q051",
+      "category": "paraphrase",
+      "doc_type": "indexes_perf",
+      "rank": 2,
+      "top_similarity": 0.767908380502962,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:sql-explain.html",
+        "17:using-explain.html",
+        "16:sql-explain.html",
+        "16:using-explain.html",
+        "18:using-explain.html",
+        "18:using-explain.html",
+        "17:using-explain.html",
+        "16:using-explain.html",
+        "17:using-explain.html",
+        "16:using-explain.html"
+      ]
+    },
+    {
+      "id": "q052",
+      "category": "direct",
+      "doc_type": "indexes_perf",
+      "rank": 1,
+      "top_similarity": 0.7859362108631441,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:populate.html",
+        "16:sql-dropindex.html",
+        "18:sql-dropindex.html",
+        "18:sql-createindex.html",
+        "16:sql-createindex.html",
+        "16:sql-droptable.html",
+        "18:sql-droptable.html",
+        "18:populate.html",
+        "16:populate.html",
+        "16:sql-createindex.html"
+      ]
+    },
+    {
+      "id": "q053",
+      "category": "version_specific",
+      "doc_type": "sql_command",
+      "rank": 1,
+      "top_similarity": 0.8400716090245014,
+      "coverage": 1.0,
+      "retrieved": [
+        "18:sql-createtable.html",
+        "18:sql-createforeigntable.html",
+        "18:sql-alterdatabase.html",
+        "18:sql-altertable.html",
+        "18:sql-createtype.html",
+        "17:sql-createforeigntable.html",
+        "17:sql-createtable.html",
+        "18:sql-altertable.html",
+        "18:sql-insert.html",
+        "18:sql-createtable.html"
+      ]
+    },
+    {
+      "id": "q054",
+      "category": "version_specific",
+      "doc_type": "sql_command",
+      "rank": 5,
+      "top_similarity": 0.7824386254752999,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:sql-createforeigntable.html",
+        "18:sql-createforeigntable.html",
+        "18:sql-createtable.html",
+        "17:sql-createfunction.html",
+        "17:sql-createtable.html",
+        "17:sql-createtableas.html",
+        "17:sql-createtable.html",
+        "17:sql-createtable.html",
+        "17:sql-createfunction.html",
+        "17:sql-createtableas.html"
+      ]
+    },
+    {
+      "id": "q055",
+      "category": "version_specific",
+      "doc_type": "functions",
+      "rank": 3,
+      "top_similarity": 0.8120433110063245,
+      "coverage": 1.0,
+      "retrieved": [
+        "18:functions-uuid.html",
+        "17:functions-datetime.html",
+        "17:functions-uuid.html",
+        "17:functions-datetime.html",
+        "17:functions-datetime.html",
+        "18:functions-uuid.html",
+        "17:functions-datetime.html",
+        "18:functions-datetime.html",
+        "17:functions-datetime.html",
+        "17:functions-datetime.html"
+      ]
+    },
+    {
+      "id": "q056",
+      "category": "version_specific",
+      "doc_type": "functions",
+      "rank": 1,
+      "top_similarity": 0.8146404027938843,
+      "coverage": 1.0,
+      "retrieved": [
+        "18:functions-uuid.html",
+        "17:functions-uuid.html",
+        "18:functions-uuid.html",
+        "16:functions-uuid.html",
+        "18:sql-createsequence.html",
+        "18:functions-uuid.html",
+        "18:functions-srf.html",
+        "18:functions-srf.html",
+        "18:functions-srf.html",
+        "18:functions-datetime.html"
+      ]
+    },
+    {
+      "id": "q057",
+      "category": "version_specific",
+      "doc_type": "sql_command",
+      "rank": 1,
+      "top_similarity": 0.8452149881486595,
+      "coverage": 1.0,
+      "retrieved": [
+        "18:sql-update.html",
+        "18:sql-update.html",
+        "18:sql-update.html",
+        "18:sql-update.html",
+        "18:sql-update.html",
+        "18:sql-update.html",
+        "18:sql-update.html",
+        "17:sql-update.html",
+        "18:sql-update.html",
+        "18:sql-merge.html"
+      ]
+    },
+    {
+      "id": "q058",
+      "category": "version_specific",
+      "doc_type": "sql_command",
+      "rank": 3,
+      "top_similarity": 0.8291986235737394,
+      "coverage": 1.0,
+      "retrieved": [
+        "18:sql-merge.html",
+        "16:sql-insert.html",
+        "16:sql-merge.html",
+        "16:sql-merge.html",
+        "16:sql-merge.html",
+        "16:sql-merge.html",
+        "17:functions-merge-support.html",
+        "16:sql-insert.html",
+        "16:sql-merge.html",
+        "18:functions-merge-support.html"
+      ]
+    },
+    {
+      "id": "q059",
+      "category": "version_specific",
+      "doc_type": "sql_command",
+      "rank": 1,
+      "top_similarity": 0.7917686924520791,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:sql-copy.html",
+        "17:sql-update.html",
+        "17:sql-copy.html",
+        "17:sql-copy.html",
+        "17:sql-copy.html",
+        "18:sql-copy.html",
+        "17:sql-copy.html",
+        "16:sql-copy.html",
+        "16:sql-copy.html",
+        "17:sql-update.html"
+      ]
+    },
+    {
+      "id": "q060",
+      "category": "version_specific",
+      "doc_type": "sql_command",
+      "rank": 3,
+      "top_similarity": 0.8056452274322567,
+      "coverage": 1.0,
+      "retrieved": [
+        "18:sql-update.html",
+        "18:populate.html",
+        "18:sql-copy.html",
+        "18:sql-copy.html",
+        "18:sql-copy.html",
+        "18:sql-copy.html",
+        "18:sql-copy.html",
+        "16:sql-copy.html",
+        "18:sql-copy.html",
+        "18:sql-copy.html"
+      ]
+    },
+    {
+      "id": "q061",
+      "category": "version_specific",
+      "doc_type": "sql_command",
+      "rank": 1,
+      "top_similarity": 0.7895518055157491,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:sql-explain.html",
+        "17:using-explain.html",
+        "17:using-explain.html",
+        "17:sql-explain.html",
+        "17:using-explain.html",
+        "17:sql-explain.html",
+        "17:using-explain.html",
+        "17:planner-stats.html",
+        "17:sql-explain.html",
+        "17:sql-explain.html"
+      ]
+    },
+    {
+      "id": "q062",
+      "category": "version_specific",
+      "doc_type": "indexes_perf",
+      "rank": 2,
+      "top_similarity": 0.8411224735117789,
+      "coverage": 1.0,
+      "retrieved": [
+        "18:indexes-types.html",
+        "18:indexes-multicolumn.html",
+        "18:indexes-ordering.html",
+        "18:sql-createindex.html",
+        "16:indexes-multicolumn.html",
+        "18:indexes-multicolumn.html",
+        "16:sql-createindex.html",
+        "18:indexes-types.html",
+        "18:sql-createindex.html",
+        "18:indexes-index-only-scans.html"
+      ]
+    },
+    {
+      "id": "q063",
+      "category": "version_specific",
+      "doc_type": "functions",
+      "rank": 2,
+      "top_similarity": 0.8266258239746094,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:functions-math.html",
+        "16:functions-math.html",
+        "17:functions-math.html",
+        "16:sql-select.html",
+        "16:functions-math.html",
+        "16:sql-select.html",
+        "16:functions-uuid.html",
+        "16:functions-math.html",
+        "16:functions-srf.html",
+        "16:functions-window.html"
+      ]
+    },
+    {
+      "id": "q064",
+      "category": "version_specific",
+      "doc_type": "functions",
+      "rank": 1,
+      "top_similarity": 0.8063138963673684,
+      "coverage": 1.0,
+      "retrieved": [
+        "18:functions-array.html",
+        "18:functions-array.html",
+        "16:functions-array.html",
+        "17:functions-array.html",
+        "18:using-explain.html",
+        "18:sql-cluster.html",
+        "18:sql-createindex.html",
+        "18:sql-select.html",
+        "18:using-explain.html",
+        "18:using-explain.html"
+      ]
+    },
+    {
+      "id": "q065",
+      "category": "version_specific",
+      "doc_type": "functions",
+      "rank": 1,
+      "top_similarity": 0.7920015454292297,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:functions-string.html",
+        "17:functions-binarystring.html",
+        "17:functions-bitstring.html",
+        "17:functions-binarystring.html",
+        "17:functions-binarystring.html",
+        "17:functions-binarystring.html",
+        "17:sql-createtype.html",
+        "17:functions-binarystring.html",
+        "18:functions-binarystring.html",
+        "17:sql-copy.html"
+      ]
+    },
+    {
+      "id": "q066",
+      "category": "version_specific",
+      "doc_type": "sql_command",
+      "rank": 1,
+      "top_similarity": 0.7343102037033338,
+      "coverage": 1.0,
+      "retrieved": [
+        "18:sql-createtable.html",
+        "18:sql-createtable.html",
+        "18:sql-lock.html",
+        "18:sql-altertable.html",
+        "18:sql-createsubscription.html",
+        "18:sql-update.html",
+        "18:sql-createindex.html",
+        "18:sql-createindex.html",
+        "18:sql-merge.html",
+        "18:sql-createtable.html"
+      ]
+    },
+    {
+      "id": "q067",
+      "category": "version_specific",
+      "doc_type": "functions",
+      "rank": 1,
+      "top_similarity": 0.8466915649197908,
+      "coverage": 1.0,
+      "retrieved": [
+        "16:functions-info.html",
+        "17:functions-info.html",
+        "17:functions-info.html",
+        "18:functions-info.html",
+        "18:functions-info.html",
+        "16:functions-info.html",
+        "16:sql-createtype.html",
+        "16:sql-createtype.html",
+        "16:sql-createtype.html",
+        "16:functions-info.html"
+      ]
+    },
+    {
+      "id": "q068",
+      "category": "version_specific",
+      "doc_type": "functions",
+      "rank": 1,
+      "top_similarity": 0.8440233283070717,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:sql-merge.html",
+        "17:sql-merge.html",
+        "17:sql-merge.html",
+        "16:sql-merge.html",
+        "18:sql-merge.html",
+        "17:sql-merge.html",
+        "17:functions-merge-support.html",
+        "16:sql-merge.html",
+        "18:sql-merge.html",
+        "17:sql-merge.html"
+      ]
+    },
+    {
+      "id": "q069",
+      "category": "version_diff",
+      "doc_type": "sql_command",
+      "rank": 1,
+      "top_similarity": 0.8258667938152944,
+      "coverage": 1.0,
+      "retrieved": [
+        "18:sql-merge.html",
+        "17:functions-merge-support.html",
+        "18:functions-merge-support.html",
+        "18:sql-insert.html",
+        "16:sql-merge.html",
+        "18:sql-merge.html",
+        "16:sql-merge.html",
+        "18:sql-merge.html",
+        "17:sql-merge.html",
+        "16:sql-merge.html"
+      ]
+    },
+    {
+      "id": "q070",
+      "category": "version_diff",
+      "doc_type": "functions",
+      "rank": 1,
+      "top_similarity": 0.7906388293935264,
+      "coverage": 1.0,
+      "retrieved": [
+        "18:functions-json.html",
+        "18:functions-json.html",
+        "16:functions-json.html",
+        "18:functions-json.html",
+        "16:functions-json.html",
+        "18:functions-json.html",
+        "16:functions-json.html",
+        "18:functions-json.html",
+        "17:functions-json.html",
+        "18:functions-json.html"
+      ]
+    },
+    {
+      "id": "q071",
+      "category": "version_diff",
+      "doc_type": "functions",
+      "rank": 1,
+      "top_similarity": 0.7253171421681986,
+      "coverage": 1.0,
+      "retrieved": [
+        "18:functions-uuid.html",
+        "17:functions-uuid.html",
+        "16:functions-uuid.html",
+        "18:functions-uuid.html",
+        "18:functions-uuid.html",
+        "17:functions-info.html",
+        "18:functions-info.html",
+        "17:functions-sequence.html",
+        "18:functions-sequence.html",
+        "16:functions-sequence.html"
+      ]
+    },
+    {
+      "id": "q072",
+      "category": "version_diff",
+      "doc_type": "functions",
+      "rank": 1,
+      "top_similarity": 0.7559058295460296,
+      "coverage": 1.0,
+      "retrieved": [
+        "18:functions-string.html",
+        "17:sql-grant.html",
+        "18:functions-conditional.html",
+        "17:functions-info.html",
+        "18:functions-info.html",
+        "18:functions-conditional.html",
+        "17:functions-formatting.html",
+        "16:functions-formatting.html",
+        "18:functions-string.html",
+        "17:functions-formatting.html"
+      ]
+    },
+    {
+      "id": "q073",
+      "category": "version_diff",
+      "doc_type": "sql_command",
+      "rank": 1,
+      "top_similarity": 0.758413703252524,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:sql-explain.html",
+        "18:sql-explain.html",
+        "16:sql-explain.html",
+        "17:using-explain.html",
+        "16:sql-altersubscription.html",
+        "17:sql-altersubscription.html",
+        "17:sql-createsubscription.html",
+        "18:sql-createsubscription.html",
+        "17:functions-info.html",
+        "16:sql-createpublication.html"
+      ]
+    },
+    {
+      "id": "q074",
+      "category": "version_diff",
+      "doc_type": "functions",
+      "rank": 1,
+      "top_similarity": 0.7498345076840542,
+      "coverage": 1.0,
+      "retrieved": [
+        "18:functions-aggregate.html",
+        "16:functions-aggregate.html",
+        "18:functions-aggregate.html",
+        "17:functions-aggregate.html",
+        "18:functions-aggregate.html",
+        "16:functions-aggregate.html",
+        "17:functions-aggregate.html",
+        "18:sql-createaggregate.html",
+        "16:sql-createaggregate.html",
+        "18:functions-aggregate.html"
+      ]
+    },
+    {
+      "id": "q075",
+      "category": "version_diff",
+      "doc_type": "sql_command",
+      "rank": 1,
+      "top_similarity": 0.7835805883157618,
+      "coverage": 1.0,
+      "retrieved": [
+        "18:sql-altertable.html",
+        "18:sql-altertable.html",
+        "17:sql-altertable.html",
+        "18:sql-altertable.html",
+        "16:sql-altertable.html",
+        "16:sql-altertable.html",
+        "18:sql-altertable.html",
+        "18:sql-altertable.html",
+        "18:sql-altertable.html",
+        "16:sql-altertable.html"
+      ]
+    },
+    {
+      "id": "q076",
+      "category": "version_diff",
+      "doc_type": "functions",
+      "rank": null,
+      "top_similarity": 0.5856569903305822,
+      "coverage": 0.0,
+      "retrieved": [
+        "17:functions-info.html",
+        "17:sql-createdatabase.html",
+        "17:functions-admin.html",
+        "17:sql-altercollation.html",
+        "16:functions-admin.html",
+        "17:sql-createtable.html",
+        "18:functions-info.html",
+        "17:sql-createdatabase.html",
+        "17:sql-altercollation.html",
+        "16:sql-createtable.html"
+      ]
+    },
+    {
+      "id": "q077",
+      "category": "version_diff",
+      "doc_type": "sql_command",
+      "rank": 5,
+      "top_similarity": 0.7038721828498814,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:sql-createforeigntable.html",
+        "17:sql-set-constraints.html",
+        "18:sql-altertable.html",
+        "17:sql-altertable.html",
+        "18:sql-createtable.html",
+        "17:sql-createforeigntable.html",
+        "18:sql-altertable.html",
+        "17:sql-set-constraints.html",
+        "17:sql-alterdomain.html",
+        "17:sql-createtable.html"
+      ]
+    },
+    {
+      "id": "q078",
+      "category": "version_diff",
+      "doc_type": "functions",
+      "rank": null,
+      "top_similarity": 0.6272518003510061,
+      "coverage": 0.0,
+      "retrieved": [
+        "18:sql-createdatabase.html",
+        "18:sql-createdatabase.html",
+        "17:sql-createdatabase.html",
+        "17:functions-net.html",
+        "18:sql-createdatabase.html",
+        "18:functions-net.html",
+        "18:sql-createdatabase.html",
+        "18:sql-createcollation.html",
+        "17:sql-createdatabase.html",
+        "17:sql-createdatabase.html"
+      ]
+    },
+    {
+      "id": "q079",
+      "category": "version_diff",
+      "doc_type": "functions",
+      "rank": 1,
+      "top_similarity": 0.748928144382508,
+      "coverage": 1.0,
+      "retrieved": [
+        "18:functions-json.html",
+        "17:functions-json.html",
+        "16:functions-json.html",
+        "17:functions-json.html",
+        "17:functions-json.html",
+        "18:functions-json.html",
+        "17:functions-json.html",
+        "16:sql-copy.html",
+        "18:functions-json.html",
+        "16:functions-json.html"
+      ]
+    },
+    {
+      "id": "q080",
+      "category": "version_diff",
+      "doc_type": "functions",
+      "rank": null,
+      "top_similarity": 0.6237472295761108,
+      "coverage": 0.0,
+      "retrieved": [
+        "16:sql-refreshmaterializedview.html",
+        "17:sql-vacuum.html",
+        "17:sql-refreshmaterializedview.html",
+        "17:sql-refreshmaterializedview.html",
+        "16:sql-refreshmaterializedview.html",
+        "17:sql-altersubscription.html",
+        "17:sql-select.html",
+        "16:planner-stats.html",
+        "17:populate.html",
+        "17:planner-stats.html"
+      ]
+    },
+    {
+      "id": "q081",
+      "category": "version_diff",
+      "doc_type": "functions",
+      "rank": 1,
+      "top_similarity": 0.7921533584594783,
+      "coverage": 1.0,
+      "retrieved": [
+        "18:functions-uuid.html",
+        "17:functions-uuid.html",
+        "18:functions-uuid.html",
+        "17:functions-datetime.html",
+        "17:functions-datetime.html",
+        "18:functions-datetime.html",
+        "17:functions-datetime.html",
+        "17:functions-datetime.html",
+        "16:functions-datetime.html",
+        "17:functions-datetime.html"
+      ]
+    },
+    {
+      "id": "q082",
+      "category": "version_diff",
+      "doc_type": "functions",
+      "rank": 1,
+      "top_similarity": 0.712748408317571,
+      "coverage": 1.0,
+      "retrieved": [
+        "18:functions-math.html",
+        "17:functions-info.html",
+        "18:functions-info.html",
+        "18:functions-geometry.html",
+        "17:functions-math.html",
+        "18:functions-math.html",
+        "17:functions-admin.html",
+        "17:functions-info.html",
+        "16:functions-admin.html",
+        "18:functions-info.html"
+      ]
+    },
+    {
+      "id": "q083",
+      "category": "cross_page",
+      "doc_type": "indexes_perf",
+      "rank": 1,
+      "top_similarity": 0.7968870876364178,
+      "coverage": 1.0,
+      "retrieved": [
+        "18:indexes-partial.html",
+        "17:indexes-expressional.html",
+        "17:indexes-partial.html",
+        "16:indexes-expressional.html",
+        "18:indexes-expressional.html",
+        "17:indexes-partial.html",
+        "16:indexes-partial.html",
+        "17:indexes-partial.html",
+        "17:indexes-partial.html",
+        "17:sql-createindex.html"
+      ]
+    },
+    {
+      "id": "q084",
+      "category": "cross_page",
+      "doc_type": "indexes_perf",
+      "rank": 1,
+      "top_similarity": 0.8300248879209109,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:indexes-index-only-scans.html",
+        "17:indexes-index-only-scans.html",
+        "17:indexes-index-only-scans.html",
+        "17:indexes-index-only-scans.html",
+        "17:indexes-index-only-scans.html",
+        "17:indexes-index-only-scans.html",
+        "17:indexes-index-only-scans.html",
+        "17:sql-createindex.html",
+        "17:sql-createindex.html",
+        "16:sql-createindex.html"
+      ]
+    },
+    {
+      "id": "q085",
+      "category": "cross_page",
+      "doc_type": "sql_command",
+      "rank": 1,
+      "top_similarity": 0.8175478468863887,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:sql-rollback-to.html",
+        "17:sql-rollback-to.html",
+        "17:sql-savepoint.html",
+        "17:sql-savepoint.html",
+        "17:sql-savepoint.html",
+        "17:sql-release-savepoint.html",
+        "16:sql-release-savepoint.html",
+        "17:sql-release-savepoint.html",
+        "17:sql-rollback.html",
+        "17:sql-rollback-prepared.html"
+      ]
+    },
+    {
+      "id": "q086",
+      "category": "cross_page",
+      "doc_type": "indexes_perf",
+      "rank": 1,
+      "top_similarity": 0.6902320158205063,
+      "coverage": 0.5,
+      "retrieved": [
+        "16:indexes-types.html",
+        "17:indexes-types.html",
+        "18:indexes-types.html",
+        "16:indexes-multicolumn.html",
+        "17:indexes-types.html",
+        "18:indexes-multicolumn.html",
+        "18:indexes-multicolumn.html",
+        "16:indexes-multicolumn.html",
+        "17:functions-admin.html",
+        "16:functions-admin.html"
+      ]
+    },
+    {
+      "id": "q087",
+      "category": "cross_page",
+      "doc_type": "indexes_perf",
+      "rank": 1,
+      "top_similarity": 0.7452480641155295,
+      "coverage": 0.6666666666666666,
+      "retrieved": [
+        "17:planner-stats.html",
+        "16:planner-stats.html",
+        "18:planner-stats.html",
+        "16:using-explain.html",
+        "17:sql-createstatistics.html",
+        "17:indexes-examine.html",
+        "16:indexes-examine.html",
+        "16:explicit-joins.html",
+        "17:using-explain.html",
+        "16:explicit-joins.html"
+      ]
+    },
+    {
+      "id": "q088",
+      "category": "cross_page",
+      "doc_type": "sql_command",
+      "rank": 1,
+      "top_similarity": 0.7722541229573539,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:sql-insert.html",
+        "17:sql-merge.html",
+        "16:sql-merge.html",
+        "18:sql-insert.html",
+        "18:sql-merge.html",
+        "18:sql-insert.html",
+        "17:sql-insert.html",
+        "18:sql-insert.html",
+        "17:sql-insert.html",
+        "17:sql-insert.html"
+      ]
+    },
+    {
+      "id": "q089",
+      "category": "cross_page",
+      "doc_type": "sql_command",
+      "rank": 1,
+      "top_similarity": 0.751223638580822,
+      "coverage": 0.5,
+      "retrieved": [
+        "18:sql-createtable.html",
+        "18:sql-createtable.html",
+        "18:indexes-unique.html",
+        "16:sql-createtable.html",
+        "17:sql-createtable.html",
+        "18:sql-set-constraints.html",
+        "17:sql-createtable.html",
+        "18:sql-createtable.html",
+        "16:sql-createtable.html",
+        "17:sql-createtable.html"
+      ]
+    },
+    {
+      "id": "q090",
+      "category": "cross_page",
+      "doc_type": "sql_command",
+      "rank": 1,
+      "top_similarity": 0.8415537570981066,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:sql-grant.html",
+        "17:sql-grant.html",
+        "17:sql-revoke.html",
+        "16:sql-revoke.html",
+        "16:sql-grant.html",
+        "17:sql-revoke.html",
+        "17:sql-revoke.html",
+        "17:sql-revoke.html",
+        "16:sql-revoke.html",
+        "17:sql-revoke.html"
+      ]
+    },
+    {
+      "id": "q091",
+      "category": "cross_page",
+      "doc_type": "sql_command",
+      "rank": 1,
+      "top_similarity": 0.8105063438415527,
+      "coverage": 1.0,
+      "retrieved": [
+        "17:sql-prepare.html",
+        "17:sql-prepare.html",
+        "17:sql-prepare.html",
+        "17:sql-execute.html",
+        "17:sql-prepare.html",
+        "17:sql-prepare.html",
+        "16:sql-prepare.html",
+        "18:sql-prepare.html",
+        "17:sql-explain.html",
+        "16:sql-createprocedure.html"
+      ]
+    },
+    {
+      "id": "q092",
+      "category": "cross_page",
+      "doc_type": "indexes_perf",
+      "rank": 1,
+      "top_similarity": 0.7014016509056091,
+      "coverage": 1.0,
+      "retrieved": [
+        "16:populate.html",
+        "18:populate.html",
+        "18:populate.html",
+        "16:populate.html",
+        "18:sql-createindex.html",
+        "16:populate.html",
+        "18:non-durability.html",
+        "16:sql-createindex.html",
+        "18:sql-createindex.html",
+        "18:sql-cluster.html"
+      ]
+    }
+  ],
+  "unanswerable": [
+    {
+      "id": "q093",
+      "top_similarity": 0.7129735946655273
+    },
+    {
+      "id": "q094",
+      "top_similarity": 0.6692754429146911
+    },
+    {
+      "id": "q095",
+      "top_similarity": 0.7438801679682645
+    },
+    {
+      "id": "q096",
+      "top_similarity": 0.709546587155658
+    },
+    {
+      "id": "q097",
+      "top_similarity": 0.7368039112330652
+    },
+    {
+      "id": "q098",
+      "top_similarity": 0.6466241689548403
+    },
+    {
+      "id": "q099",
+      "top_similarity": 0.6502795413219795
+    },
+    {
+      "id": "q100",
+      "top_similarity": 0.7654952495242882
+    }
+  ]
+}

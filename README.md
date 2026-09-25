@@ -27,7 +27,8 @@ question ──embed──▶ nearest chunks ───────────�
 | pgvector schema | Done |
 | Embedding and ingestion | Done |
 | Evaluation question set and retrieval eval | Done |
-| FastAPI `/ingest` and `/query` | Planned |
+| FastAPI `/ingest` and `/query` (retrieval) | Done |
+| Answer generation with an LLM | Planned |
 | Hybrid search, reranking | Planned |
 | Auth, rate limiting, caching | Planned |
 | Observability, A/B testing | Planned |
@@ -43,6 +44,12 @@ question ──embed──▶ nearest chunks ───────────�
 **Incremental ingestion.** Pages and chunks are upserted by stable IDs (`18:sql-createindex.html#3`). A chunk whose content hash changed loses its vector; only chunks without a vector from the current model are embedded, in batches committed one at a time, so an interrupted run resumes and a repeated run does nothing. Embedding the full corpus takes about 70 seconds on a laptop.
 
 **Task prefixes.** nomic-embed-text is trained with instructions: documents are embedded as `search_document: …` and questions as `search_query: …`. Omitting them measurably hurts retrieval.
+
+**Cross-version dedup.** Most sections are identical in 16, 17 and 18, so a plain top-5 often returned the same passage three times. Without a version filter, `/query` fetches 3×k candidates and merges chunks whose text (minus the breadcrumb) is identical into the best-scoring one, listing every version it applies to in `versions`. This raised hit@5 from 0.83 to 0.88 and paraphrase hit@5 from 0.64 to 0.79. Sections that changed between versions stay separate, so version differences remain visible.
+
+**HNSW limits.** An HNSW scan returns at most `hnsw.ef_search` rows (default 40) and applies `WHERE` filters after the scan, so a large k or a narrow filter could silently return fewer than k results. Each query raises `ef_search` to at least the number of rows it fetches and enables pgvector 0.8's `iterative_scan`, both scoped to the query's transaction.
+
+**Sync endpoints and a connection pool.** Endpoints are plain functions that FastAPI runs in a thread pool, which keeps the blocking psycopg and embedding calls simple; the embedding server, not Python, is the bottleneck. A `psycopg_pool` pool reuses database connections across requests.
 
 **One database.** pgvector keeps vectors, metadata and full-text search in Postgres. Chunks carry `version` and `doc_type` directly, so filtered searches need no join. An HNSW index serves vector search and a GIN index on a generated `tsvector` column serves keyword search, which hybrid search will combine. A `content_hash` per chunk lets re-ingestion skip unchanged text.
 
@@ -61,14 +68,16 @@ question ──embed──▶ nearest chunks ───────────�
 
 Labels are page-level (`18:sql-merge.html`) so they survive re-chunking. Every label carries a quote that `validate_questions.py` checks against the corpus; version questions also carry quotes that must be *absent* from the versions lacking the feature.
 
-Baseline (plain vector search, top 10, 92 answerable questions):
+Results (vector search, top 10, 92 answerable questions). `eval_retrieval.py` runs the same search code as `/query`; with dedup, a merged result counts for every version it lists:
 
 | Configuration | hit@1 | hit@5 | hit@10 | MRR |
 |---|---|---|---|---|
-| Vector search | 0.66 | 0.83 | 0.88 | 0.721 |
+| Vector search (baseline) | 0.66 | 0.83 | 0.88 | 0.721 |
 | + version filter | 0.67 | 0.83 | 0.88 | 0.736 |
+| + cross-version dedup | 0.66 | 0.88 | 0.89 | 0.749 |
+| + version filter + dedup (what `/query` does) | 0.67 | 0.88 | 0.89 | 0.759 |
 
-Paraphrased questions are the weak spot (hit@5 0.64), along with exact function names that resemble other words (`date_trunc` retrieves `TRUNCATE`), which hybrid search and reranking target next. Top-1 similarity barely separates answerable questions (median 0.756) from unanswerable ones (median 0.711), so a similarity threshold alone won't detect out-of-scope questions.
+Paraphrased questions are the weak spot (hit@5 0.79 with dedup), along with exact function names that resemble other words (`date_trunc` retrieves `TRUNCATE`), which hybrid search and reranking target next. Top-1 similarity barely separates answerable questions (median 0.756) from unanswerable ones (median 0.711), so a similarity threshold alone won't detect out-of-scope questions.
 
 ## Setup
 
@@ -106,7 +115,32 @@ python embed_ingest.py
 
 # 4. Check eval labels, then measure retrieval (results saved in data/eval/results/)
 python validate_questions.py
-python eval_retrieval.py [--filter-version] [--show-misses]
+python eval_retrieval.py [--filter-version] [--dedup] [--show-misses]
+```
+
+## API
+
+```bash
+uvicorn app.main:app --reload    # needs the database and embedding server running
+```
+
+Interactive docs at http://localhost:8000/docs.
+
+| Endpoint | Does |
+|---|---|
+| `POST /query` | `{"question", "version"?, "doc_type"?, "k"?}` → top-k chunks with URL, heading path, similarity and the versions they apply to |
+| `POST /ingest` | One page (`version`, `doc_type`, `section_title`, `page`, `url`, `text` as markdown) → chunked, upserted, new or changed chunks embedded. Re-sending an unchanged page is a no-op |
+| `GET /health` | 200 if the database and the embedding server respond, else 503 |
+
+```bash
+curl -s localhost:8000/query -H 'content-type: application/json' \
+  -d '{"question": "how do I create an index without locking the table", "version": 17}'
+```
+
+Tests run against the local database and embedding server; the ingest test adds and removes a made-up page:
+
+```bash
+pytest
 ```
 
 | Script | Main options |
@@ -118,6 +152,8 @@ python eval_retrieval.py [--filter-version] [--show-misses]
 ## Repository layout
 
 ```
+app/                  FastAPI app (main.py), request/response models, shared search
+tests/                API tests
 fetch_parse_docs.py   crawl postgresql.org and convert pages to markdown
 chunk_docs.py         split pages into embedding-sized chunks
 embed_ingest.py       load into Postgres and embed chunks

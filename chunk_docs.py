@@ -32,6 +32,8 @@ from tokenizers import Tokenizer
 
 TOKENIZER = "nomic-ai/nomic-embed-text-v1.5"
 DOC_PREFIX = "search_document: "
+TARGET_TOKENS = 450
+MAX_TOKENS = 512
 
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.*?)\s*$")
 ANCHOR_RE = re.compile(r"\s*\[#\]\(#([^)]+)\)\s*$")
@@ -272,8 +274,8 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--in", dest="inp", type=Path, default=Path("data/parsed/docs.jsonl"))
     ap.add_argument("--out", type=Path, default=Path("data/chunks/chunks.jsonl"))
-    ap.add_argument("--target", type=int, default=450, help="Soft chunk size in tokens")
-    ap.add_argument("--max-tokens", type=int, default=512, help="Hard cap incl. prefix + special tokens")
+    ap.add_argument("--target", type=int, default=TARGET_TOKENS, help="Soft chunk size in tokens")
+    ap.add_argument("--max-tokens", type=int, default=MAX_TOKENS, help="Hard cap incl. prefix + special tokens")
     args = ap.parse_args()
 
     count = TokenCounter()

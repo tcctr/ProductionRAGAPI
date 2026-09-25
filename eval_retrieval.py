@@ -4,10 +4,13 @@
 Usage:
     python eval_retrieval.py                  # plain vector search (baseline)
     python eval_retrieval.py --filter-version # restrict to the question's version
+    python eval_retrieval.py --dedup          # merge identical sections across versions, like /query
 
 For each answerable question, embeds it as a search query, takes the top-k
 chunks from pgvector, and checks whether any comes from an expected page
 ("18:sql-merge.html"). Labels are page-level so they survive re-chunking.
+Search is app/search.py, the same code /query runs. With --dedup, a merged
+result counts for every version in its "versions".
 
 Metrics:
   hit@k   share of questions with an expected page in the top k
@@ -28,24 +31,10 @@ from statistics import mean, median
 
 import psycopg
 
+from app.search import search
 from embed_ingest import DATABASE_URL, EMBED_MODEL, QUERY_PREFIX, embed, to_pgvector
 
 KS = (1, 5, 10)
-
-
-def search(conn: psycopg.Connection, qvec: str, k: int, version: int | None) -> list[tuple[str, float]]:
-    """Top-k (page_key, similarity) by cosine similarity, optionally for one version."""
-    where = "WHERE version = %(version)s" if version is not None else ""
-    rows = conn.execute(
-        f"""
-        SELECT version || ':' || page, 1 - (embedding <=> %(q)s::vector)
-        FROM chunks {where}
-        ORDER BY embedding <=> %(q)s::vector
-        LIMIT %(k)s
-        """,
-        {"q": qvec, "k": k, "version": version},
-    ).fetchall()
-    return [(key, float(sim)) for key, sim in rows]
 
 
 def score(results: list[dict]) -> dict:
@@ -72,6 +61,8 @@ def main() -> None:
     ap.add_argument("--k", type=int, default=max(KS))
     ap.add_argument("--filter-version", action="store_true",
                     help="restrict search to the question's version when it names one")
+    ap.add_argument("--dedup", action="store_true",
+                    help="without a version filter, merge chunks identical across versions (as /query does)")
     ap.add_argument("--out-dir", type=Path, default=Path("data/eval/results"))
     ap.add_argument("--show-misses", action="store_true", help="print questions with no hit in top k")
     args = ap.parse_args()
@@ -83,18 +74,20 @@ def main() -> None:
     with psycopg.connect(DATABASE_URL) as conn:
         for q, vec in zip(questions, vectors):
             version = q["version"] if args.filter_version else None
-            top = search(conn, to_pgvector(vec), args.k, version)
+            top = search(conn, to_pgvector(vec), args.k, version, dedup=args.dedup)
             if q["category"] == "unanswerable":
-                unanswerable.append({"id": q["id"], "top_similarity": top[0][1]})
+                unanswerable.append({"id": q["id"], "top_similarity": top[0]["similarity"]})
                 continue
             expected = set(q["expected_pages"])
-            keys = [key for key, _ in top]
-            rank = next((i + 1 for i, key in enumerate(keys) if key in expected), None)
+            keys = [f"{c['version']}:{c['page']}" for c in top]
+            # Every version:page each result stands for (several when dedup merged copies).
+            covered = [{f"{v}:{c['page']}" for v in c["versions"]} for c in top]
+            rank = next((i + 1 for i, ks in enumerate(covered) if ks & expected), None)
             wanted_pages = {key.split(":", 1)[1] for key in expected}
-            found_pages = {key.split(":", 1)[1] for key in keys if key in expected}
+            found_pages = {key.split(":", 1)[1] for ks in covered for key in ks & expected}
             results.append({
                 "id": q["id"], "category": q["category"], "doc_type": q["doc_type"],
-                "rank": rank, "top_similarity": top[0][1],
+                "rank": rank, "top_similarity": top[0]["similarity"],
                 "coverage": len(found_pages) / len(wanted_pages),
                 "retrieved": keys,
             })
@@ -105,7 +98,7 @@ def main() -> None:
         by_cat[r["category"]].append(r)
         by_type[r["doc_type"]].append(r)
 
-    mode = "version filter" if args.filter_version else "no filter"
+    mode = ("version filter" if args.filter_version else "no filter") + (", dedup" if args.dedup else "")
     print(f"retrieval eval: {len(results)} answerable questions, top {args.k}, {mode}\n")
     print(f"{'overall':18} {fmt(overall)}")
     print("\nby category")
@@ -137,7 +130,7 @@ def main() -> None:
     path = args.out_dir / f"{stamp}.json"
     path.write_text(json.dumps({
         "timestamp": stamp, "git_commit": commit, "embed_model": EMBED_MODEL,
-        "k": args.k, "filter_version": args.filter_version,
+        "k": args.k, "filter_version": args.filter_version, "dedup": args.dedup,
         "overall": overall,
         "by_category": {c: score(rs) for c, rs in by_cat.items()},
         "by_doc_type": {d: score(rs) for d, rs in by_type.items()},

@@ -64,8 +64,12 @@ def to_pgvector(v: list[float]) -> str:
     return "[" + ",".join(f"{x:.7g}" for x in v) + "]"
 
 
-def upsert_documents(conn: psycopg.Connection, docs: list[dict]) -> dict[tuple[int, str], int]:
-    """Insert/update pages; delete pages no longer in the corpus. Returns (version, page) -> id."""
+def upsert_documents(conn: psycopg.Connection, docs: list[dict], prune: bool = True) -> dict[tuple[int, str], int]:
+    """Insert/update pages and return (version, page) -> id for them.
+
+    With prune, pages not in docs are deleted (docs is the whole corpus); /ingest
+    passes prune=False to add or update single pages.
+    """
     rows = [
         (int(d["version"]), d["doc_type"], d["section_title"], d["page"], d["url"], d["text"],
          hashlib.sha256(d["text"].encode()).hexdigest())
@@ -88,16 +92,22 @@ def upsert_documents(conn: psycopg.Connection, docs: list[dict]) -> dict[tuple[i
             rows,
         )
         keys = [f"{v}:{p}" for v, _, _, p, *_ in rows]
-        cur.execute("DELETE FROM documents WHERE version || ':' || page <> ALL(%s)", (keys,))
-        removed = cur.rowcount
-        cur.execute("SELECT version, page, id FROM documents")
+        removed = 0
+        if prune:
+            cur.execute("DELETE FROM documents WHERE version || ':' || page <> ALL(%s)", (keys,))
+            removed = cur.rowcount
+        cur.execute("SELECT version, page, id FROM documents WHERE version || ':' || page = ANY(%s)", (keys,))
         ids = {(v, p): i for v, p, i in cur.fetchall()}
     print(f"documents: {len(rows)} upserted, {removed} removed")
     return ids
 
 
-def upsert_chunks(conn: psycopg.Connection, chunks: list[dict], doc_ids: dict[tuple[int, str], int]) -> None:
-    """Insert/update chunks. A chunk whose text changed loses its vector so it gets re-embedded."""
+def upsert_chunks(conn: psycopg.Connection, chunks: list[dict], doc_ids: dict[tuple[int, str], int]) -> int:
+    """Insert/update chunks of the pages in doc_ids and delete their stale chunks; returns #deleted.
+
+    A chunk whose text changed loses its vector so it gets re-embedded. Chunks of
+    pages outside doc_ids are untouched (pruned pages lose theirs via ON DELETE CASCADE).
+    """
     rows = [
         (c["id"], doc_ids[(int(c["version"]), c["page"])], int(c["version"]), c["doc_type"], c["page"],
          c["url"], c["section_title"], c["heading_path"], c["chunk_index"], c["content"],
@@ -106,7 +116,10 @@ def upsert_chunks(conn: psycopg.Connection, chunks: list[dict], doc_ids: dict[tu
     ]
     with conn.cursor() as cur:
         # Drop stale chunks first so a page that shrank can't collide on (document_id, chunk_index).
-        cur.execute("DELETE FROM chunks WHERE id <> ALL(%s)", ([r[0] for r in rows],))
+        cur.execute(
+            "DELETE FROM chunks WHERE document_id = ANY(%s) AND id <> ALL(%s)",
+            (list(doc_ids.values()), [r[0] for r in rows]),
+        )
         removed = cur.rowcount
         cur.executemany(
             """
@@ -130,15 +143,17 @@ def upsert_chunks(conn: psycopg.Connection, chunks: list[dict], doc_ids: dict[tu
             rows,
         )
     print(f"chunks: {len(rows)} upserted, {removed} removed")
+    return removed
 
 
-def embed_pending(conn: psycopg.Connection, batch_size: int) -> int:
-    """Embed every chunk lacking a vector from EMBED_MODEL, committing after each batch."""
+def embed_pending(conn: psycopg.Connection, batch_size: int, ids: list[str] | None = None) -> int:
+    """Embed every chunk (or every chunk in ids) lacking a vector from EMBED_MODEL, committing after each batch."""
     with conn.cursor() as cur:
         cur.execute(
             "SELECT id, content FROM chunks "
-            "WHERE embedding IS NULL OR embedding_model IS DISTINCT FROM %s ORDER BY id",
-            (EMBED_MODEL,),
+            "WHERE (embedding IS NULL OR embedding_model IS DISTINCT FROM %s) "
+            "AND (%s::text[] IS NULL OR id = ANY(%s)) ORDER BY id",
+            (EMBED_MODEL, ids, ids),
         )
         pending = cur.fetchall()
     if not pending:
