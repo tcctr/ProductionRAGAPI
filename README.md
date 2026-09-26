@@ -29,7 +29,7 @@ question ──embed──▶ nearest chunks ───────────�
 | Evaluation question set and retrieval eval | Done |
 | FastAPI `/ingest` and `/query` | Done |
 | Answer generation with a local LLM | Done |
-| Answer evaluation | Planned |
+| Answer evaluation (LLM judge) | In progress |
 | Hybrid search, reranking | Planned |
 | Auth, rate limiting, caching | Planned |
 | Observability, A/B testing | Planned |
@@ -84,6 +84,27 @@ All rows use `ef_search = 200`. With pgvector's default of 40 (the first measure
 
 Paraphrased questions are the weak spot (hit@5 0.82 with dedup, but hit@1 only 0.43): the right page is usually retrieved but not ranked first, which reranking targets next. Top-1 similarity barely separates answerable questions (median 0.757) from unanswerable ones (median 0.711), so a similarity threshold alone won't detect out-of-scope questions.
 
+### Answer quality
+
+`generate_answers.py` answers every question the way `/query` does (version filter + dedup, top 5) and saves each answer with the exact chunks the model saw. `judge_answers.py` then grades them:
+
+- **Free checks:** every `[n]` citation must point to a retrieved chunk, and a regex spots refusals ("the excerpts do not cover …") as a cross-check on the judge.
+- **LLM judge:** a local model gets the question, the reference answer, the numbered excerpts and the answer, and returns small labels constrained by a JSON schema (llama-server compiles it into a grammar, so the output always parses): each factual claim, SQL examples included, as supported or unsupported by the excerpts; statements contradicting the reference; coverage of the reference's key points (full/partial/none); and whether it refused. The verdict follows from fixed rules: a refusal is `refused` (correct only for unanswerable questions, and only with no unsupported claims), a contradiction or no coverage is `incorrect`, full coverage `correct`, partial coverage `partial`.
+
+Correctness and faithfulness are kept apart: an answer can match the reference and still add an unsupported SQL example, and the judge caught exactly that (an invalid `COPY ... ON_ERROR = ignore REJECT_LIMIT = 10`).
+
+First run, Qwen3.6-35B-A3B answering and judging its own answers (92 answerable questions):
+
+| | correct | partial | incorrect | refused | faithfulness |
+|---|---|---|---|---|---|
+| overall | 0.55 | 0.20 | 0.07 | 0.18 | 0.97 |
+| direct | 0.77 | 0.23 | 0.00 | 0.00 | 1.00 |
+| version_specific | 0.81 | 0.06 | 0.12 | 0.00 | 0.97 |
+| paraphrase | 0.46 | 0.21 | 0.07 | 0.25 | 0.97 |
+| version_diff | 0.21 | 0.07 | 0.07 | 0.64 | 0.92 |
+
+All 8 unanswerable questions were refused without invented facts. Of the 17 refused answerable questions, 6 had no expected page in the top 5 (a correct refusal of bad retrieval), 3 had the right page but not the chunk with the answer (e.g. `functions-json.html` without the `->>` row: page-level hit@k overstates retrieval on long pages), and 7 were "which version added X?" questions. The docs never say "added in 17", and 5 chunks can't show that a feature is *absent* from 16, so the model declines to infer it. The judge also makes mistakes (it graded one answer that agreed with the reference as `incorrect`), so these numbers are provisional until it is checked against hand grades. Next: that check, then the same run with a 9B dense model.
+
 ## Setup
 
 Requirements: Python 3.12+, Docker, and [llama.cpp](https://github.com/ggml-org/llama.cpp) (`brew install llama.cpp`).
@@ -129,6 +150,10 @@ python embed_ingest.py
 # 4. Check eval labels, then measure retrieval (results saved in data/eval/results/)
 python validate_questions.py
 python eval_retrieval.py [--filter-version] [--dedup] [--show-misses]
+
+# 5. Answer every question with an LLM, then grade the answers (saved in data/eval/answers/, data/eval/judgments/)
+python generate_answers.py --name qwen3.6-35b-a3b --llm-url $LLM_URL
+python judge_answers.py data/eval/answers/<file>.json --judge-url $LLM_URL
 ```
 
 ## API
@@ -161,6 +186,8 @@ pytest
 | `fetch_parse_docs.py` | `--versions 16 17 18`, `--delay 1.0`, `--raw-dir`, `--out` |
 | `chunk_docs.py` | `--target 450`, `--max-tokens 512`, `--in`, `--out` |
 | `embed_ingest.py` | `--batch-size 32`, `--test-query`; env `DATABASE_URL`, `EMBED_URL`, `EMBED_MODEL` |
+| `generate_answers.py` | `--name` (required), `--llm-url`, `--k 5`, `--limit` |
+| `judge_answers.py` | answers file, `--judge-url`, `--ids`, `--limit` |
 | API (`app/generate.py`) | env `LLM_URL` (default `http://localhost:8082/v1/chat/completions`), `LLM_MODEL`, `LLM_TIMEOUT` (120 s) |
 
 ## Repository layout
@@ -173,7 +200,9 @@ chunk_docs.py         split pages into embedding-sized chunks
 embed_ingest.py       load into Postgres and embed chunks
 validate_questions.py check eval labels against the corpus
 eval_retrieval.py     retrieval metrics (hit@k, MRR) on the eval set
-data/eval/            eval questions and saved results
+generate_answers.py   answer every eval question with an LLM
+judge_answers.py      grade saved answers with an LLM judge and citation checks
+data/eval/            eval questions, saved retrieval results, answers and judgments
 db/schema.sql         tables and indexes
 docker-compose.yml    Postgres + pgvector
 data/parsed/          parsed corpus (docs.jsonl)
