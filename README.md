@@ -46,9 +46,9 @@ question ──embed──▶ nearest chunks ───────────�
 
 **Task prefixes.** nomic-embed-text is trained with instructions: documents are embedded as `search_document: …` and questions as `search_query: …`. Omitting them measurably hurts retrieval.
 
-**Cross-version dedup.** Most sections are identical in 16, 17 and 18, so a plain top-5 often returned the same passage three times. Without a version filter, `/query` fetches 3×k candidates and merges chunks whose text (minus the breadcrumb) is identical into the best-scoring one, listing every version it applies to in `versions`. This raised hit@5 from 0.83 to 0.88 and paraphrase hit@5 from 0.64 to 0.79. Sections that changed between versions stay separate, so version differences remain visible.
+**Cross-version dedup.** Most sections are identical in 16, 17 and 18, so a plain top-5 often returned the same passage three times. Without a version filter, `/query` fetches 3×k candidates and merges chunks whose text (minus the breadcrumb) is identical into the best-scoring one, listing every version it applies to in `versions`. This raises hit@5 from 0.87 to 0.93 and paraphrase hit@5 from 0.64 to 0.82. Sections that changed between versions stay separate, so version differences remain visible.
 
-**HNSW limits.** An HNSW scan returns at most `hnsw.ef_search` rows (default 40) and applies `WHERE` filters after the scan, so a large k or a narrow filter could silently return fewer than k results. Each query raises `ef_search` to at least the number of rows it fetches and enables pgvector 0.8's `iterative_scan`, both scoped to the query's transaction.
+**HNSW recall.** HNSW is an approximate index: it follows links between similar vectors and keeps only `hnsw.ef_search` candidates (default 40) while it searches, so it can miss the true best match. Compared with an exact scan on the eval questions, `ef_search = 40` gave 6 of 100 questions the wrong top result and missed about 8% of the true top 15; "What does the ABORT command do?" never reached the ABORT page and returned `CREATE POLICY` passages instead. At 200 every result matched the exact scan, for about 5 ms more per search, and the eval's MRR went from 0.759 to 0.808. The scan also applies `WHERE` filters after the index, so each query raises `ef_search` to at least 200 or the number of rows it fetches, and enables pgvector 0.8's `iterative_scan` to keep scanning until enough rows pass the filters; both settings are scoped to the query's transaction.
 
 **Sync endpoints and a connection pool.** Endpoints are plain functions that FastAPI runs in a thread pool, which keeps the blocking psycopg and embedding calls simple; the embedding server, not Python, is the bottleneck. A `psycopg_pool` pool reuses database connections across requests.
 
@@ -75,12 +75,14 @@ Results (vector search, top 10, 92 answerable questions). `eval_retrieval.py` ru
 
 | Configuration | hit@1 | hit@5 | hit@10 | MRR |
 |---|---|---|---|---|
-| Vector search (baseline) | 0.66 | 0.83 | 0.88 | 0.721 |
-| + version filter | 0.67 | 0.83 | 0.88 | 0.736 |
-| + cross-version dedup | 0.66 | 0.88 | 0.89 | 0.749 |
-| + version filter + dedup (what `/query` does) | 0.67 | 0.88 | 0.89 | 0.759 |
+| Vector search | 0.71 | 0.87 | 0.93 | 0.769 |
+| + version filter | 0.72 | 0.87 | 0.93 | 0.784 |
+| + cross-version dedup | 0.71 | 0.93 | 0.96 | 0.797 |
+| + version filter + dedup (what `/query` does) | 0.72 | 0.93 | 0.96 | 0.808 |
 
-Paraphrased questions are the weak spot (hit@5 0.79 with dedup), along with exact function names that resemble other words (`date_trunc` retrieves `TRUNCATE`), which hybrid search and reranking target next. Top-1 similarity barely separates answerable questions (median 0.756) from unanswerable ones (median 0.711), so a similarity threshold alone won't detect out-of-scope questions.
+All rows use `ef_search = 200`. With pgvector's default of 40 (the first measurements) the same four rows had MRR 0.721, 0.736, 0.749 and 0.759: part of what looked like embedding-model misses was the index skipping the right chunk (see HNSW recall).
+
+Paraphrased questions are the weak spot (hit@5 0.82 with dedup, but hit@1 only 0.43): the right page is usually retrieved but not ranked first, which reranking targets next. Top-1 similarity barely separates answerable questions (median 0.757) from unanswerable ones (median 0.711), so a similarity threshold alone won't detect out-of-scope questions.
 
 ## Setup
 

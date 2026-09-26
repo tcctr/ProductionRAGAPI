@@ -6,6 +6,12 @@ from psycopg.rows import dict_row
 # the copies of a section that is identical in 16, 17 and 18.
 DEDUP_OVERFETCH = 3
 
+# Candidates HNSW keeps while searching (pgvector's default is 40). Measured against exact search
+# on the eval questions: at 40, 6 of 100 got the wrong top result and ~8% of the true top 15
+# were missed (e.g. "What does the ABORT command do?" never reached sql-abort.html); 200 found
+# all of them, for ~5 ms more per search.
+EF_SEARCH_MIN = 200
+
 
 def body(content: str) -> str:
     """Chunk text without its breadcrumb line ("PostgreSQL 18 > ..."), the only part that names the version."""
@@ -30,12 +36,12 @@ def search(conn: psycopg.Connection, qvec: str, k: int, version: int | None = No
         params["doc_type"] = doc_type
 
     with conn.transaction(), conn.cursor(row_factory=dict_row) as cur:
-        # HNSW returns at most ef_search rows (default 40), and filters are applied after the
-        # index scan; iterative_scan keeps scanning until LIMIT rows pass the filters.
+        # HNSW returns at most ef_search rows and applies filters after the index scan;
+        # iterative_scan keeps scanning until LIMIT rows pass the filters.
         # set_config(..., true) scopes both settings to this transaction.
         cur.execute("SELECT set_config('hnsw.ef_search', %s, true), "
                     "set_config('hnsw.iterative_scan', 'strict_order', true)",
-                    (str(max(40, fetch_k)),))
+                    (str(max(EF_SEARCH_MIN, fetch_k)),))
         cur.execute(
             f"""
             SELECT id, version, doc_type, page, section_title, heading_path, url, content,
