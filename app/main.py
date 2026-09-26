@@ -1,11 +1,11 @@
 """RAG API over the PostgreSQL docs.
 
 Usage:
-    uvicorn app.main:app --reload        # needs ragapi-db and llama-server running
+    uvicorn app.main:app --reload        # needs ragapi-db, the embedding server and the LLM server
     open http://localhost:8000/docs      # interactive API docs
 
 Endpoints are plain `def`s: FastAPI runs them in a thread pool, so the blocking
-psycopg and requests calls don't stall other requests.
+psycopg and requests calls (including the seconds-long LLM call) don't stall other requests.
 """
 from collections.abc import Iterator
 from contextlib import asynccontextmanager
@@ -15,13 +15,17 @@ import requests
 from fastapi import Depends, FastAPI, HTTPException, Request
 from psycopg_pool import ConnectionPool, PoolTimeout
 
+from app import generate as llm
 from app.models import IngestRequest, IngestResponse, QueryRequest, QueryResponse
 from app.search import search
 from chunk_docs import MAX_TOKENS, TARGET_TOKENS, TokenCounter, chunk_record
 from embed_ingest import (DATABASE_URL, EMBED_URL, QUERY_PREFIX, embed, embed_pending, to_pgvector,
                           upsert_chunks, upsert_documents)
 
-EMBED_HEALTH_URL = EMBED_URL.split("/v1/")[0] + "/health"
+
+def health_url(api_url: str) -> str:
+    """llama-server's /health lives at the root of the server that serves /v1/..."""
+    return api_url.split("/v1/")[0] + "/health"
 
 
 @asynccontextmanager
@@ -49,15 +53,28 @@ def embedding_unavailable(e: Exception) -> HTTPException:
     return HTTPException(503, f"embedding server unavailable: {e}")
 
 
+def llm_unavailable(e: Exception) -> HTTPException:
+    return HTTPException(503, f"LLM server unavailable: {e}")
+
+
 @app.post("/query", response_model=QueryResponse)
-def query(req: QueryRequest, conn: psycopg.Connection = Depends(get_conn)):
+def query(req: QueryRequest, request: Request):
     try:
         # One attempt: a user is waiting, so fail fast instead of embed()'s backoff retries.
         qvec = to_pgvector(embed([QUERY_PREFIX + req.question], retries=1)[0])
     except (requests.RequestException, ValueError) as e:
         raise embedding_unavailable(e)
-    chunks = search(conn, qvec, req.k, req.version, req.doc_type)
-    return {"question": req.question, "chunks": chunks}
+    # Not get_conn, which holds the connection until the response is sent: give it back to the
+    # pool before the LLM call, so slow answers don't use up connections that searches need.
+    with request.app.state.pool.connection() as conn:
+        chunks = search(conn, qvec, req.k, req.version, req.doc_type)
+    answer = None
+    if req.generate and chunks:
+        try:
+            answer = llm.generate(req.question, chunks)
+        except (requests.RequestException, ValueError) as e:
+            raise llm_unavailable(e)
+    return {"question": req.question, "answer": answer, "chunks": chunks}
 
 
 @app.post("/ingest", response_model=IngestResponse)
@@ -84,7 +101,7 @@ def ingest(req: IngestRequest, request: Request, conn: psycopg.Connection = Depe
 
 @app.get("/health")
 def health(request: Request):
-    """200 if the database and the embedding server both respond, else 503."""
+    """200 if the database, the embedding server and the LLM server all respond, else 503."""
     status = {}
     try:
         # Not get_conn: when the database is down, fail in 2s instead of the pool's 30s default.
@@ -93,11 +110,12 @@ def health(request: Request):
         status["database"] = "ok"
     except (psycopg.Error, PoolTimeout) as e:
         status["database"] = f"error: {e}"
-    try:
-        requests.get(EMBED_HEALTH_URL, timeout=2).raise_for_status()
-        status["embeddings"] = "ok"
-    except requests.RequestException as e:
-        status["embeddings"] = f"error: {e}"
+    for name, url in [("embeddings", EMBED_URL), ("llm", llm.LLM_URL)]:
+        try:
+            requests.get(health_url(url), timeout=2).raise_for_status()
+            status[name] = "ok"
+        except requests.RequestException as e:
+            status[name] = f"error: {e}"
     if any(v != "ok" for v in status.values()):
         raise HTTPException(503, status)
     return status

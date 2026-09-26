@@ -1,9 +1,12 @@
-"""API tests against the real local database and embedding server (see README setup)."""
+"""API tests against the real local database, embedding server and LLM server (see README setup)."""
+import re
+
 import psycopg
 import pytest
 from fastapi.testclient import TestClient
 
 import embed_ingest
+from app import generate
 from app.main import app
 
 TEST_PAGE = "ragapi-test-page.html"
@@ -38,13 +41,15 @@ def client():
 
 
 def query(client, **body):
-    resp = client.post("/query", json=body)
+    """Chunks only: retrieval tests skip the LLM, which would add seconds per call."""
+    resp = client.post("/query", json={"generate": False} | body)
     assert resp.status_code == 200, resp.text
+    assert resp.json()["answer"] is None
     return resp.json()["chunks"]
 
 
 def test_health(client):
-    assert client.get("/health").json() == {"database": "ok", "embeddings": "ok"}
+    assert client.get("/health").json() == {"database": "ok", "embeddings": "ok", "llm": "ok"}
 
 
 @pytest.mark.parametrize("body", [
@@ -53,6 +58,7 @@ def test_health(client):
     {"question": "x", "k": 0},
     {"question": "x", "k": 51},
     {"question": "x", "doc_type": "tutorial"},
+    {"question": "x", "generate": "maybe"},
 ])
 def test_query_rejects_invalid_input(client, body):
     assert client.post("/query", json=body).status_code == 422
@@ -110,3 +116,26 @@ def test_embedding_server_down_returns_503(client, monkeypatch):
     resp = client.post("/query", json={"question": "anything"})
     assert resp.status_code == 503
     assert "embedding server unavailable" in resp.json()["detail"]
+
+
+def test_query_answers_with_citations(client):
+    resp = client.post("/query", json={"question": "Which PostgreSQL version added a RETURNING "
+                                       "clause to MERGE?"})
+    assert resp.status_code == 200, resp.text
+    answer = resp.json()["answer"]
+    assert "18" in answer
+    assert re.search(r"\[\d+\]", answer), answer
+
+
+def test_merged_chunk_lists_all_versions_in_prompt():
+    chunk = {"version": 18, "versions": [16, 17, 18],
+             "content": "PostgreSQL 18 > CREATE INDEX\n\nCREATE INDEX — define a new index"}
+    user = generate.build_messages("q", [chunk])[1]["content"]
+    assert "[1] PostgreSQL 16, 17, 18 > CREATE INDEX" in user
+
+
+def test_llm_server_down_returns_503(client, monkeypatch):
+    monkeypatch.setattr(generate, "LLM_URL", "http://localhost:1/v1/chat/completions")
+    resp = client.post("/query", json={"question": "anything"})
+    assert resp.status_code == 503
+    assert "LLM server unavailable" in resp.json()["detail"]

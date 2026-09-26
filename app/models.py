@@ -13,6 +13,8 @@ class QueryRequest(BaseModel):
                                     "chunks identical across versions are merged into one result")
     doc_type: DocType | None = None
     k: int = Field(5, ge=1, le=50)
+    generate: bool = Field(True, description="Write an answer from the chunks with the LLM; "
+                           "false returns the chunks only")
 
 
 class Chunk(BaseModel):
@@ -31,6 +33,8 @@ class Chunk(BaseModel):
 
 class QueryResponse(BaseModel):
     question: str
+    answer: str | None = Field(description="LLM answer citing chunks as [n], where n is the 1-based "
+                               "position in chunks; null when generate is false")
     chunks: list[Chunk]
 
 

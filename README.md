@@ -27,8 +27,9 @@ question ──embed──▶ nearest chunks ───────────�
 | pgvector schema | Done |
 | Embedding and ingestion | Done |
 | Evaluation question set and retrieval eval | Done |
-| FastAPI `/ingest` and `/query` (retrieval) | Done |
-| Answer generation with an LLM | Planned |
+| FastAPI `/ingest` and `/query` | Done |
+| Answer generation with a local LLM | Done |
+| Answer evaluation | Planned |
 | Hybrid search, reranking | Planned |
 | Auth, rate limiting, caching | Planned |
 | Observability, A/B testing | Planned |
@@ -50,6 +51,8 @@ question ──embed──▶ nearest chunks ───────────�
 **HNSW limits.** An HNSW scan returns at most `hnsw.ef_search` rows (default 40) and applies `WHERE` filters after the scan, so a large k or a narrow filter could silently return fewer than k results. Each query raises `ef_search` to at least the number of rows it fetches and enables pgvector 0.8's `iterative_scan`, both scoped to the query's transaction.
 
 **Sync endpoints and a connection pool.** Endpoints are plain functions that FastAPI runs in a thread pool, which keeps the blocking psycopg and embedding calls simple; the embedding server, not Python, is the bottleneck. A `psycopg_pool` pool reuses database connections across requests.
+
+**Local answer generation.** Answers come from a local model (Qwen3.6-35B-A3B, Q4 GGUF) behind llama.cpp's OpenAI-compatible chat endpoint, so any compatible server can replace it through `LLM_URL`. It is a mixture-of-experts model: 35B parameters, but only about 3B are used per token, which gives large-model answers at small-model speed (about 4 seconds per answer, ~3k prompt tokens). The retrieved chunks are numbered in the prompt in the order `/query` returns them, so a citation `[2]` in the answer points at `chunks[1]` in the response. The system prompt allows only facts from the excerpts, asks for the version each statement applies to, and asks the model to say when the excerpts don't cover the question; a chunk merged across versions gets all of them in its breadcrumb (`PostgreSQL 16, 17, 18 > ...`). Thinking mode is off and the temperature is 0.2: the answer is already in the excerpts. The database connection goes back to the pool before the LLM call, so slow answers don't hold connections that searches need.
 
 **One database.** pgvector keeps vectors, metadata and full-text search in Postgres. Chunks carry `version` and `doc_type` directly, so filtered searches need no join. An HNSW index serves vector search and a GIN index on a generated `tsvector` column serves keyword search, which hybrid search will combine. A `content_hash` per chunk lets re-ingestion skip unchanged text.
 
@@ -95,6 +98,14 @@ Download the embedding model ([nomic-ai/nomic-embed-text-v1.5-GGUF](https://hugg
 llama-server -m nomic-embed-text-v1.5.Q8_0.gguf --embedding --port 8081
 ```
 
+Start an LLM server for answers. Any OpenAI-compatible chat server works; with llama.cpp and [Qwen3.6-35B-A3B](https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF) (about 22 GB at Q4):
+
+```bash
+llama-server -m Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf --port 8082 -c 16384 --reasoning off
+```
+
+To use a server on another machine, set `LLM_URL`, e.g. `export LLM_URL=http://192.168.1.50:8095/v1/chat/completions`.
+
 Start the database (listens on host port 5433; the schema is applied on first start):
 
 ```bash
@@ -121,23 +132,23 @@ python eval_retrieval.py [--filter-version] [--dedup] [--show-misses]
 ## API
 
 ```bash
-uvicorn app.main:app --reload    # needs the database and embedding server running
+uvicorn app.main:app --reload    # needs the database, embedding server and LLM server running
 ```
 
 Interactive docs at http://localhost:8000/docs.
 
 | Endpoint | Does |
 |---|---|
-| `POST /query` | `{"question", "version"?, "doc_type"?, "k"?}` → top-k chunks with URL, heading path, similarity and the versions they apply to |
+| `POST /query` | `{"question", "version"?, "doc_type"?, "k"?, "generate"?}` → an answer citing the chunks as `[n]`, plus the top-k chunks with URL, heading path, similarity and the versions they apply to. `"generate": false` skips the LLM and returns chunks only |
 | `POST /ingest` | One page (`version`, `doc_type`, `section_title`, `page`, `url`, `text` as markdown) → chunked, upserted, new or changed chunks embedded. Re-sending an unchanged page is a no-op |
-| `GET /health` | 200 if the database and the embedding server respond, else 503 |
+| `GET /health` | 200 if the database, the embedding server and the LLM server respond, else 503 |
 
 ```bash
 curl -s localhost:8000/query -H 'content-type: application/json' \
   -d '{"question": "how do I create an index without locking the table", "version": 17}'
 ```
 
-Tests run against the local database and embedding server; the ingest test adds and removes a made-up page:
+Tests run against the local database, embedding server and LLM server; the ingest test adds and removes a made-up page:
 
 ```bash
 pytest
@@ -148,11 +159,12 @@ pytest
 | `fetch_parse_docs.py` | `--versions 16 17 18`, `--delay 1.0`, `--raw-dir`, `--out` |
 | `chunk_docs.py` | `--target 450`, `--max-tokens 512`, `--in`, `--out` |
 | `embed_ingest.py` | `--batch-size 32`, `--test-query`; env `DATABASE_URL`, `EMBED_URL`, `EMBED_MODEL` |
+| API (`app/generate.py`) | env `LLM_URL` (default `http://localhost:8082/v1/chat/completions`), `LLM_MODEL`, `LLM_TIMEOUT` (120 s) |
 
 ## Repository layout
 
 ```
-app/                  FastAPI app (main.py), request/response models, shared search
+app/                  FastAPI app (main.py), request/response models, shared search, answer generation
 tests/                API tests
 fetch_parse_docs.py   crawl postgresql.org and convert pages to markdown
 chunk_docs.py         split pages into embedding-sized chunks
