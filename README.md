@@ -103,7 +103,9 @@ First run, Qwen3.6-35B-A3B answering and judging its own answers (92 answerable 
 | paraphrase | 0.46 | 0.21 | 0.07 | 0.25 | 0.97 |
 | version_diff | 0.21 | 0.07 | 0.07 | 0.64 | 0.92 |
 
-All 8 unanswerable questions were refused without invented facts. Of the 17 refused answerable questions, 6 had no expected page in the top 5 (a correct refusal of bad retrieval), 3 had the right page but not the chunk with the answer (e.g. `functions-json.html` without the `->>` row: page-level hit@k overstates retrieval on long pages), and 7 were "which version added X?" questions. The docs never say "added in 17", and 5 chunks can't show that a feature is *absent* from 16, so the model declines to infer it. The judge also makes mistakes (it graded one answer that agreed with the reference as `incorrect`), so these numbers are provisional until it is checked against hand grades. Next: that check, then the same run with a 9B dense model.
+All 8 unanswerable questions were refused without invented facts. Of the 17 refused answerable questions, 6 had no expected page in the top 5 (a correct refusal of bad retrieval), 3 had the right page but not the chunk with the answer (e.g. `functions-json.html` without the `->>` row: page-level hit@k overstates retrieval on long pages), and 7 were "which version added X?" questions. The docs never say "added in 17", and 5 chunks can't show that a feature is *absent* from 16, so the model declines to infer it. The judge also makes mistakes (it graded one answer that agreed with the reference as `incorrect`).
+
+**Checking the judge.** `hand_grade.py` picks 21 judged answers stratified by verdict and category and writes a local web page to grade them blind (question, reference, excerpts and answer, no verdict). Blind agreement with the judge was low: 7/21 (33%), Cohen's kappa 0.09. Most of the gap was the rubric, not the judge: the hand grades marked "declined although the answer exists" as `incorrect` where the rubric says `refused`, and drew the correct/partial line differently. A second page shows each disagreement with both grades and the judge's labels; after reading them the judge's grade held on all 14, so settled agreement is 21/21. That number is an upper bound (grades set after seeing the judge's reasoning), but it was enough to use the judge for comparing models. Next: the same run with a 9B dense model.
 
 ## Setup
 
@@ -154,6 +156,10 @@ python eval_retrieval.py [--filter-version] [--dedup] [--show-misses]
 # 5. Answer every question with an LLM, then grade the answers (saved in data/eval/answers/, data/eval/judgments/)
 python generate_answers.py --name qwen3.6-35b-a3b --llm-url $LLM_URL
 python judge_answers.py data/eval/answers/<file>.json --judge-url $LLM_URL
+
+# 6. Check the judge against hand grades (writes a grading page to data/eval/hand_grades/)
+python hand_grade.py page data/eval/judgments/<file>.json
+python hand_grade.py score data/eval/judgments/<file>.json <downloaded grades>.json
 ```
 
 ## API
@@ -188,6 +194,7 @@ pytest
 | `embed_ingest.py` | `--batch-size 32`, `--test-query`; env `DATABASE_URL`, `EMBED_URL`, `EMBED_MODEL` |
 | `generate_answers.py` | `--name` (required), `--llm-url`, `--k 5`, `--limit` |
 | `judge_answers.py` | answers file, `--judge-url`, `--ids`, `--limit` |
+| `hand_grade.py` | `page` / `review` / `score`, `--seed 0` |
 | API (`app/generate.py`) | env `LLM_URL` (default `http://localhost:8082/v1/chat/completions`), `LLM_MODEL`, `LLM_TIMEOUT` (120 s) |
 
 ## Repository layout
@@ -202,7 +209,8 @@ validate_questions.py check eval labels against the corpus
 eval_retrieval.py     retrieval metrics (hit@k, MRR) on the eval set
 generate_answers.py   answer every eval question with an LLM
 judge_answers.py      grade saved answers with an LLM judge and citation checks
-data/eval/            eval questions, saved retrieval results, answers and judgments
+hand_grade.py         blind hand-grading page and agreement with the judge
+data/eval/            eval questions, saved retrieval results, answers, judgments and hand grades
 db/schema.sql         tables and indexes
 docker-compose.yml    Postgres + pgvector
 data/parsed/          parsed corpus (docs.jsonl)

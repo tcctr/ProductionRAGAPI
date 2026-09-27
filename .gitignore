@@ -222,3 +222,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Grading pages (regenerable with hand_grade.py page/review)
+data/eval/hand_grades/*.html

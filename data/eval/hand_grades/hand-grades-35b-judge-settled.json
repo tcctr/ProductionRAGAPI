@@ -1,0 +1,112 @@
+{
+  "judgments_file": "data/eval/judgments/qwen3.6-35b-a3b-20260926T151949.916Z-judged-20260926T154836.550Z.json",
+  "seed": 0,
+  "grades": {
+    "q048": {
+      "grade": "correct",
+      "settled": {
+        "grade": "partial"
+      }
+    },
+    "q097": {
+      "grade": "refused",
+      "settled": {
+        "grade": "correct"
+      }
+    },
+    "q051": {
+      "grade": "partial",
+      "settled": {
+        "grade": "correct"
+      }
+    },
+    "q046": {
+      "grade": "incorrect",
+      "settled": {
+        "grade": "refused"
+      }
+    },
+    "q054": {
+      "grade": "incorrect"
+    },
+    "q080": {
+      "grade": "partial",
+      "settled": {
+        "grade": "refused"
+      }
+    },
+    "q015": {
+      "grade": "partial",
+      "settled": {
+        "grade": "correct"
+      }
+    },
+    "q079": {
+      "grade": "partial",
+      "settled": {
+        "grade": "correct"
+      }
+    },
+    "q033": {
+      "grade": "incorrect",
+      "note": "the ai showed thinking on the putput",
+      "settled": {
+        "grade": "refused"
+      }
+    },
+    "q059": {
+      "grade": "partial"
+    },
+    "q026": {
+      "grade": "incorrect",
+      "settled": {
+        "grade": "refused"
+      }
+    },
+    "q003": {
+      "grade": "partial",
+      "settled": {
+        "grade": "correct"
+      }
+    },
+    "q007": {
+      "grade": "incorrect"
+    },
+    "q074": {
+      "grade": "partial"
+    },
+    "q062": {
+      "grade": "correct"
+    },
+    "q088": {
+      "grade": "correct",
+      "settled": {
+        "grade": "incorrect"
+      }
+    },
+    "q087": {
+      "grade": "correct",
+      "settled": {
+        "grade": "partial"
+      }
+    },
+    "q060": {
+      "grade": "correct"
+    },
+    "q020": {
+      "grade": "correct",
+      "settled": {
+        "grade": "partial"
+      }
+    },
+    "q069": {
+      "grade": "incorrect"
+    },
+    "q066": {
+      "grade": "correct",
+      "settled": {
+        "grade": "incorrect"
+      }
+    }
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "judgments_file": "data/eval/judgments/qwen3.6-35b-a3b-20260926T151949.916Z-judged-20260926T154836.550Z.json",
+  "seed": 0,
+  "grades": {
+    "q048": {
+      "grade": "correct"
+    },
+    "q097": {
+      "grade": "refused"
+    },
+    "q051": {
+      "grade": "partial"
+    },
+    "q046": {
+      "grade": "incorrect"
+    },
+    "q054": {
+      "grade": "incorrect"
+    },
+    "q080": {
+      "grade": "partial"
+    },
+    "q015": {
+      "grade": "partial"
+    },
+    "q079": {
+      "grade": "partial"
+    },
+    "q033": {
+      "grade": "incorrect",
+      "note": "the ai showed thinking on the putput"
+    },
+    "q059": {
+      "grade": "partial"
+    },
+    "q026": {
+      "grade": "incorrect"
+    },
+    "q003": {
+      "grade": "partial"
+    },
+    "q007": {
+      "grade": "incorrect"
+    },
+    "q074": {
+      "grade": "partial"
+    },
+    "q062": {
+      "grade": "correct"
+    },
+    "q088": {
+      "grade": "correct"
+    },
+    "q087": {
+      "grade": "correct"
+    },
+    "q060": {
+      "grade": "correct"
+    },
+    "q020": {
+      "grade": "correct"
+    },
+    "q069": {
+      "grade": "incorrect"
+    },
+    "q066": {
+      "grade": "correct"
+    }
+  }
+}
