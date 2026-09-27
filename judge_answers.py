@@ -13,10 +13,12 @@ Free checks (no LLM):
 
 LLM judge, per question: sees the question, the reference answer, the numbered excerpts
 and the answer, and returns small labels constrained to a JSON schema:
-  claims          each factual claim (code included), supported or unsupported by the excerpts
-  contradictions  statements that conflict with the reference answer
+  claims          each factual claim (code included), supported or unsupported by the excerpts, and
+                  whether the reference answer agrees with it, contradicts it or doesn't mention it
   coverage        how much of the reference's key points the answer states: full/partial/none
-  refused         whether the answer declines to answer from the excerpts
+  says_excerpts_dont_answer   whether the answer says the excerpts don't answer the question
+Only fixed labels, no free text beyond the claims: an earlier version had a free-text contradictions
+list and the judge wrote notes there ("the reference does not mention ..."), each counting as one.
 
 The verdict is derived from those labels by fixed rules (see verdict()), not asked for.
 Each run is saved to data/eval/judgments/<answers file name>-<timestamp>.json.
@@ -43,9 +45,12 @@ Grade the answer:
 1. claims: split the answer into its factual claims, including claims made by SQL examples (syntax, \
 option names, defaults). Mark each "supported" if the excerpts state it (in any excerpt, cited or not), \
 otherwise "unsupported". Statements that only say what the excerpts do or do not cover are not claims.
-2. contradictions: statements in the answer that conflict with the reference answer. Empty if none.
+2. For each claim, also mark how the reference answer relates to it: "agrees" if the reference answer \
+says it, "contradicts" if the reference answer says the opposite, "not_mentioned" if the reference answer \
+does not address it. Judge this against the reference answer only, not the excerpts.
 3. coverage: how many of the reference answer's key points the answer states: "full", "partial" or "none".
-4. refused: true if the answer declines to answer the question because the excerpts do not cover it.
+4. says_excerpts_dont_answer: true if the answer says the excerpts do not answer the question, \
+whether or not it then describes what the excerpts do cover or adds a guess of its own.
 
 Be strict: a claim that goes beyond the excerpts is unsupported even if it is true."""
 
@@ -55,13 +60,13 @@ JUDGE_SCHEMA = {
         "claims": {"type": "array", "items": {
             "type": "object",
             "properties": {"claim": {"type": "string"},
-                           "support": {"type": "string", "enum": ["supported", "unsupported"]}},
-            "required": ["claim", "support"]}},
-        "contradictions": {"type": "array", "items": {"type": "string"}},
+                           "support": {"type": "string", "enum": ["supported", "unsupported"]},
+                           "reference": {"type": "string", "enum": ["agrees", "not_mentioned", "contradicts"]}},
+            "required": ["claim", "support", "reference"]}},
         "coverage": {"type": "string", "enum": ["full", "partial", "none"]},
-        "refused": {"type": "boolean"},
+        "says_excerpts_dont_answer": {"type": "boolean"},
     },
-    "required": ["claims", "contradictions", "coverage", "refused"],
+    "required": ["claims", "coverage", "says_excerpts_dont_answer"],
 }
 
 # [3], [2][3] and [1, 2] all count; each number must be 1..len(chunks).
@@ -100,14 +105,25 @@ def judge(judge_url: str, question: dict, rec: dict) -> dict:
         raise ValueError(f"unexpected judge response: {resp.text[:200]}") from e
 
 
+# Judgments saved before 2026-09-27 have "refused" and a free-text "contradictions" list instead.
+def declined(grade: dict) -> bool:
+    return grade["says_excerpts_dont_answer"] if "says_excerpts_dont_answer" in grade else grade["refused"]
+
+
+def contradictions(grade: dict) -> list[str]:
+    if "contradictions" in grade:
+        return grade["contradictions"]
+    return [c["claim"] for c in grade["claims"] if c["reference"] == "contradicts"]
+
+
 def verdict(category: str, grade: dict) -> str:
     unsupported = any(c["support"] == "unsupported" for c in grade["claims"])
     if category == "unanswerable":
         # Declining is the right answer, but not if it then answers anyway from memory.
-        return "correct" if grade["refused"] and not unsupported else "incorrect"
-    if grade["refused"]:
+        return "correct" if declined(grade) and not unsupported else "incorrect"
+    if declined(grade):
         return "refused"
-    if grade["contradictions"] or grade["coverage"] == "none":
+    if contradictions(grade) or grade["coverage"] == "none":
         return "incorrect"
     return "correct" if grade["coverage"] == "full" else "partial"
 
@@ -183,7 +199,7 @@ def main() -> None:
     for cat, rs in sorted(by_cat.items()):
         print(f"  {cat:16} {fmt(summarize(rs))}")
     # The refusal regex is free but brittle; show where it and the judge disagree.
-    disagree = [r["id"] for r in rows if "verdict" in r and r["refusal_phrase"] != r["grade"]["refused"]]
+    disagree = [r["id"] for r in rows if "verdict" in r and r["refusal_phrase"] != declined(r["grade"])]
     print(f"\nrefusal phrase vs judge disagree on: {', '.join(disagree) or 'none'}")
     skipped = [r["id"] for r in rows if "skipped" in r]
     if skipped:

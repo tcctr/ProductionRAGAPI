@@ -24,7 +24,7 @@ import random
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from judge_answers import VERDICTS
+from judge_answers import VERDICTS, contradictions, declined
 
 # Judge mistakes and model errors already seen (see CLAUDE.md), so the check covers them.
 MUST_INCLUDE = ("q033", "q088", "q060", "q054")
@@ -97,8 +97,8 @@ def write_review(judgments_path: Path, grades_path: Path, out_dir: Path) -> Path
         if g.get("grade") and g["grade"] != rows[i]["verdict"]:
             grade = rows[i]["grade"]
             items.append(item(rows[i], answers, questions) | {"blind": g, "judge": {
-                "verdict": rows[i]["verdict"], "coverage": grade["coverage"], "refused": grade["refused"],
-                "contradictions": grade["contradictions"],
+                "verdict": rows[i]["verdict"], "coverage": grade["coverage"], "refused": declined(grade),
+                "contradictions": contradictions(grade),
                 "unsupported": [c["claim"] for c in grade["claims"] if c["support"] != "supported"]}})
     data = {"mode": "review", "judgments_file": str(judgments_path), "original": grades,
             "items": items}
