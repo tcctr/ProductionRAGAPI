@@ -76,6 +76,13 @@ REFUSAL = re.compile(r"\b(?:do|does)(?: not|n't) (?:cover|contain|include|provid
                      r"address|explain|specify|state|answer)\b|\bnot covered\b", re.IGNORECASE)
 
 
+CANT_TELL = re.compile(r"\bnot possible to determine\b|\bcannot (?:be )?determined?\b", re.IGNORECASE)
+
+
+def is_refusal(text: str) -> bool:
+    return bool(REFUSAL.search(text) or CANT_TELL.search(text))
+
+
 def citations(answer: str) -> list[int]:
     return [int(n) for group in CITATION.findall(answer) for n in group.split(",")]
 
@@ -113,7 +120,9 @@ def declined(grade: dict) -> bool:
 def contradictions(grade: dict) -> list[str]:
     if "contradictions" in grade:
         return grade["contradictions"]
-    return [c["claim"] for c in grade["claims"] if c["reference"] == "contradicts"]
+    # The judge sometimes labels a refusal ("the excerpts do not state which version ...") as contradicting
+    # the reference; that is a refusal, not a wrong fact (q021, q070).
+    return [c["claim"] for c in grade["claims"] if c["reference"] == "contradicts" and not is_refusal(c["claim"])]
 
 
 def verdict(category: str, grade: dict, refusal_phrase: bool = False) -> str:
