@@ -12,6 +12,8 @@ import os
 
 import requests
 
+from app.versions import VERSIONS
+
 LLM_URL = os.getenv("LLM_URL", "http://localhost:8082/v1/chat/completions")
 LLM_MODEL = os.getenv("LLM_MODEL", "local")
 LLM_TIMEOUT = float(os.getenv("LLM_TIMEOUT", "120"))
@@ -31,6 +33,17 @@ the excerpts differ between versions, say which version each statement applies t
 Do not guess.
 - Be concise. Put SQL in markdown code blocks."""
 
+# Added to SYSTEM_PROMPT when the question compares versions and a term search came with the excerpts.
+VERSION_RULES = """
+- Before the excerpts, a term search lists which versions' documentation contains key terms from the \
+question. It searched all of the documentation provided to you, not just the excerpts, so you may state \
+its results as facts; cite them as (term search).
+- The documentation covers PostgreSQL 16, 17 and 18 only. If something is documented in a version but \
+not in the earlier ones covered, say it was added in that version. If it is already in 16, say it is \
+available in 16, 17 and 18 and may be older.
+- A term being present does not mean the feature asked about is: MERGE and RETURNING both exist in 16, \
+but MERGE ... RETURNING may not. Check the excerpts for the feature itself."""
+
 
 def format_source(n: int, chunk: dict) -> str:
     """One numbered excerpt. A chunk merged across versions gets all of them in its breadcrumb:
@@ -43,21 +56,47 @@ def format_source(n: int, chunk: dict) -> str:
     return f"[{n}] {content}"
 
 
-def build_messages(question: str, chunks: list[dict]) -> list[dict]:
+def format_presence(presence: dict[str, list[int]]) -> str:
+    """The term search as text: "- `casefold`: in 18; not in 16, 17"."""
+    lines = []
+    for term, found in presence.items():
+        missing = [v for v in VERSIONS if v not in found]
+        parts = []
+        if found:
+            parts.append("in " + ", ".join(map(str, found)))
+        if missing:
+            parts.append("not in " + ", ".join(map(str, missing)))
+        lines.append(f"- `{term}`: {'; '.join(parts)}")
+    return "\n".join(lines)
+
+
+def format_sources(chunks: list[dict], presence: dict[str, list[int]] | None = None) -> str:
+    """The numbered excerpts, preceded by the term search when there is one."""
+    sources = "\n\n---\n\n".join(format_source(n, c) for n, c in enumerate(chunks, start=1))
+    if presence:
+        sources = (f"Term search (exact text, all PostgreSQL 16, 17 and 18 documentation provided):\n"
+                   f"{format_presence(presence)}\n\n---\n\n{sources}")
+    return sources
+
+
+def build_messages(question: str, chunks: list[dict],
+                   presence: dict[str, list[int]] | None = None) -> list[dict]:
     """Chat messages for the LLM. Excerpts are numbered 1..k in the order of chunks, so a
     citation [n] in the answer refers to chunks[n - 1]."""
-    sources = "\n\n---\n\n".join(format_source(n, c) for n, c in enumerate(chunks, start=1))
+    system = SYSTEM_PROMPT + (VERSION_RULES if presence else "")
     return [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": f"Documentation excerpts:\n\n{sources}\n\n---\n\nQuestion: {question}"},
+        {"role": "system", "content": system},
+        {"role": "user", "content": f"Documentation excerpts:\n\n{format_sources(chunks, presence)}"
+                                    f"\n\n---\n\nQuestion: {question}"},
     ]
 
 
-def generate(question: str, chunks: list[dict]) -> str:
-    """Answer question from chunks. Raises requests.RequestException or ValueError on failure."""
+def generate(question: str, chunks: list[dict], presence: dict[str, list[int]] | None = None) -> str:
+    """Answer question from chunks (and the term search when comparing versions).
+    Raises requests.RequestException or ValueError on failure."""
     resp = requests.post(LLM_URL, timeout=LLM_TIMEOUT, json={
         "model": LLM_MODEL,
-        "messages": build_messages(question, chunks),
+        "messages": build_messages(question, chunks, presence),
         "temperature": TEMPERATURE,
         "max_tokens": MAX_ANSWER_TOKENS,
         # Qwen-style models think before answering unless told not to; with the answer already

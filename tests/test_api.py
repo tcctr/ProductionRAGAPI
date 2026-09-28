@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 import embed_ingest
 from app import generate
 from app.main import app
+from app.versions import is_version_question, question_terms
 
 TEST_PAGE = "ragapi-test-page.html"
 
@@ -59,6 +60,7 @@ def test_health(client):
     {"question": "x", "k": 51},
     {"question": "x", "doc_type": "tutorial"},
     {"question": "x", "generate": "maybe"},
+    {"question": "x", "version": 17, "compare_versions": True},
 ])
 def test_query_rejects_invalid_input(client, body):
     assert client.post("/query", json=body).status_code == 422
@@ -118,12 +120,48 @@ def test_embedding_server_down_returns_503(client, monkeypatch):
     assert "embedding server unavailable" in resp.json()["detail"]
 
 
+def test_version_question_detection_and_terms():
+    assert is_version_question("Since which version does EXPLAIN support the SERIALIZE option?")
+    assert is_version_question("When were the uuidv4() and uuidv7() functions added?")
+    assert not is_version_question("In PostgreSQL 17, how can COPY skip rows with malformed data?")
+    assert question_terms("Which version added the casefold() function?") == ["casefold"]
+    assert question_terms("Which version added the AT LOCAL operator?") == ["AT LOCAL"]
+    assert question_terms("Which version added the gamma and lgamma functions?") == ["gamma", "lgamma"]
+
+
+def test_query_compares_versions(client):
+    resp = client.post("/query", json={"question": "Which version added the casefold() function?",
+                                       "generate": False})
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    # The exact text search sees every chunk: casefold is only documented in 18.
+    assert body["version_presence"] == {"casefold": [18]}
+    # Every version is searched separately, so each one is represented.
+    assert {v for c in body["chunks"] for v in c["versions"]} == {16, 17, 18}
+
+
+def test_query_without_version_question_skips_comparison(client):
+    resp = client.post("/query", json={"question": "What does the casefold() function do?", "generate": False})
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["version_presence"] is None
+
+
+def test_term_search_goes_into_prompt():
+    chunk = {"version": 18, "versions": [18], "content": "PostgreSQL 18 > 9.4. String Functions\n\ncasefold"}
+    system, user = (m["content"] for m in generate.build_messages("q", [chunk], {"casefold": [18]}))
+    assert "- `casefold`: in 18; not in 16, 17" in user
+    assert "term search" in system
+    assert "term search" not in generate.build_messages("q", [chunk])[0]["content"]
+
+
 def test_query_answers_with_citations(client):
-    resp = client.post("/query", json={"question": "Which PostgreSQL version added a RETURNING "
-                                       "clause to MERGE?"})
+    # A version question: JSON_TABLE is in the 17 and 18 docs, not in 16. The first sentence must
+    # name 17 alone; a later "not in 16" or "also in 18" is fine.
+    resp = client.post("/query", json={"question": "Which PostgreSQL version introduced JSON_TABLE?"})
     assert resp.status_code == 200, resp.text
     answer = resp.json()["answer"]
-    assert "18" in answer
+    first = re.split(r"(?<=[.!?])\s", answer, maxsplit=1)[0]
+    assert "17" in first and "18" not in first and "16" not in first, answer
     assert re.search(r"\[\d+\]", answer), answer
 
 

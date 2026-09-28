@@ -6,8 +6,9 @@ Usage:
     python generate_answers.py --name qwen3.5-9b      --llm-url http://localhost:8082/v1/chat/completions
 
 Runs the same steps as /query (embed, search with the question's version filter and
-cross-version dedup, generate), calling app/search.py and app/generate.py directly so
-no API server is needed. Saves the question, the chunks the LLM saw (numbered like its
+cross-version dedup, or per-version search plus a term search for "which version added X?"
+questions, generate), calling app/versions.py and app/generate.py directly so no API
+server is needed. Saves the question, the chunks the LLM saw (numbered like its
 citations) and the answer, so judge_answers.py can grade without regenerating.
 
 A question whose LLM call fails is saved with "error" instead of an answer, and the
@@ -24,7 +25,7 @@ import psycopg
 import requests
 
 from app import generate as llm
-from app.search import search
+from app.versions import retrieve
 from embed_ingest import DATABASE_URL, EMBED_MODEL, QUERY_PREFIX, embed, to_pgvector
 
 # Chunk fields worth keeping: what the LLM saw, plus what grading needs to match pages.
@@ -48,6 +49,7 @@ def main() -> None:
     ap.add_argument("--questions", type=Path, default=Path("data/eval/questions.jsonl"))
     ap.add_argument("--k", type=int, default=5, help="chunks per answer (/query's default)")
     ap.add_argument("--limit", type=int, help="only the first N questions (for a quick try)")
+    ap.add_argument("--ids", nargs="+", help="only these question ids")
     ap.add_argument("--out-dir", type=Path, default=Path("data/eval/answers"))
     args = ap.parse_args()
 
@@ -55,18 +57,23 @@ def main() -> None:
     model = served_model(args.llm_url)
     print(f"model: {model or 'unknown'} at {args.llm_url}")
 
-    questions = [json.loads(line) for line in args.questions.open(encoding="utf-8")][:args.limit]
+    questions = [json.loads(line) for line in args.questions.open(encoding="utf-8")]
+    if args.ids:
+        questions = [q for q in questions if q["id"] in args.ids]
+    questions = questions[:args.limit]
     vectors = embed([QUERY_PREFIX + q["question"] for q in questions])
 
     records, errors, total_s = [], 0, 0.0
     with psycopg.connect(DATABASE_URL) as conn:
         for i, (q, vec) in enumerate(zip(questions, vectors), start=1):
-            chunks = search(conn, to_pgvector(vec), args.k, q["version"])
+            chunks, presence = retrieve(conn, q["question"], to_pgvector(vec), args.k, q["version"])
             rec = {"id": q["id"], "category": q["category"], "question": q["question"],
                    "chunks": [{f: c[f] for f in CHUNK_FIELDS} for c in chunks]}
+            if presence is not None:
+                rec["version_presence"] = presence
             start = time.perf_counter()
             try:
-                rec["answer"] = llm.generate(q["question"], chunks)
+                rec["answer"] = llm.generate(q["question"], chunks, presence)
             except (requests.RequestException, ValueError) as e:
                 rec["error"] = str(e)
                 errors += 1

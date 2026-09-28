@@ -1,7 +1,7 @@
 """Request and response schemas. FastAPI validates requests against these and builds /docs from them."""
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 Version = Literal[16, 17, 18]
 DocType = Literal["sql_command", "functions", "indexes_perf"]
@@ -15,6 +15,16 @@ class QueryRequest(BaseModel):
     k: int = Field(5, ge=1, le=50)
     generate: bool = Field(True, description="Write an answer from the chunks with the LLM; "
                            "false returns the chunks only")
+    compare_versions: bool | None = Field(
+        None, description="Search each version separately and look up the question's identifiers in "
+        "every version, for questions like 'Which version added X?'. Null detects it from the question; "
+        "can't be combined with version")
+
+    @model_validator(mode="after")
+    def one_version_or_compare(self):
+        if self.compare_versions and self.version is not None:
+            raise ValueError("compare_versions needs all versions; drop version")
+        return self
 
 
 class Chunk(BaseModel):
@@ -36,6 +46,9 @@ class QueryResponse(BaseModel):
     answer: str | None = Field(description="LLM answer citing chunks as [n], where n is the 1-based "
                                "position in chunks; null when generate is false")
     chunks: list[Chunk]
+    version_presence: dict[str, list[int]] | None = Field(
+        description="When comparing versions: each identifier from the question and the versions whose "
+        "documentation contains it; null otherwise")
 
 
 class IngestRequest(BaseModel):

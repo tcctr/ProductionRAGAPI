@@ -12,6 +12,7 @@ Free checks (no LLM):
   refusal     answer opens with "the excerpts do not cover/contain ..." (checked against the judge)
 
 LLM judge, per question: sees the question, the reference answer, the numbered excerpts
+(after the term search, for answers written with one)
 and the answer, and returns small labels constrained to a JSON schema:
   claims          each factual claim (code included), supported or unsupported by the excerpts, and
                   whether the reference answer agrees with it, contradicts it or doesn't mention it
@@ -54,6 +55,13 @@ whether or not it then describes what the excerpts do cover or adds a guess of i
 
 Be strict: a claim that goes beyond the excerpts is unsupported even if it is true."""
 
+# Added when the answer was written with a term search (version-comparison questions).
+JUDGE_TERM_RULE = """
+
+The excerpts start with a term search: an exact search of all the documentation for the listed terms. \
+Its results count as stated by the excerpts, and so does concluding that something was added in the \
+first of versions 16, 17 and 18 whose documentation contains it."""
+
 JUDGE_SCHEMA = {
     "type": "object",
     "properties": {
@@ -93,12 +101,14 @@ def looks_like_refusal(answer: str) -> bool:
 
 
 def judge(judge_url: str, question: dict, rec: dict) -> dict:
-    sources = "\n\n---\n\n".join(llm.format_source(n, c) for n, c in enumerate(rec["chunks"], start=1))
+    presence = rec.get("version_presence")
+    sources = llm.format_sources(rec["chunks"], presence)
     user = (f"Question: {question['question']}\n\nReference answer: {question['reference_answer']}\n\n"
             f"Excerpts:\n\n{sources}\n\n---\n\nAnswer to grade:\n{rec['answer']}")
+    system = JUDGE_PROMPT + (JUDGE_TERM_RULE if presence else "")
     resp = requests.post(judge_url, timeout=llm.LLM_TIMEOUT, json={
         "model": llm.LLM_MODEL,
-        "messages": [{"role": "system", "content": JUDGE_PROMPT}, {"role": "user", "content": user}],
+        "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
         "temperature": 0,
         "max_tokens": 2048,
         # llama-server compiles the schema into a grammar, so the reply is always this JSON shape.

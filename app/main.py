@@ -17,7 +17,7 @@ from psycopg_pool import ConnectionPool, PoolTimeout
 
 from app import generate as llm
 from app.models import IngestRequest, IngestResponse, QueryRequest, QueryResponse
-from app.search import search
+from app.versions import retrieve
 from chunk_docs import MAX_TOKENS, TARGET_TOKENS, TokenCounter, chunk_record
 from embed_ingest import (DATABASE_URL, EMBED_URL, QUERY_PREFIX, embed, embed_pending, to_pgvector,
                           upsert_chunks, upsert_documents)
@@ -67,14 +67,15 @@ def query(req: QueryRequest, request: Request):
     # Not get_conn, which holds the connection until the response is sent: give it back to the
     # pool before the LLM call, so slow answers don't use up connections that searches need.
     with request.app.state.pool.connection() as conn:
-        chunks = search(conn, qvec, req.k, req.version, req.doc_type)
+        chunks, presence = retrieve(conn, req.question, qvec, req.k, req.version, req.doc_type,
+                                    req.compare_versions)
     answer = None
     if req.generate and chunks:
         try:
-            answer = llm.generate(req.question, chunks)
+            answer = llm.generate(req.question, chunks, presence)
         except (requests.RequestException, ValueError) as e:
             raise llm_unavailable(e)
-    return {"question": req.question, "answer": answer, "chunks": chunks}
+    return {"question": req.question, "answer": answer, "chunks": chunks, "version_presence": presence}
 
 
 @app.post("/ingest", response_model=IngestResponse)
