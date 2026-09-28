@@ -54,6 +54,8 @@ question ──embed──▶ nearest chunks ───────────�
 
 **Local answer generation.** Answers come from a local model (Qwen3.6-35B-A3B, Q4 GGUF) behind llama.cpp's OpenAI-compatible chat endpoint, so any compatible server can replace it through `LLM_URL`. It is a mixture-of-experts model: 35B parameters, but only about 3B are used per token, which gives large-model answers at small-model speed (about 4 seconds per answer, ~3k prompt tokens). The retrieved chunks are numbered in the prompt in the order `/query` returns them, so a citation `[2]` in the answer points at `chunks[1]` in the response. The system prompt allows only facts from the excerpts, asks for the version each statement applies to, and asks the model to say when the excerpts don't cover the question; a chunk merged across versions gets all of them in its breadcrumb (`PostgreSQL 16, 17, 18 > ...`). Thinking mode is off and the temperature is 0.2: the answer is already in the excerpts. The database connection goes back to the pool before the LLM call, so slow answers don't hold connections that searches need.
 
+**Version-comparison questions.** "Which version added X?" is hard for plain retrieval: the docs never say "added in 17", one search over all versions often returns nothing from the version that lacks X, and a few chunks can't show that a version lacks it anyway. When the question asks which version (detected by a regex that matches all 14 such eval questions and none of the other 86, or forced with `compare_versions`), `/query` searches each version separately (2 chunks each for k = 5) and runs an exact text search for the question's identifiers (`casefold()`, `JSON_TABLE`, `AT LOCAL`) over every chunk of every version. The result goes above the excerpts as a term search (`casefold`: in 18; not in 16, 17) with rules to state it as fact, to call the first covered version that documents something the one that added it, and not to take a term's presence as the feature's (MERGE and RETURNING both exist in 16; MERGE ... RETURNING doesn't).
+
 **One database.** pgvector keeps vectors, metadata and full-text search in Postgres. Chunks carry `version` and `doc_type` directly, so filtered searches need no join. An HNSW index serves vector search and a GIN index on a generated `tsvector` column serves keyword search, which hybrid search will combine. A `content_hash` per chunk lets re-ingestion skip unchanged text.
 
 ## Evaluation
@@ -122,7 +124,17 @@ Two models answering, both judged by Qwen3.6-35B-A3B (92 answerable questions): 
 
 Both models declined all 8 unanswerable questions without invented facts. The 9B is close overall; it falls behind on cross_page (mostly partial answers that cover one of the pages) and on version_diff, where it makes the most mistakes: it claims JSON_TABLE, EXPLAIN SERIALIZE and NOT ENFORCED exist in PostgreSQL 16 (incorrect 0.21 vs 0.07). The 35B's own errors include virtual generated columns in 17 and EXPLAIN SERIALIZE in 16.
 
-Of the 35B's 16 refused answerable questions, 6 had no expected page in the top 5 (a correct refusal of bad retrieval), 3 had the right page but not the chunk with the answer (e.g. `functions-json.html` without the `->>` row, which the chunk-level hit now measures), and 6 were "which version added X?" questions. The docs never say "added in 17", and 5 chunks can't show that a feature is *absent* from 16, so the model declines to infer it. Retrieval, not the model, is the main limit.
+Of the 35B's 16 refused answerable questions, 6 had no expected page in the top 5 (a correct refusal of bad retrieval), 3 had the right page but not the chunk with the answer (e.g. `functions-json.html` without the `->>` row, which the chunk-level hit now measures), and 6 were "which version added X?" questions. The docs never say "added in 17", and 5 chunks can't show that a feature is *absent* from 16, so the model declines to infer it (fixed since, see Version questions below). Retrieval, not the model, is the main limit.
+
+**Version questions.** With per-version retrieval and the term search (35B, the 14 version_diff questions; run 1 was a trial before the committed code, graded against the old q074/q080 references that expected "16" as the first version, and isn't saved):
+
+| version_diff | correct | partial | incorrect | refused |
+|---|---|---|---|---|
+| single search (full run above) | 0.29 | 0.07 | 0.07 | 0.57 |
+| per-version + term search, run 1 | 0.79 | 0.07 | 0.07 | 0.07 |
+| per-version + term search, run 2 | 0.57 | 0.36 | 0.07 | 0.00 |
+
+Both runs retrieved the same chunks and named the right version in 13 of 14 answers; they differ in sampling (temperature 0.2) and in where the judge draws the correct/partial line, mostly for answers that give the version but not the reference's one-line description of the feature. The miss is MERGE ... RETURNING: 17's MERGE page isn't in 17's top 4 chunks, so the model sees "no RETURNING" in 16 and RETURNING in 18 and answers 18.
 
 **Checking the judge.** `hand_grade.py` picks 21 judged answers stratified by verdict and category and writes a local web page to grade them blind (question, reference, excerpts and answer, no verdict). Blind agreement with the judge was low: 7/21 (33%), Cohen's kappa 0.08. Most of the gap was the rubric, not the judge: the hand grades marked "declined although the answer exists" as `incorrect` where the rubric says `refused`, and drew the correct/partial line differently. A second page shows each disagreement with both grades and the judge's labels, and the hand grades were settled after reading them. The disagreements and the 9B run also exposed judge bugs (notes counted as contradictions, conflicts with the excerpts graded as wrong answers, clean refusals missed), fixed with the per-claim reference labels and verdict rules above. The current judge agrees with 18/21 settled grades (86%, kappa 0.80), an upper bound since the grades were settled after seeing the judge's reasoning. One remaining judge error: it accepted "a primary key can't prevent overlaps, use EXCLUDE" for a PostgreSQL 18 question whose answer is `PRIMARY KEY (..., WITHOUT OVERLAPS)`.
 
@@ -191,7 +203,7 @@ Interactive docs at http://localhost:8000/docs.
 
 | Endpoint | Does |
 |---|---|
-| `POST /query` | `{"question", "version"?, "doc_type"?, "k"?, "generate"?}` → an answer citing the chunks as `[n]`, plus the top-k chunks with URL, heading path, similarity and the versions they apply to. `"generate": false` skips the LLM and returns chunks only |
+| `POST /query` | `{"question", "version"?, "doc_type"?, "k"?, "generate"?, "compare_versions"?}` → an answer citing the chunks as `[n]`, plus the top-k chunks with URL, heading path, similarity and the versions they apply to. `"generate": false` skips the LLM and returns chunks only. For "which version …?" questions (or `"compare_versions": true`), chunks come from each version and `version_presence` lists the versions whose docs contain each identifier in the question |
 | `POST /ingest` | One page (`version`, `doc_type`, `section_title`, `page`, `url`, `text` as markdown) → chunked, upserted, new or changed chunks embedded. Re-sending an unchanged page is a no-op |
 | `GET /health` | 200 if the database, the embedding server and the LLM server respond, else 503 |
 
@@ -211,7 +223,7 @@ pytest
 | `fetch_parse_docs.py` | `--versions 16 17 18`, `--delay 1.0`, `--raw-dir`, `--out` |
 | `chunk_docs.py` | `--target 450`, `--max-tokens 512`, `--in`, `--out` |
 | `embed_ingest.py` | `--batch-size 32`, `--test-query`; env `DATABASE_URL`, `EMBED_URL`, `EMBED_MODEL` |
-| `generate_answers.py` | `--name` (required), `--llm-url`, `--k 5`, `--limit` |
+| `generate_answers.py` | `--name` (required), `--llm-url`, `--k 5`, `--ids`, `--limit` |
 | `judge_answers.py` | answers file, `--judge-url`, `--ids`, `--limit` |
 | `hand_grade.py` | `page` / `review` / `score`, `--seed 0` |
 | API (`app/generate.py`) | env `LLM_URL` (default `http://localhost:8082/v1/chat/completions`), `LLM_MODEL`, `LLM_TIMEOUT` (120 s) |
@@ -219,7 +231,7 @@ pytest
 ## Repository layout
 
 ```
-app/                  FastAPI app (main.py), request/response models, shared search, answer generation
+app/                  FastAPI app (main.py), request/response models, shared search, version comparison, answer generation
 tests/                API tests
 fetch_parse_docs.py   crawl postgresql.org and convert pages to markdown
 chunk_docs.py         split pages into embedding-sized chunks

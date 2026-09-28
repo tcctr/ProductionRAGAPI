@@ -1,0 +1,966 @@
+{
+  "timestamp": "20260928T140025.874Z",
+  "git_commit": "07fb655",
+  "name": "qwen3.6-35b-a3b-version-diff",
+  "served_model": "/models/Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf",
+  "llm_url": "http://192.168.3.195:8095/v1/chat/completions",
+  "temperature": 0.2,
+  "embed_model": "nomic-embed-text-v1.5.Q8_0",
+  "k": 5,
+  "filter_version": true,
+  "dedup": true,
+  "answered": 14,
+  "errors": 0,
+  "answers": [
+    {
+      "id": "q069",
+      "category": "version_diff",
+      "question": "Which PostgreSQL version added a RETURNING clause to MERGE?",
+      "chunks": [
+        {
+          "id": "16:sql-merge.html#8",
+          "version": 16,
+          "versions": [
+            16
+          ],
+          "page": "sql-merge.html",
+          "url": "https://www.postgresql.org/docs/16/sql-merge.html",
+          "similarity": 0.7918222670661178,
+          "content": "PostgreSQL 16 > MERGE > Notes\n\nYou should ensure that the join produces at most one candidate change row for each target row. In other words, a target row shouldn't join to more than one data source row. If it does, then only one of the candidate change rows will be used to modify the target row; later attempts to modify the row will cause an error. This can also occur if row triggers make changes to the target table and the rows so modified are then subsequently also modified by `MERGE`. If the repeated action is an `INSERT`, this will cause a uniqueness violation, while a repeated `UPDATE` or `DELETE` will cause a cardinality violation; the latter behavior is required by the SQL standard. This differs from historical PostgreSQL behavior of joins in `UPDATE` and `DELETE` statements where second and subsequent attempts to modify the same row are simply ignored.\n\nIf a `WHEN` clause omits an `AND` sub-clause, it becomes the final reachable clause of that kind (`MATCHED` or `NOT MATCHED`). If a later `WHEN` clause of that kind is specified it would be provably unreachable and an error is raised. If no final reachable clause is specified of either kind, it is possible that no action will be taken for a candidate change row.\n\nThe order in which rows are generated from the data source is indeterminate by default. A *`source_query`* can be used to specify a consistent ordering, if required, which might be needed to avoid deadlocks between concurrent transactions.\n\nThere is no `RETURNING` clause with `MERGE`. Actions of `INSERT`, `UPDATE` and `DELETE` cannot contain `RETURNING` or `WITH` clauses."
+        },
+        {
+          "id": "16:sql-insert.html#13",
+          "version": 16,
+          "versions": [
+            16,
+            17
+          ],
+          "page": "sql-insert.html",
+          "url": "https://www.postgresql.org/docs/16/sql-insert.html",
+          "similarity": 0.787589754153525,
+          "content": "PostgreSQL 16 > INSERT > Compatibility\n\n## Compatibility\n\n`INSERT` conforms to the SQL standard, except that the `RETURNING` clause is a PostgreSQL extension, as is the ability to use `WITH` with `INSERT`, and the ability to specify an alternative action with `ON CONFLICT`. Also, the case in which a column name list is omitted, but not all the columns are filled from the `VALUES` clause or *`query`*, is disallowed by the standard. If you prefer a more SQL standard conforming statement than `ON CONFLICT`, see [MERGE](sql-merge.html \"MERGE\").\n\nThe SQL standard specifies that `OVERRIDING SYSTEM VALUE` can only be specified if an identity column that is generated always exists. PostgreSQL allows the clause in any case and ignores it if it is not applicable.\n\nPossible limitations of the *`query`* clause are documented under [SELECT](sql-select.html \"SELECT\")."
+        },
+        {
+          "id": "17:functions-merge-support.html#0",
+          "version": 17,
+          "versions": [
+            17
+          ],
+          "page": "functions-merge-support.html",
+          "url": "https://www.postgresql.org/docs/17/functions-merge-support.html",
+          "similarity": 0.8039227957817616,
+          "content": "PostgreSQL 17 > 9.23. Merge Support Functions\n\n## 9.23. Merge Support Functions\n\nPostgreSQL includes one merge support function that may be used in the `RETURNING` list of a [MERGE](sql-merge.html \"MERGE\") command to identify the action taken for each row; see [Table 9.66](functions-merge-support.html#FUNCTIONS-MERGE-SUPPORT-TABLE \"Table 9.66. Merge Support Functions\").\n\n**Table 9.66. Merge Support Functions**\n\n| Function  Description |\n| --- |\n| `merge_action` ( ) → `text`  Returns the merge action command executed for the current row. This will be `'INSERT'`, `'UPDATE'`, or `'DELETE'`. |\n\nExample:\n\n```\nMERGE INTO products p\n  USING stock s ON p.product_id = s.product_id\n  WHEN MATCHED AND s.quantity > 0 THEN\n    UPDATE SET in_stock = true, quantity = s.quantity\n  WHEN MATCHED THEN\n    UPDATE SET in_stock = false, quantity = 0\n  WHEN NOT MATCHED THEN\n    INSERT (product_id, in_stock, quantity)\n      VALUES (s.product_id, true, s.quantity)\n  RETURNING merge_action(), p.*;\n\n merge_action | product_id | in_stock | quantity\n--------------+------------+----------+----------\n UPDATE       |       1001 | t        |       50\n UPDATE       |       1002 | f        |        0\n INSERT       |       1003 | t        |       10\n```\n\nNote that this function can only be used in the `RETURNING` list of a `MERGE` command. It is an error to use it in any other part of a query."
+        },
+        {
+          "id": "18:sql-merge.html#2",
+          "version": 18,
+          "versions": [
+            18
+          ],
+          "page": "sql-merge.html",
+          "url": "https://www.postgresql.org/docs/18/sql-merge.html",
+          "similarity": 0.8258818841682272,
+          "content": "PostgreSQL 18 > MERGE > Description\n\nThe optional `RETURNING` clause causes `MERGE` to compute and return value(s) based on each row inserted, updated, or deleted. Any expression using the source or target table's columns, or the [`merge_action()`](functions-merge-support.html#MERGE-ACTION) function can be computed. By default, when an `INSERT` or `UPDATE` action is performed, the new values of the target table's columns are used, and when a `DELETE` is performed, the old values of the target table's columns are used, but it is also possible to explicitly request old and new values. The syntax of the `RETURNING` list is identical to that of the output list of `SELECT`.\n\nThere is no separate `MERGE` privilege. If you specify an update action, you must have the `UPDATE` privilege on the column(s) of the target table that are referred to in the `SET` clause. If you specify an insert action, you must have the `INSERT` privilege on the target table. If you specify a delete action, you must have the `DELETE` privilege on the target table. If you specify a `DO NOTHING` action, you must have the `SELECT` privilege on at least one column of the target table. You will also need `SELECT` privilege on any column(s) of the *`data_source`* and of the target table referred to in any `condition` (including `join_condition`) or `expression`. Privileges are tested once at statement start and are checked whether or not particular `WHEN` clauses are executed.\n\n`MERGE` is not supported if the target table is a materialized view, foreign table, or if it has any rules defined on it."
+        },
+        {
+          "id": "18:functions-merge-support.html#0",
+          "version": 18,
+          "versions": [
+            18
+          ],
+          "page": "functions-merge-support.html",
+          "url": "https://www.postgresql.org/docs/18/functions-merge-support.html",
+          "similarity": 0.8035210722349171,
+          "content": "PostgreSQL 18 > 9.23. Merge Support Functions\n\n## 9.23. Merge Support Functions\n\nPostgreSQL includes one merge support function that may be used in the `RETURNING` list of a [MERGE](sql-merge.html \"MERGE\") command to identify the action taken for each row; see [Table 9.68](functions-merge-support.html#FUNCTIONS-MERGE-SUPPORT-TABLE \"Table 9.68. Merge Support Functions\").\n\n**Table 9.68. Merge Support Functions**\n\n| Function  Description |\n| --- |\n| `merge_action` ( ) → `text`  Returns the merge action command executed for the current row. This will be `'INSERT'`, `'UPDATE'`, or `'DELETE'`. |\n\nExample:\n\n```\nMERGE INTO products p\n  USING stock s ON p.product_id = s.product_id\n  WHEN MATCHED AND s.quantity > 0 THEN\n    UPDATE SET in_stock = true, quantity = s.quantity\n  WHEN MATCHED THEN\n    UPDATE SET in_stock = false, quantity = 0\n  WHEN NOT MATCHED THEN\n    INSERT (product_id, in_stock, quantity)\n      VALUES (s.product_id, true, s.quantity)\n  RETURNING merge_action(), p.*;\n\n merge_action | product_id | in_stock | quantity\n--------------+------------+----------+----------\n UPDATE       |       1001 | t        |       50\n UPDATE       |       1002 | f        |        0\n INSERT       |       1003 | t        |       10\n```\n\nNote that this function can only be used in the `RETURNING` list of a `MERGE` command. It is an error to use it in any other part of a query."
+        }
+      ],
+      "version_presence": {
+        "RETURNING": [
+          16,
+          17,
+          18
+        ],
+        "MERGE": [
+          16,
+          17,
+          18
+        ]
+      },
+      "answer": "PostgreSQL 18 added the `RETURNING` clause to `MERGE` [4].\n\nIn PostgreSQL 16 and 17, `MERGE` did not support a `RETURNING` clause [1]. The feature was introduced in version 18, which allows `MERGE` to compute and return values based on each row inserted, updated, or deleted [4].",
+      "seconds": 1.49
+    },
+    {
+      "id": "q070",
+      "category": "version_diff",
+      "question": "Which PostgreSQL version introduced JSON_TABLE?",
+      "chunks": [
+        {
+          "id": "16:functions-json.html#16",
+          "version": 16,
+          "versions": [
+            16
+          ],
+          "page": "functions-json.html",
+          "url": "https://www.postgresql.org/docs/16/functions-json.html#FUNCTIONS-JSON-PROCESSING",
+          "similarity": 0.7811284530835435,
+          "content": "PostgreSQL 16 > 9.16. JSON Functions and Operators > Note\n\n**Table 9.47. JSON Creation Functions**\n\n| Function  Description  Example(s) |\n| --- |\n| [[a]](#id-1.5.8.22.8.9.2.2.1.1.3.4) For example, the [hstore](hstore.html \"F.18. hstore — hstore key/value datatype\") extension has a cast from `hstore` to `json`, so that `hstore` values converted via the JSON creation functions will be represented as JSON objects, not as primitive string values. |\n\n[Table 9.48](functions-json.html#FUNCTIONS-SQLJSON-MISC \"Table 9.48. SQL/JSON Testing Functions\") details SQL/JSON facilities for testing JSON."
+        },
+        {
+          "id": "16:functions-json.html#0",
+          "version": 16,
+          "versions": [
+            16
+          ],
+          "page": "functions-json.html",
+          "url": "https://www.postgresql.org/docs/16/functions-json.html#FUNCTIONS-JSON",
+          "similarity": 0.7767533625294811,
+          "content": "PostgreSQL 16 > 9.16. JSON Functions and Operators\n\n## 9.16. JSON Functions and Operators\n\nThis section describes:\n\n* functions and operators for processing and creating JSON data\n* the SQL/JSON path language\n\nTo provide native support for JSON data types within the SQL environment, PostgreSQL implements the *SQL/JSON data model*. This model comprises sequences of items. Each item can hold SQL scalar values, with an additional SQL/JSON null value, and composite data structures that use JSON arrays and objects. The model is a formalization of the implied data model in the JSON specification [RFC 7159](https://datatracker.ietf.org/doc/html/rfc7159).\n\nSQL/JSON allows you to handle JSON data alongside regular SQL data, with transaction support, including:\n\n* Uploading JSON data into the database and storing it in regular SQL columns as character or binary strings.\n* Generating JSON objects and arrays from relational data.\n* Querying JSON data using SQL/JSON query functions and SQL/JSON path language expressions.\n\nTo learn more about the SQL/JSON standard, see [[sqltr-19075-6]](biblio.html#SQLTR-19075-6 \"SQL Technical Report\"). For details on JSON types supported in PostgreSQL, see [Section 8.14](datatype-json.html \"8.14. JSON Types\")."
+        },
+        {
+          "id": "17:functions-json.html#74",
+          "version": 17,
+          "versions": [
+            17,
+            18
+          ],
+          "page": "functions-json.html",
+          "url": "https://www.postgresql.org/docs/17/functions-json.html#FUNCTIONS-SQLJSON-TABLE",
+          "similarity": 0.7898365980484255,
+          "content": "PostgreSQL 17 > 9.16. JSON Functions and Operators > 9.16.4. JSON\\_TABLE\n\n### 9.16.4. JSON\\_TABLE\n\n`JSON_TABLE` is an SQL/JSON function which queries JSON data and presents the results as a relational view, which can be accessed as a regular SQL table. You can use `JSON_TABLE` inside the `FROM` clause of a `SELECT`, `UPDATE`, or `DELETE` and as data source in a `MERGE` statement.\n\nTaking JSON data as input, `JSON_TABLE` uses a JSON path expression to extract a part of the provided data to use as a *row pattern* for the constructed view. Each SQL/JSON value given by the row pattern serves as source for a separate row in the constructed view.\n\nTo split the row pattern into columns, `JSON_TABLE` provides the `COLUMNS` clause that defines the schema of the created view. For each column, a separate JSON path expression can be specified to be evaluated against the row pattern to get an SQL/JSON value that will become the value for the specified column in a given output row.\n\nJSON data stored at a nested level of the row pattern can be extracted using the `NESTED PATH` clause. Each `NESTED PATH` clause can be used to generate one or more columns using the data from a nested level of the row pattern. Those columns can be specified using a `COLUMNS` clause that looks similar to the top-level COLUMNS clause. Rows constructed from NESTED COLUMNS are called *child rows* and are joined against the row constructed from the columns specified in the parent `COLUMNS` clause to get the row in the final view. Child columns themselves may contain a `NESTED PATH` specification thus allowing to extract data located at arbitrary nesting levels. Columns produced by multiple `NESTED PATH`s at the same level are considered to be *siblings* of each other and their rows after joining with the parent row are combined using UNION."
+        },
+        {
+          "id": "17:functions-json.html#75",
+          "version": 17,
+          "versions": [
+            17,
+            18
+          ],
+          "page": "functions-json.html",
+          "url": "https://www.postgresql.org/docs/17/functions-json.html#FUNCTIONS-SQLJSON-TABLE",
+          "similarity": 0.7874913938348781,
+          "content": "PostgreSQL 17 > 9.16. JSON Functions and Operators > 9.16.4. JSON\\_TABLE\n\nThe rows produced by `JSON_TABLE` are laterally joined to the row that generated them, so you do not have to explicitly join the constructed view with the original table holding JSON data.\n\nThe syntax is:\n\n```\nJSON_TABLE (\n    context_item, path_expression [ AS json_path_name ] [ PASSING { value AS varname } [, ...] ]\n    COLUMNS ( json_table_column [, ...] )\n    [ { ERROR | EMPTY [ARRAY]} ON ERROR ]\n)\n\nwhere json_table_column is:\n\n  name FOR ORDINALITY\n  | name type\n        [ FORMAT JSON [ENCODING UTF8]]\n        [ PATH path_expression ]\n        [ { WITHOUT | WITH { CONDITIONAL | [UNCONDITIONAL] } } [ ARRAY ] WRAPPER ]\n        [ { KEEP | OMIT } QUOTES [ ON SCALAR STRING ] ]\n        [ { ERROR | NULL | EMPTY { [ARRAY] | OBJECT } | DEFAULT expression } ON EMPTY ]\n        [ { ERROR | NULL | EMPTY { [ARRAY] | OBJECT } | DEFAULT expression } ON ERROR ]\n  | name type EXISTS [ PATH path_expression ]\n        [ { ERROR | TRUE | FALSE | UNKNOWN } ON ERROR ]\n  | NESTED [ PATH ] path_expression [ AS json_path_name ] COLUMNS ( json_table_column [, ...] )\n```\n\nEach syntax element is described below in more detail."
+        }
+      ],
+      "version_presence": {
+        "JSON_TABLE": [
+          17,
+          18
+        ]
+      },
+      "answer": "JSON_TABLE was introduced in PostgreSQL 17 [1]. It is available in PostgreSQL 17 and 18, but not in PostgreSQL 16 [1].",
+      "seconds": 0.85
+    },
+    {
+      "id": "q071",
+      "category": "version_diff",
+      "question": "When were the uuidv4() and uuidv7() functions added?",
+      "chunks": [
+        {
+          "id": "16:functions-uuid.html#0",
+          "version": 16,
+          "versions": [
+            16
+          ],
+          "page": "functions-uuid.html",
+          "url": "https://www.postgresql.org/docs/16/functions-uuid.html",
+          "similarity": 0.7115401373457796,
+          "content": "PostgreSQL 16 > 9.14. UUID Functions\n\n## 9.14. UUID Functions\n\nPostgreSQL includes one function to generate a UUID:\n\n```\ngen_random_uuid () → uuid\n```\n\nThis function returns a version 4 (random) UUID. This is the most commonly used type of UUID and is appropriate for most applications.\n\nThe [uuid-ossp](uuid-ossp.html \"F.49. uuid-ossp — a UUID generator\") module provides additional functions that implement other standard algorithms for generating UUIDs.\n\nPostgreSQL also provides the usual comparison operators shown in [Table 9.1](functions-comparison.html#FUNCTIONS-COMPARISON-OP-TABLE \"Table 9.1. Comparison Operators\") for UUIDs."
+        },
+        {
+          "id": "16:functions-sequence.html#1",
+          "version": 16,
+          "versions": [
+            16
+          ],
+          "page": "functions-sequence.html",
+          "url": "https://www.postgresql.org/docs/16/functions-sequence.html#FUNCTIONS-SEQUENCE",
+          "similarity": 0.6071443557739258,
+          "content": "PostgreSQL 16 > 9.17. Sequence Manipulation Functions\n\n**Table 9.52. Sequence Functions**\n\n| Function  Description |\n| --- |\n| `setval` ( `regclass`, `bigint` [, `boolean` ] ) → `bigint`  Sets the sequence object's current value, and optionally its `is_called` flag. The two-parameter form sets the sequence's `last_value` field to the specified value and sets its `is_called` field to `true`, meaning that the next `nextval` will advance the sequence before returning a value. The value that will be reported by `currval` is also set to the specified value. In the three-parameter form, `is_called` can be set to either `true` or `false`. `true` has the same effect as the two-parameter form. If it is set to `false`, the next `nextval` will return exactly the specified value, and sequence advancement commences with the following `nextval`. Furthermore, the value reported by `currval` is not changed in this case. For example,   ``` SELECT setval('myseq', 42);           Next nextval will return 43 SELECT setval('myseq', 42, true);     Same as above SELECT setval('myseq', 42, false);    Next nextval will return 42 ```   The result returned by `setval` is just the value of its second argument.  This function requires `UPDATE` privilege on the sequence. |\n| `currval` ( `regclass` ) → `bigint`  Returns the value most recently obtained by `nextval` for this sequence in the current session. (An error is reported if `nextval` has never been called for this sequence in this session.) Because this is returning a session-local value, it gives a predictable answer whether or not other sessions have executed `nextval` since the current session did.  This function requires `USAGE` or `SELECT` privilege on the sequence. |"
+        },
+        {
+          "id": "17:functions-uuid.html#0",
+          "version": 17,
+          "versions": [
+            17
+          ],
+          "page": "functions-uuid.html",
+          "url": "https://www.postgresql.org/docs/17/functions-uuid.html",
+          "similarity": 0.7128995656967163,
+          "content": "PostgreSQL 17 > 9.14. UUID Functions\n\n## 9.14. UUID Functions\n\nPostgreSQL includes one function to generate a UUID:\n\n```\ngen_random_uuid () → uuid\n```\n\nThis function returns a version 4 (random) UUID. This is the most commonly used type of UUID and is appropriate for most applications.\n\nThe [uuid-ossp](uuid-ossp.html \"F.47. uuid-ossp — a UUID generator\") module provides additional functions that implement other standard algorithms for generating UUIDs.\n\nThere are also functions to extract data from UUIDs:\n\n```\nuuid_extract_timestamp (uuid) → timestamp with time zone\n```\n\nThis function extracts a `timestamp with time zone` from UUID version 1. For other versions, this function returns null. Note that the extracted timestamp is not necessarily exactly equal to the time the UUID was generated; this depends on the implementation that generated the UUID.\n\n```\nuuid_extract_version (uuid) → smallint\n```\n\nThis function extracts the version from a UUID of the variant described by [RFC 4122](https://datatracker.ietf.org/doc/html/rfc4122). For other variants, this function returns null. For example, for a UUID generated by `gen_random_uuid`, this function will return 4.\n\nPostgreSQL also provides the usual comparison operators shown in [Table 9.1](functions-comparison.html#FUNCTIONS-COMPARISON-OP-TABLE \"Table 9.1. Comparison Operators\") for UUIDs."
+        },
+        {
+          "id": "17:functions-info.html#51",
+          "version": 17,
+          "versions": [
+            17
+          ],
+          "page": "functions-info.html",
+          "url": "https://www.postgresql.org/docs/17/functions-info.html#FUNCTIONS-INFO-VERSION",
+          "similarity": 0.6257351486998664,
+          "content": "PostgreSQL 17 > 9.27. System Information Functions and Operators > 9.27.11. Version Information Functions\n\n### 9.27.11. Version Information Functions\n\nThe functions shown in [Table 9.91](functions-info.html#FUNCTIONS-VERSION \"Table 9.91. Version Information Functions\") print version information.\n\n**Table 9.91. Version Information Functions**\n\n| Function  Description |\n| --- |\n| `version` () → `text`  Returns a string describing the PostgreSQL server's version. You can also get this information from [server\\_version](runtime-config-preset.html#GUC-SERVER-VERSION), or for a machine-readable version use [server\\_version\\_num](runtime-config-preset.html#GUC-SERVER-VERSION-NUM). Software developers should use `server_version_num` (available since 8.2) or [`PQserverVersion`](libpq-status.html#LIBPQ-PQSERVERVERSION) instead of parsing the text version. |\n| `unicode_version` () → `text`  Returns a string representing the version of Unicode used by PostgreSQL. |\n| `icu_unicode_version` () → `text`  Returns a string representing the version of Unicode used by ICU, if the server was built with ICU support; otherwise returns `NULL` |"
+        },
+        {
+          "id": "18:functions-uuid.html#0",
+          "version": 18,
+          "versions": [
+            18
+          ],
+          "page": "functions-uuid.html",
+          "url": "https://www.postgresql.org/docs/18/functions-uuid.html#FUNCTIONS-UUID",
+          "similarity": 0.7253166437149048,
+          "content": "PostgreSQL 18 > 9.14. UUID Functions\n\n## 9.14. UUID Functions\n\n[Table 9.45](functions-uuid.html#FUNC_UUID_GEN_TABLE \"Table 9.45. UUID Generation Functions\") shows the PostgreSQL functions that can be used to generate UUIDs.\n\n**Table 9.45. UUID Generation Functions**\n\n| Function  Description  Example(s) |\n| --- |\n| `gen_random_uuid` ( ) → `uuid`  `uuidv4` ( ) → `uuid`  Generates a version 4 (random) UUID  `gen_random_uuid()` → `5b30857f-0bfa-48b5-ac0b-5c64e28078d1`  `uuidv4()` → `b42410ee-132f-42ee-9e4f-09a6485c95b8` |\n| `uuidv7` ( [ *`shift`* `interval` ] ) → `uuid`  Generates a version 7 (time-ordered) UUID. The timestamp is computed using UNIX timestamp with millisecond precision + sub-millisecond timestamp + random. The optional parameter *`shift`* will shift the computed timestamp by the given `interval`. Infinite interval values are not accepted. The shifted timestamp must fall within the range supported by UUID version 7's 48-bit millisecond timestamp field: from 1970-01-01 00:00:00 UTC to approximately year 10889. An error is raised if the resulting timestamp is outside this range.  `uuidv7()` → `019535d9-3df7-79fb-b466-fa907fa17f9e` |"
+        },
+        {
+          "id": "18:functions-uuid.html#2",
+          "version": 18,
+          "versions": [
+            18
+          ],
+          "page": "functions-uuid.html",
+          "url": "https://www.postgresql.org/docs/18/functions-uuid.html#FUNCTIONS-UUID",
+          "similarity": 0.6714527411134696,
+          "content": "PostgreSQL 18 > 9.14. UUID Functions > Note\n\n**Table 9.46. UUID Extraction Functions**\n\n| Function  Description  Example(s) |\n| --- |\n| `uuid_extract_timestamp` ( `uuid` ) → `timestamp with time zone`  Extracts a `timestamp with time zone` from a UUID of version 1 or 7. For other versions, this function returns null. Note that the extracted timestamp is not necessarily exactly equal to the time the UUID was generated; this depends on the implementation that generated the UUID.  `uuid_extract_timestamp('019535d9-3df7-79fb-b466-​fa907fa17f9e'::uuid)` → `2025-02-23 21:46:24.503-05` |\n| `uuid_extract_version` ( `uuid` ) → `smallint`  Extracts the version from a UUID of one of the variants described by [RFC 9562](https://datatracker.ietf.org/doc/html/rfc9562). For other variants, this function returns null. For example, for a UUID generated by `gen_random_uuid()`, this function will return 4.  `uuid_extract_version('41db1265-8bc1-4ab3-992f-​885799a4af1d'::uuid)` → `4`  `uuid_extract_version('019535d9-3df7-79fb-b466-​fa907fa17f9e'::uuid)` → `7` |\n\nPostgreSQL also provides the usual comparison operators shown in [Table 9.1](functions-comparison.html#FUNCTIONS-COMPARISON-OP-TABLE \"Table 9.1. Comparison Operators\") for UUIDs.\n\nSee [Section 8.12](datatype-uuid.html \"8.12. UUID Type\") for details on the data type `uuid` in PostgreSQL."
+        }
+      ],
+      "version_presence": {
+        "uuidv4": [
+          18
+        ],
+        "uuidv7": [
+          18
+        ]
+      },
+      "answer": "Based on the term search results and the documentation excerpts:\n\n*   **`uuidv4()`**: This function was added in **PostgreSQL 18**. It is not available in versions 16 or 17 [1][2][5].\n*   **`uuidv7()`**: This function was added in **PostgreSQL 18**. It is not available in versions 16 or 17 [1][2][5].\n\nIn PostgreSQL 18, `uuidv4()` generates a version 4 (random) UUID, and `uuidv7()` generates a version 7 (time-ordered) UUID [5].",
+      "seconds": 2.39
+    },
+    {
+      "id": "q072",
+      "category": "version_diff",
+      "question": "Which version added the casefold() function?",
+      "chunks": [
+        {
+          "id": "16:sql-grant.html#10",
+          "version": 16,
+          "versions": [
+            16,
+            17
+          ],
+          "page": "sql-grant.html",
+          "url": "https://www.postgresql.org/docs/16/sql-grant.html",
+          "similarity": 0.6212034225463867,
+          "content": "PostgreSQL 16 > GRANT > Compatibility\n\nIn the SQL standard, sequences only have a `USAGE` privilege, which controls the use of the `NEXT VALUE FOR` expression, which is equivalent to the function `nextval` in PostgreSQL. The sequence privileges `SELECT` and `UPDATE` are PostgreSQL extensions. The application of the sequence `USAGE` privilege to the `currval` function is also a PostgreSQL extension (as is the function itself).\n\nPrivileges on databases, tablespaces, schemas, languages, and configuration parameters are PostgreSQL extensions.\n\n## See Also\n\n[REVOKE](sql-revoke.html \"REVOKE\"), [ALTER DEFAULT PRIVILEGES](sql-alterdefaultprivileges.html \"ALTER DEFAULT PRIVILEGES\")"
+        },
+        {
+          "id": "16:functions-conditional.html#2",
+          "version": 16,
+          "versions": [
+            16,
+            17,
+            18
+          ],
+          "page": "functions-conditional.html",
+          "url": "https://www.postgresql.org/docs/16/functions-conditional.html#FUNCTIONS-CASE",
+          "similarity": 0.620011031627655,
+          "content": "PostgreSQL 16 > 9.18. Conditional Expressions > Note\n\n### Note\n\nAs described in [Section 4.2.14](sql-expressions.html#SYNTAX-EXPRESS-EVAL \"4.2.14. Expression Evaluation Rules\"), there are various situations in which subexpressions of an expression are evaluated at different times, so that the principle that “`CASE` evaluates only necessary subexpressions” is not ironclad. For example a constant `1/0` subexpression will usually result in a division-by-zero failure at planning time, even if it's within a `CASE` arm that would never be entered at run time.\n\n### 9.18.2. `COALESCE`\n\n```\nCOALESCE(value [, ...])\n```\n\nThe `COALESCE` function returns the first of its arguments that is not null. Null is returned only if all arguments are null. It is often used to substitute a default value for null values when data is retrieved for display, for example:\n\n```\nSELECT COALESCE(description, short_description, '(none)') ...\n```\n\nThis returns `description` if it is not null, otherwise `short_description` if it is not null, otherwise `(none)`.\n\nThe arguments must all be convertible to a common data type, which will be the type of the result (see [Section 10.5](typeconv-union-case.html \"10.5. UNION, CASE, and Related Constructs\") for details).\n\nLike a `CASE` expression, `COALESCE` only evaluates the arguments that are needed to determine the result; that is, arguments to the right of the first non-null argument are not evaluated. This SQL-standard function provides capabilities similar to `NVL` and `IFNULL`, which are used in some other database systems."
+        },
+        {
+          "id": "18:functions-string.html#11",
+          "version": 18,
+          "versions": [
+            18
+          ],
+          "page": "functions-string.html",
+          "url": "https://www.postgresql.org/docs/18/functions-string.html#FUNCTIONS-STRING",
+          "similarity": 0.7559058295460296,
+          "content": "PostgreSQL 18 > 9.4. String Functions and Operators > Note\n\n**Table 9.10. Other String Functions and Operators**\n\n| Function/Operator  Description  Example(s) |\n| --- |\n| `casefold` ( `text` ) → `text`  Performs case folding of the input string according to the collation. Case folding is similar to case conversion, but the purpose of case folding is to facilitate case-insensitive matching of strings, whereas the purpose of case conversion is to convert to a particular cased form. This function can only be used when the server encoding is `UTF8`.  Ordinarily, case folding simply converts to lowercase, but there may be exceptions depending on the collation. For instance, some characters have more than two lowercase variants, or fold to uppercase.  Case folding may change the length of the string. For instance, in the `PG_UNICODE_FAST` collation, `ß` (U+00DF) folds to `ss`.  `casefold` can be used for Unicode Default Caseless Matching. It does not always preserve the normalized form of the input string (see [normalize](functions-string.html#FUNCTION-NORMALIZE)).  The `libc` provider doesn't support case folding, so `casefold` is identical to [lower](functions-string.html#FUNCTION-LOWER). |\n| `left` ( *`string`* `text`, *`n`* `integer` ) → `text`  Returns first *`n`* characters in the string, or when *`n`* is negative, returns all but last |*`n`*| characters.  `left('abcde', 2)` → `ab` |\n| `length` ( `text` ) → `integer`  Returns the number of characters in the string.  `length('jose')` → `4` |"
+        }
+      ],
+      "version_presence": {
+        "casefold": [
+          18
+        ]
+      },
+      "answer": "The `casefold()` function was added in PostgreSQL 18 [3]. It is not available in PostgreSQL 16 or 17 (term search).",
+      "seconds": 0.67
+    },
+    {
+      "id": "q073",
+      "category": "version_diff",
+      "question": "Since which version does EXPLAIN support the SERIALIZE option?",
+      "chunks": [
+        {
+          "id": "16:sql-explain.html#1",
+          "version": 16,
+          "versions": [
+            16
+          ],
+          "page": "sql-explain.html",
+          "url": "https://www.postgresql.org/docs/16/sql-explain.html",
+          "similarity": 0.6864454577036911,
+          "content": "PostgreSQL 16 > EXPLAIN > Description\n\nThe `ANALYZE` option causes the statement to be actually executed, not only planned. Then actual run time statistics are added to the display, including the total elapsed time expended within each plan node (in milliseconds) and the total number of rows it actually returned. This is useful for seeing whether the planner's estimates are close to reality.\n\n### Important\n\nKeep in mind that the statement is actually executed when the `ANALYZE` option is used. Although `EXPLAIN` will discard any output that a `SELECT` would return, other side effects of the statement will happen as usual. If you wish to use `EXPLAIN ANALYZE` on an `INSERT`, `UPDATE`, `DELETE`, `MERGE`, `CREATE TABLE AS`, or `EXECUTE` statement without letting the command affect your data, use this approach:\n\n```\nBEGIN;\nEXPLAIN ANALYZE ...;\nROLLBACK;\n```\n\nOnly the `ANALYZE` and `VERBOSE` options can be specified, and only in that order, without surrounding the option list in parentheses. Prior to PostgreSQL 9.0, the unparenthesized syntax was the only one supported. It is expected that all new options will be supported only in the parenthesized syntax."
+        },
+        {
+          "id": "16:sql-altersubscription.html#3",
+          "version": 16,
+          "versions": [
+            16
+          ],
+          "page": "sql-altersubscription.html",
+          "url": "https://www.postgresql.org/docs/16/sql-altersubscription.html",
+          "similarity": 0.6804991579650878,
+          "content": "PostgreSQL 16 > ALTER SUBSCRIPTION > Parameters\n\n        See [Notes](sql-createsubscription.html#SQL-CREATESUBSCRIPTION-NOTES \"Notes\") for details of how `copy_data = true` can interact with the [`origin`](sql-createsubscription.html#SQL-CREATESUBSCRIPTION-WITH-ORIGIN) parameter.\n\n        See the [`binary`](sql-createsubscription.html#SQL-CREATESUBSCRIPTION-WITH-BINARY) parameter of `CREATE SUBSCRIPTION` for details about copying pre-existing data in binary format.\n\n`ENABLE`\n:   Enables a previously disabled subscription, starting the logical replication worker at the end of the transaction.\n\n`DISABLE`\n:   Disables a running subscription, stopping the logical replication worker at the end of the transaction."
+        },
+        {
+          "id": "17:sql-explain.html#4",
+          "version": 17,
+          "versions": [
+            17
+          ],
+          "page": "sql-explain.html",
+          "url": "https://www.postgresql.org/docs/17/sql-explain.html",
+          "similarity": 0.758413703252524,
+          "content": "PostgreSQL 17 > EXPLAIN > Parameters\n\n`SERIALIZE`\n:   Include information on the cost of *serializing* the query's output data, that is converting it to text or binary format to send to the client. This can be a significant part of the time required for regular execution of the query, if the datatype output functions are expensive or if TOASTed values must be fetched from out-of-line storage. `EXPLAIN`'s default behavior, `SERIALIZE NONE`, does not perform these conversions. If `SERIALIZE TEXT` or `SERIALIZE BINARY` is specified, the appropriate conversions are performed, and the time spent doing so is measured (unless `TIMING OFF` is specified). If the `BUFFERS` option is also specified, then any buffer accesses involved in the conversions are counted too. In no case, however, will `EXPLAIN` actually send the resulting data to the client; hence network transmission costs cannot be investigated this way. Serialization may only be enabled when `ANALYZE` is also enabled. If `SERIALIZE` is written without an argument, `TEXT` is assumed.\n\n`WAL`\n:   Include information on WAL record generation. Specifically, include the number of records, number of full page images (fpi) and the amount of WAL generated in bytes. In text format, only non-zero values are printed. This parameter may only be used when `ANALYZE` is also enabled. It defaults to `FALSE`.\n\n`TIMING`\n:   Include actual startup time and time spent in each node in the output. The overhead of repeatedly reading the system clock can slow down the query significantly on some systems, so it may be useful to set this parameter to `FALSE` when only actual row counts, and not exact times, are needed. Run time of the entire statement is always measured, even when node-level timing is turned off with this option. This parameter may only be used when `ANALYZE` is also enabled. It defaults to `TRUE`."
+        },
+        {
+          "id": "17:using-explain.html#17",
+          "version": 17,
+          "versions": [
+            17,
+            18
+          ],
+          "page": "using-explain.html",
+          "url": "https://www.postgresql.org/docs/17/using-explain.html#USING-EXPLAIN-BASICS",
+          "similarity": 0.6815935399997616,
+          "content": "PostgreSQL 17 > 14.1. Using EXPLAIN > 14.1. Using `EXPLAIN` > 14.1.1. `EXPLAIN` Basics\n\nOne way to look at variant plans is to force the planner to disregard whatever strategy it thought was the cheapest, using the enable/disable flags described in [Section 19.7.1](runtime-config-query.html#RUNTIME-CONFIG-QUERY-ENABLE \"19.7.1. Planner Method Configuration\"). (This is a crude tool, but useful. See also [Section 14.3](explicit-joins.html \"14.3. Controlling the Planner with Explicit JOIN Clauses\").) For example, if we're unconvinced that merge join is the best join type for the previous example, we could try"
+        },
+        {
+          "id": "18:sql-explain.html#4",
+          "version": 18,
+          "versions": [
+            18
+          ],
+          "page": "sql-explain.html",
+          "url": "https://www.postgresql.org/docs/18/sql-explain.html",
+          "similarity": 0.7563514419020995,
+          "content": "PostgreSQL 18 > EXPLAIN > Parameters\n\n`SERIALIZE`\n:   Include information on the cost of *serializing* the query's output data, that is converting it to text or binary format to send to the client. This can be a significant part of the time required for regular execution of the query, if the datatype output functions are expensive or if TOASTed values must be fetched from out-of-line storage. `EXPLAIN`'s default behavior, `SERIALIZE NONE`, does not perform these conversions. If `SERIALIZE TEXT` or `SERIALIZE BINARY` is specified, the appropriate conversions are performed, and the time spent doing so is measured (unless `TIMING OFF` is specified). If the `BUFFERS` option is also specified, then any buffer accesses involved in the conversions are counted too. In no case, however, will `EXPLAIN` actually send the resulting data to the client; hence network transmission costs cannot be investigated this way. Serialization may only be enabled when `ANALYZE` is also enabled. If `SERIALIZE` is written without an argument, `TEXT` is assumed.\n\n`WAL`\n:   Include information on WAL record generation. Specifically, include the number of records, number of full page images (fpi), the amount of WAL generated in bytes and the number of times the WAL buffers became full. In text format, only non-zero values are printed. This parameter may only be used when `ANALYZE` is also enabled. It defaults to `FALSE`.\n\n`TIMING`\n:   Include actual startup time and time spent in each node in the output. The overhead of repeatedly reading the system clock can slow down the query significantly on some systems, so it may be useful to set this parameter to `FALSE` when only actual row counts, and not exact times, are needed. Run time of the entire statement is always measured, even when node-level timing is turned off with this option. This parameter may only be used when `ANALYZE` is also enabled. It defaults to `TRUE`."
+        }
+      ],
+      "version_presence": {
+        "EXPLAIN": [
+          16,
+          17,
+          18
+        ],
+        "SERIALIZE": [
+          17,
+          18
+        ]
+      },
+      "answer": "The `SERIALIZE` option for `EXPLAIN` is supported starting in PostgreSQL 17 [3]. It is not available in PostgreSQL 16 [1].",
+      "seconds": 0.99
+    },
+    {
+      "id": "q074",
+      "category": "version_diff",
+      "question": "In which versions is the any_value aggregate available?",
+      "chunks": [
+        {
+          "id": "16:functions-aggregate.html#10",
+          "version": 16,
+          "versions": [
+            16,
+            17,
+            18
+          ],
+          "page": "functions-aggregate.html",
+          "url": "https://www.postgresql.org/docs/16/functions-aggregate.html#FUNCTIONS-AGGREGATE",
+          "similarity": 0.7473153845275854,
+          "content": "PostgreSQL 16 > 9.21. Aggregate Functions > Note\n\n### Note\n\nThe boolean aggregates `bool_and` and `bool_or` correspond to the standard SQL aggregates `every` and `any` or `some`. PostgreSQL supports `every`, but not `any` or `some`, because there is an ambiguity built into the standard syntax:\n\n```\nSELECT b1 = ANY((SELECT b2 FROM t2 ...)) FROM t1 ...;\n```\n\nHere `ANY` can be considered either as introducing a subquery, or as being an aggregate function, if the subquery returns one row with a Boolean value. Thus the standard name cannot be given to these aggregates."
+        },
+        {
+          "id": "16:functions-aggregate.html#1",
+          "version": 16,
+          "versions": [
+            16
+          ],
+          "page": "functions-aggregate.html",
+          "url": "https://www.postgresql.org/docs/16/functions-aggregate.html#FUNCTIONS-AGGREGATE",
+          "similarity": 0.7372463565244188,
+          "content": "PostgreSQL 16 > 9.21. Aggregate Functions\n\n**Table 9.59. General-Purpose Aggregate Functions**\n\n| Function  Description | Partial Mode |\n| --- | --- |\n| `any_value` ( `anyelement` ) → `same as input type`  Returns an arbitrary value from the non-null input values. | Yes |\n| `array_agg` ( `anynonarray` ) → `anyarray`  Collects all the input values, including nulls, into an array. | Yes |\n| `array_agg` ( `anyarray` ) → `anyarray`  Concatenates all the input arrays into an array of one higher dimension. (The inputs must all have the same dimensionality, and cannot be empty or null.) | Yes |\n| `avg` ( `smallint` ) → `numeric`  `avg` ( `integer` ) → `numeric`  `avg` ( `bigint` ) → `numeric`  `avg` ( `numeric` ) → `numeric`  `avg` ( `real` ) → `double precision`  `avg` ( `double precision` ) → `double precision`  `avg` ( `interval` ) → `interval`  Computes the average (arithmetic mean) of all the non-null input values. | Yes |\n| `bit_and` ( `smallint` ) → `smallint`  `bit_and` ( `integer` ) → `integer`  `bit_and` ( `bigint` ) → `bigint`  `bit_and` ( `bit` ) → `bit`  Computes the bitwise AND of all non-null input values. | Yes |\n| `bit_or` ( `smallint` ) → `smallint`  `bit_or` ( `integer` ) → `integer`  `bit_or` ( `bigint` ) → `bigint`  `bit_or` ( `bit` ) → `bit`  Computes the bitwise OR of all non-null input values. | Yes |"
+        },
+        {
+          "id": "17:functions-aggregate.html#1",
+          "version": 17,
+          "versions": [
+            17
+          ],
+          "page": "functions-aggregate.html",
+          "url": "https://www.postgresql.org/docs/17/functions-aggregate.html#FUNCTIONS-AGGREGATE",
+          "similarity": 0.7353159408365474,
+          "content": "PostgreSQL 17 > 9.21. Aggregate Functions\n\n**Table 9.60. General-Purpose Aggregate Functions**\n\n| Function  Description | Partial Mode |\n| --- | --- |\n| `any_value` ( `anyelement` ) → `same as input type`  Returns an arbitrary value from the non-null input values. | Yes |\n| `array_agg` ( `anynonarray` `ORDER BY` `input_sort_columns` ) → `anyarray`  Collects all the input values, including nulls, into an array. | Yes |\n| `array_agg` ( `anyarray` `ORDER BY` `input_sort_columns` ) → `anyarray`  Concatenates all the input arrays into an array of one higher dimension. (The inputs must all have the same dimensionality, and cannot be empty or null.) | Yes |\n| `avg` ( `smallint` ) → `numeric`  `avg` ( `integer` ) → `numeric`  `avg` ( `bigint` ) → `numeric`  `avg` ( `numeric` ) → `numeric`  `avg` ( `real` ) → `double precision`  `avg` ( `double precision` ) → `double precision`  `avg` ( `interval` ) → `interval`  Computes the average (arithmetic mean) of all the non-null input values. | Yes |\n| `bit_and` ( `smallint` ) → `smallint`  `bit_and` ( `integer` ) → `integer`  `bit_and` ( `bigint` ) → `bigint`  `bit_and` ( `bit` ) → `bit`  Computes the bitwise AND of all non-null input values. | Yes |"
+        },
+        {
+          "id": "18:functions-aggregate.html#1",
+          "version": 18,
+          "versions": [
+            18
+          ],
+          "page": "functions-aggregate.html",
+          "url": "https://www.postgresql.org/docs/18/functions-aggregate.html#FUNCTIONS-AGGREGATE",
+          "similarity": 0.7371944408772723,
+          "content": "PostgreSQL 18 > 9.21. Aggregate Functions\n\n**Table 9.62. General-Purpose Aggregate Functions**\n\n| Function  Description | Partial Mode |\n| --- | --- |\n| `any_value` ( `anyelement` ) → `same as input type`  Returns an arbitrary value from the non-null input values. | Yes |\n| `array_agg` ( `anynonarray` `ORDER BY` `input_sort_columns` ) → `anyarray`  Collects all the input values, including nulls, into an array. | Yes |\n| `array_agg` ( `anyarray` `ORDER BY` `input_sort_columns` ) → `anyarray`  Concatenates all the input arrays into an array of one higher dimension. (The inputs must all have the same dimensionality, and cannot be empty or null.) | Yes |\n| `avg` ( `smallint` ) → `numeric`  `avg` ( `integer` ) → `numeric`  `avg` ( `bigint` ) → `numeric`  `avg` ( `numeric` ) → `numeric`  `avg` ( `real` ) → `double precision`  `avg` ( `double precision` ) → `double precision`  `avg` ( `interval` ) → `interval`  Computes the average (arithmetic mean) of all the non-null input values. | Yes |\n| `bit_and` ( `smallint` ) → `smallint`  `bit_and` ( `integer` ) → `integer`  `bit_and` ( `bigint` ) → `bigint`  `bit_and` ( `bit` ) → `bit`  Computes the bitwise AND of all non-null input values. | Yes |"
+        }
+      ],
+      "version_presence": {
+        "any_value": [
+          16,
+          17,
+          18
+        ]
+      },
+      "answer": "The `any_value` aggregate function is available in PostgreSQL 16, 17, and 18 [2][3][4].",
+      "seconds": 0.63
+    },
+    {
+      "id": "q075",
+      "category": "version_diff",
+      "question": "Which version added ALTER TABLE ... ALTER COLUMN ... SET EXPRESSION for generated columns?",
+      "chunks": [
+        {
+          "id": "16:sql-altertable.html#5",
+          "version": 16,
+          "versions": [
+            16,
+            17
+          ],
+          "page": "sql-altertable.html",
+          "url": "https://www.postgresql.org/docs/16/sql-altertable.html",
+          "similarity": 0.7631326772649706,
+          "content": "PostgreSQL 16 > ALTER TABLE > Description\n\n`SET DATA TYPE` [#](#SQL-ALTERTABLE-DESC-SET-DATA-TYPE)\n:   This form changes the type of a column of a table. Indexes and simple table constraints involving the column will be automatically converted to use the new column type by reparsing the originally supplied expression. The optional `COLLATE` clause specifies a collation for the new column; if omitted, the collation is the default for the new column type. The optional `USING` clause specifies how to compute the new column value from the old; if omitted, the default conversion is the same as an assignment cast from old data type to new. A `USING` clause must be provided if there is no implicit or assignment cast from old to new type.\n\n    When this form is used, the column's statistics are removed, so running [`ANALYZE`](sql-analyze.html \"ANALYZE\") on the table afterwards is recommended.\n\n`SET`/`DROP DEFAULT` [#](#SQL-ALTERTABLE-DESC-SET-DROP-DEFAULT)\n:   These forms set or remove the default value for a column (where removal is equivalent to setting the default value to NULL). The new default value will only apply in subsequent `INSERT` or `UPDATE` commands; it does not cause rows already in the table to change.\n\n`SET`/`DROP NOT NULL` [#](#SQL-ALTERTABLE-DESC-SET-DROP-NOT-NULL)\n:   These forms change whether a column is marked to allow null values or to reject null values.\n\n    `SET NOT NULL` may only be applied to a column provided none of the records in the table contain a `NULL` value for the column. Ordinarily this is checked during the `ALTER TABLE` by scanning the entire table; however, if a valid `CHECK` constraint exists (and is not dropped in the same command) which proves no `NULL` can exist, then the table scan is skipped."
+        },
+        {
+          "id": "16:sql-altertable.html#31",
+          "version": 16,
+          "versions": [
+            16,
+            17
+          ],
+          "page": "sql-altertable.html",
+          "url": "https://www.postgresql.org/docs/16/sql-altertable.html",
+          "similarity": 0.7629466935459794,
+          "content": "PostgreSQL 16 > ALTER TABLE > Examples\n\n## Examples\n\nTo add a column of type `varchar` to a table:\n\n```\nALTER TABLE distributors ADD COLUMN address varchar(30);\n```\n\nThat will cause all existing rows in the table to be filled with null values for the new column.\n\nTo add a column with a non-null default:\n\n```\nALTER TABLE measurements\n  ADD COLUMN mtime timestamp with time zone DEFAULT now();\n```\n\nExisting rows will be filled with the current time as the value of the new column, and then new rows will receive the time of their insertion.\n\nTo add a column and fill it with a value different from the default to be used later:\n\n```\nALTER TABLE transactions\n  ADD COLUMN status varchar(30) DEFAULT 'old',\n  ALTER COLUMN status SET default 'current';\n```\n\nExisting rows will be filled with `old`, but then the default for subsequent commands will be `current`. The effects are the same as if the two sub-commands had been issued in separate `ALTER TABLE` commands.\n\nTo drop a column from a table:\n\n```\nALTER TABLE distributors DROP COLUMN address RESTRICT;\n```\n\nTo change the types of two existing columns in one operation:\n\n```\nALTER TABLE distributors\n    ALTER COLUMN address TYPE varchar(80),\n    ALTER COLUMN name TYPE varchar(100);\n```\n\nTo change an integer column containing Unix timestamps to `timestamp with time zone` via a `USING` clause:\n\n```\nALTER TABLE foo\n    ALTER COLUMN foo_timestamp SET DATA TYPE timestamp with time zone\n    USING\n        timestamp with time zone 'epoch' + foo_timestamp * interval '1 second';\n```\n\nThe same, when the column has a default expression that won't automatically cast to the new data type:"
+        },
+        {
+          "id": "18:sql-altertable.html#7",
+          "version": 18,
+          "versions": [
+            18
+          ],
+          "page": "sql-altertable.html",
+          "url": "https://www.postgresql.org/docs/18/sql-altertable.html",
+          "similarity": 0.7835805883157618,
+          "content": "PostgreSQL 18 > ALTER TABLE > Description\n\n    This form is currently only supported for stored generated columns (not virtual ones).\n\n    If `DROP EXPRESSION IF EXISTS` is specified and the column is not a generated column, no error is thrown. In this case a notice is issued instead.\n\n`ADD GENERATED { ALWAYS | BY DEFAULT } AS IDENTITY` `SET GENERATED { ALWAYS | BY DEFAULT }` `DROP IDENTITY [ IF EXISTS ]` [#](#SQL-ALTERTABLE-DESC-GENERATED-IDENTITY)\n:   These forms change whether a column is an identity column or change the generation attribute of an existing identity column. See [`CREATE TABLE`](sql-createtable.html \"CREATE TABLE\") for details. Like `SET DEFAULT`, these forms only affect the behavior of subsequent `INSERT` and `UPDATE` commands; they do not cause rows already in the table to change.\n\n    If `DROP IDENTITY IF EXISTS` is specified and the column is not an identity column, no error is thrown. In this case a notice is issued instead.\n\n`SET sequence_option` `RESTART` [#](#SQL-ALTERTABLE-DESC-SET-SEQUENCE-OPTION)\n:   These forms alter the sequence that underlies an existing identity column. *`sequence_option`* is an option supported by [`ALTER SEQUENCE`](sql-altersequence.html \"ALTER SEQUENCE\") such as `INCREMENT BY`."
+        },
+        {
+          "id": "18:sql-altertable.html#5",
+          "version": 18,
+          "versions": [
+            18
+          ],
+          "page": "sql-altertable.html",
+          "url": "https://www.postgresql.org/docs/18/sql-altertable.html",
+          "similarity": 0.7686606187426689,
+          "content": "PostgreSQL 18 > ALTER TABLE > Description\n\n`SET DATA TYPE` [#](#SQL-ALTERTABLE-DESC-SET-DATA-TYPE)\n:   This form changes the type of a column of a table. Indexes and simple table constraints involving the column will be automatically converted to use the new column type by reparsing the originally supplied expression. The optional `COLLATE` clause specifies a collation for the new column; if omitted, the collation is the default for the new column type. The optional `USING` clause specifies how to compute the new column value from the old; if omitted, the default conversion is the same as an assignment cast from old data type to new. A `USING` clause must be provided if there is no implicit or assignment cast from old to new type.\n\n    When this form is used, the column's statistics are removed, so running [`ANALYZE`](sql-analyze.html \"ANALYZE\") on the table afterwards is recommended. For a virtual generated column, `ANALYZE` is not necessary because such columns never have statistics.\n\n`SET`/`DROP DEFAULT` [#](#SQL-ALTERTABLE-DESC-SET-DROP-DEFAULT)\n:   These forms set or remove the default value for a column (where removal is equivalent to setting the default value to NULL). The new default value will only apply in subsequent `INSERT` or `UPDATE` commands; it does not cause rows already in the table to change.\n\n`SET`/`DROP NOT NULL` [#](#SQL-ALTERTABLE-DESC-SET-DROP-NOT-NULL)\n:   These forms change whether a column is marked to allow null values or to reject null values."
+        }
+      ],
+      "version_presence": {
+        "ALTER TABLE": [
+          16,
+          17,
+          18
+        ],
+        "ALTER COLUMN": [
+          16,
+          17,
+          18
+        ],
+        "SET EXPRESSION": [
+          17,
+          18
+        ]
+      },
+      "answer": "Based on the term search results, `SET EXPRESSION` is available in PostgreSQL 17 and 18, but not in 16 [Term search]. Therefore, this feature was added in PostgreSQL 17.\n\nThe provided excerpts do not contain the specific description for `SET EXPRESSION` to confirm the syntax or details, but the version availability is established by the term search.\n\n**Answer:** PostgreSQL 17 (and 18).",
+      "seconds": 1.82
+    },
+    {
+      "id": "q076",
+      "category": "version_diff",
+      "question": "Which version added the crc32 and crc32c functions?",
+      "chunks": [
+        {
+          "id": "16:sql-createtype.html#20",
+          "version": 16,
+          "versions": [
+            16,
+            17,
+            18
+          ],
+          "page": "sql-createtype.html",
+          "url": "https://www.postgresql.org/docs/16/sql-createtype.html",
+          "similarity": 0.5868149574641873,
+          "content": "PostgreSQL 16 > CREATE TYPE > Notes\n\nBefore PostgreSQL version 8.2, the shell-type creation syntax `CREATE TYPE name` did not exist. The way to create a new base type was to create its input function first. In this approach, PostgreSQL will first see the name of the new data type as the return type of the input function. The shell type is implicitly created in this situation, and then it can be referenced in the definitions of the remaining I/O functions. This approach still works, but is deprecated and might be disallowed in some future release. Also, to avoid accidentally cluttering the catalogs with shell types as a result of simple typos in function definitions, a shell type will only be made this way when the input function is written in C.\n\nIn PostgreSQL version 16 and later, it is desirable for base types' input functions to return “soft” errors using the new `errsave()`/`ereturn()` mechanism, rather than throwing `ereport()` exceptions as in previous versions. See `src/backend/utils/fmgr/README` for more information."
+        },
+        {
+          "id": "16:functions-admin.html#35",
+          "version": 16,
+          "versions": [
+            16
+          ],
+          "page": "functions-admin.html",
+          "url": "https://www.postgresql.org/docs/16/functions-admin.html#FUNCTIONS-ADMIN-DBOBJECT",
+          "similarity": 0.5818403710031741,
+          "content": "PostgreSQL 16 > 9.27. System Administration Functions > 9.27.7. Database Object Management Functions\n\n**Table 9.98. Collation Management Functions**\n\n| Function  Description |\n| --- |\n| `pg_import_system_collations` ( *`schema`* `regnamespace` ) → `integer`  Adds collations to the system catalog `pg_collation` based on all the locales it finds in the operating system. This is what `initdb` uses; see [Section 24.2.2](collation.html#COLLATION-MANAGING \"24.2.2. Managing Collations\") for more details. If additional locales are installed into the operating system later on, this function can be run again to add collations for the new locales. Locales that match existing entries in `pg_collation` will be skipped. (But collation objects based on locales that are no longer present in the operating system are not removed by this function.) The *`schema`* parameter would typically be `pg_catalog`, but that is not a requirement; the collations could be installed into some other schema as well. The function returns the number of new collation objects it created. Use of this function is restricted to superusers. |\n\n[Table 9.99](functions-admin.html#FUNCTIONS-INFO-PARTITION \"Table 9.99. Partitioning Information Functions\") lists functions that provide information about the structure of partitioned tables."
+        },
+        {
+          "id": "17:functions-info.html#51",
+          "version": 17,
+          "versions": [
+            17
+          ],
+          "page": "functions-info.html",
+          "url": "https://www.postgresql.org/docs/17/functions-info.html#FUNCTIONS-INFO-VERSION",
+          "similarity": 0.5856569903305822,
+          "content": "PostgreSQL 17 > 9.27. System Information Functions and Operators > 9.27.11. Version Information Functions\n\n### 9.27.11. Version Information Functions\n\nThe functions shown in [Table 9.91](functions-info.html#FUNCTIONS-VERSION \"Table 9.91. Version Information Functions\") print version information.\n\n**Table 9.91. Version Information Functions**\n\n| Function  Description |\n| --- |\n| `version` () → `text`  Returns a string describing the PostgreSQL server's version. You can also get this information from [server\\_version](runtime-config-preset.html#GUC-SERVER-VERSION), or for a machine-readable version use [server\\_version\\_num](runtime-config-preset.html#GUC-SERVER-VERSION-NUM). Software developers should use `server_version_num` (available since 8.2) or [`PQserverVersion`](libpq-status.html#LIBPQ-PQSERVERVERSION) instead of parsing the text version. |\n| `unicode_version` () → `text`  Returns a string representing the version of Unicode used by PostgreSQL. |\n| `icu_unicode_version` () → `text`  Returns a string representing the version of Unicode used by ICU, if the server was built with ICU support; otherwise returns `NULL` |"
+        },
+        {
+          "id": "18:functions-info.html#53",
+          "version": 18,
+          "versions": [
+            18
+          ],
+          "page": "functions-info.html",
+          "url": "https://www.postgresql.org/docs/18/functions-info.html#FUNCTIONS-INFO-VERSION",
+          "similarity": 0.5773367377921071,
+          "content": "PostgreSQL 18 > 9.27. System Information Functions and Operators > 9.27.11. Version Information Functions\n\n### 9.27.11. Version Information Functions\n\nThe functions shown in [Table 9.93](functions-info.html#FUNCTIONS-VERSION \"Table 9.93. Version Information Functions\") print version information.\n\n**Table 9.93. Version Information Functions**\n\n| Function  Description |\n| --- |\n| `version` () → `text`  Returns a string describing the PostgreSQL server's version. You can also get this information from [server\\_version](runtime-config-preset.html#GUC-SERVER-VERSION), or for a machine-readable version use [server\\_version\\_num](runtime-config-preset.html#GUC-SERVER-VERSION-NUM). Software developers should use `server_version_num` (available since 8.2) or [`PQserverVersion`](libpq-status.html#LIBPQ-PQSERVERVERSION) instead of parsing the text version. |\n| `unicode_version` () → `text`  Returns a string representing the version of Unicode used by PostgreSQL. |\n| `icu_unicode_version` () → `text`  Returns a string representing the version of Unicode used by ICU, if the server was built with ICU support; otherwise returns `NULL` |"
+        }
+      ],
+      "version_presence": {
+        "crc32": [
+          18
+        ],
+        "crc32c": [
+          18
+        ]
+      },
+      "answer": "The `crc32` and `crc32c` functions were added in PostgreSQL 18 [1]. They are not available in PostgreSQL 16 or 17 [1].",
+      "seconds": 0.77
+    },
+    {
+      "id": "q077",
+      "category": "version_diff",
+      "question": "Which versions let me declare a constraint as NOT ENFORCED?",
+      "chunks": [
+        {
+          "id": "16:sql-createforeigntable.html#5",
+          "version": 16,
+          "versions": [
+            16,
+            17,
+            18
+          ],
+          "page": "sql-createforeigntable.html",
+          "url": "https://www.postgresql.org/docs/16/sql-createforeigntable.html",
+          "similarity": 0.7005809754306371,
+          "content": "PostgreSQL 16 > CREATE FOREIGN TABLE > Notes\n\n## Notes\n\nConstraints on foreign tables (such as `CHECK` or `NOT NULL` clauses) are not enforced by the core PostgreSQL system, and most foreign data wrappers do not attempt to enforce them either; that is, the constraint is simply assumed to hold true. There would be little point in such enforcement since it would only apply to rows inserted or updated via the foreign table, and not to rows modified by other means, such as directly on the remote server. Instead, a constraint attached to a foreign table should represent a constraint that is being enforced by the remote server.\n\nSome special-purpose foreign data wrappers might be the only access mechanism for the data they access, and in that case it might be appropriate for the foreign data wrapper itself to perform constraint enforcement. But you should not assume that a wrapper does that unless its documentation says so.\n\nAlthough PostgreSQL does not attempt to enforce constraints on foreign tables, it does assume that they are correct for purposes of query optimization. If there are rows visible in the foreign table that do not satisfy a declared constraint, queries on the table might produce errors or incorrect answers. It is the user's responsibility to ensure that the constraint definition matches reality."
+        },
+        {
+          "id": "16:sql-set-constraints.html#1",
+          "version": 16,
+          "versions": [
+            16,
+            17,
+            18
+          ],
+          "page": "sql-set-constraints.html",
+          "url": "https://www.postgresql.org/docs/16/sql-set-constraints.html",
+          "similarity": 0.6931555890878075,
+          "content": "PostgreSQL 16 > SET CONSTRAINTS > Description\n\nCurrently, only `UNIQUE`, `PRIMARY KEY`, `REFERENCES` (foreign key), and `EXCLUDE` constraints are affected by this setting. `NOT NULL` and `CHECK` constraints are always checked immediately when a row is inserted or modified (*not* at the end of the statement). Uniqueness and exclusion constraints that have not been declared `DEFERRABLE` are also checked immediately.\n\nThe firing of triggers that are declared as “constraint triggers” is also controlled by this setting — they fire at the same time that the associated constraint should be checked.\n\n## Notes\n\nBecause PostgreSQL does not require constraint names to be unique within a schema (but only per-table), it is possible that there is more than one match for a specified constraint name. In this case `SET CONSTRAINTS` will act on all matches. For a non-schema-qualified name, once a match or matches have been found in some schema in the search path, schemas appearing later in the path are not searched.\n\nThis command only alters the behavior of constraints within the current transaction. Issuing this outside of a transaction block emits a warning and otherwise has no effect.\n\n## Compatibility\n\nThis command complies with the behavior defined in the SQL standard, except for the limitation that, in PostgreSQL, it does not apply to `NOT NULL` and `CHECK` constraints. Also, PostgreSQL checks non-deferrable uniqueness constraints immediately, not at end of statement as the standard would suggest."
+        }
+      ],
+      "version_presence": {
+        "NOT ENFORCED": [
+          18
+        ]
+      },
+      "answer": "Based on the term search results, the `NOT ENFORCED` clause is available in **PostgreSQL 18** [Term search]. It is not present in PostgreSQL 16 or 17 [Term search].\n\nThe provided documentation excerpts do not contain specific details on how to use `NOT ENFORCED` or its behavior, only that the term appears in the 18 documentation.",
+      "seconds": 1.68
+    },
+    {
+      "id": "q078",
+      "category": "version_diff",
+      "question": "Which version added the AT LOCAL operator?",
+      "chunks": [
+        {
+          "id": "16:functions-net.html#7",
+          "version": 16,
+          "versions": [
+            16
+          ],
+          "page": "functions-net.html",
+          "url": "https://www.postgresql.org/docs/16/functions-net.html#FUNCTIONS-NET",
+          "similarity": 0.6201305985450789,
+          "content": "PostgreSQL 16 > 9.12. Network Address Functions and Operators > Tip\n\n### Tip\n\nThe `abbrev`, `host`, and `text` functions are primarily intended to offer alternative display formats for IP addresses.\n\nThe MAC address types, `macaddr` and `macaddr8`, support the usual comparison operators shown in [Table 9.1](functions-comparison.html#FUNCTIONS-COMPARISON-OP-TABLE \"Table 9.1. Comparison Operators\") as well as the specialized functions shown in [Table 9.41](functions-net.html#MACADDR-FUNCTIONS-TABLE \"Table 9.41. MAC Address Functions\"). In addition, they support the bitwise logical operators `~`, `&` and `|` (NOT, AND and OR), just as shown above for IP addresses."
+        },
+        {
+          "id": "16:functions-net.html#0",
+          "version": 16,
+          "versions": [
+            16
+          ],
+          "page": "functions-net.html",
+          "url": "https://www.postgresql.org/docs/16/functions-net.html#FUNCTIONS-NET",
+          "similarity": 0.6123473912113689,
+          "content": "PostgreSQL 16 > 9.12. Network Address Functions and Operators\n\n## 9.12. Network Address Functions and Operators\n\nThe IP network address types, `cidr` and `inet`, support the usual comparison operators shown in [Table 9.1](functions-comparison.html#FUNCTIONS-COMPARISON-OP-TABLE \"Table 9.1. Comparison Operators\") as well as the specialized operators and functions shown in [Table 9.39](functions-net.html#CIDR-INET-OPERATORS-TABLE \"Table 9.39. IP Address Operators\") and [Table 9.40](functions-net.html#CIDR-INET-FUNCTIONS-TABLE \"Table 9.40. IP Address Functions\").\n\nAny `cidr` value can be cast to `inet` implicitly; therefore, the operators and functions shown below as operating on `inet` also work on `cidr` values. (Where there are separate functions for `inet` and `cidr`, it is because the behavior should be different for the two cases.) Also, it is permitted to cast an `inet` value to `cidr`. When this is done, any bits to the right of the netmask are silently zeroed to create a valid `cidr` value."
+        },
+        {
+          "id": "17:functions-datetime.html#28",
+          "version": 17,
+          "versions": [
+            17,
+            18
+          ],
+          "page": "functions-datetime.html",
+          "url": "https://www.postgresql.org/docs/17/functions-datetime.html#FUNCTIONS-DATETIME-ZONECONVERT",
+          "similarity": 0.6615381635152211,
+          "content": "PostgreSQL 17 > 9.9. Date/Time Functions and Operators > 9.9.4. `AT TIME ZONE` and `AT LOCAL`\n\n### 9.9.4. `AT TIME ZONE` and `AT LOCAL`\n\nThe `AT TIME ZONE` operator converts time stamp *without* time zone to/from time stamp *with* time zone, and `time with time zone` values to different time zones. [Table 9.34](functions-datetime.html#FUNCTIONS-DATETIME-ZONECONVERT-TABLE \"Table 9.34. AT TIME ZONE and AT LOCAL Variants\") shows its variants."
+        },
+        {
+          "id": "17:functions-datetime.html#30",
+          "version": 17,
+          "versions": [
+            17,
+            18
+          ],
+          "page": "functions-datetime.html",
+          "url": "https://www.postgresql.org/docs/17/functions-datetime.html#FUNCTIONS-DATETIME-ZONECONVERT",
+          "similarity": 0.6532966494560288,
+          "content": "PostgreSQL 17 > 9.9. Date/Time Functions and Operators > 9.9.4. `AT TIME ZONE` and `AT LOCAL`\n\n**Table 9.34. `AT TIME ZONE` and `AT LOCAL` Variants**\n\n| Operator  Description  Example(s) |\n| --- |\n| `time with time zone` `AT TIME ZONE` *`zone`* → `time with time zone`  Converts given time *with* time zone to a new time zone. Since no date is supplied, this uses the currently active UTC offset for the named destination zone.  `time with time zone '05:34:17-05' at time zone 'UTC'` → `10:34:17+00` |\n| `time with time zone` `AT LOCAL` → `time with time zone`  Converts given time *with* time zone to a new time zone. Since no date is supplied, this uses the currently active UTC offset for the session's `TimeZone` value.  Assuming the session's `TimeZone` is set to `UTC`:  `time with time zone '05:34:17-05' at local` → `10:34:17+00` |\n\nIn these expressions, the desired time zone *`zone`* can be specified either as a text value (e.g., `'America/Los_Angeles'`) or as an interval (e.g., `INTERVAL '-08:00'`). In the text case, a time zone name can be specified in any of the ways described in [Section 8.5.3](datatype-datetime.html#DATATYPE-TIMEZONES \"8.5.3. Time Zones\"). The interval case is only useful for zones that have fixed offsets from UTC, so it is not very common in practice.\n\nThe syntax `AT LOCAL` may be used as shorthand for `AT TIME ZONE local`, where *`local`* is the session's `TimeZone` value.\n\nExamples (assuming the current [TimeZone](runtime-config-client.html#GUC-TIMEZONE) setting is `America/Los_Angeles`):"
+        }
+      ],
+      "version_presence": {
+        "AT LOCAL": [
+          17,
+          18
+        ]
+      },
+      "answer": "The `AT LOCAL` operator was added in PostgreSQL 17 [1]. It is available in versions 17 and 18, but not in version 16 [1].",
+      "seconds": 0.8
+    },
+    {
+      "id": "q079",
+      "category": "version_diff",
+      "question": "Which version added the strip_in_arrays parameter to json_strip_nulls?",
+      "chunks": [
+        {
+          "id": "16:functions-json.html#31",
+          "version": 16,
+          "versions": [
+            16
+          ],
+          "page": "functions-json.html",
+          "url": "https://www.postgresql.org/docs/16/functions-json.html#FUNCTIONS-JSON-PROCESSING",
+          "similarity": 0.6919730144699017,
+          "content": "PostgreSQL 16 > 9.16. JSON Functions and Operators > Note\n\n**Table 9.49. JSON Processing Functions**\n\n| Function  Description  Example(s) |\n| --- |\n| `json_strip_nulls` ( `json` ) → `json`  `jsonb_strip_nulls` ( `jsonb` ) → `jsonb`  Deletes all object fields that have null values from the given JSON value, recursively. Null values that are not object fields are untouched.  `json_strip_nulls('[{\"f1\":1, \"f2\":null}, 2, null, 3]')` → `[{\"f1\":1},2,null,3]` |\n| `jsonb_path_exists` ( *`target`* `jsonb`, *`path`* `jsonpath` [, *`vars`* `jsonb` [, *`silent`* `boolean` ]] ) → `boolean`  Checks whether the JSON path returns any item for the specified JSON value. If the *`vars`* argument is specified, it must be a JSON object, and its fields provide named values to be substituted into the `jsonpath` expression. If the *`silent`* argument is specified and is `true`, the function suppresses the same errors as the `@?` and `@@` operators do.  `jsonb_path_exists('{\"a\":[1,2,3,4,5]}', '$.a[*] ? (@ >= $min && @ <= $max)', '{\"min\":2, \"max\":4}')` → `t` |"
+        },
+        {
+          "id": "16:functions-json.html#29",
+          "version": 16,
+          "versions": [
+            16
+          ],
+          "page": "functions-json.html",
+          "url": "https://www.postgresql.org/docs/16/functions-json.html#FUNCTIONS-JSON-PROCESSING",
+          "similarity": 0.659337618848334,
+          "content": "PostgreSQL 16 > 9.16. JSON Functions and Operators > Note\n\n**Table 9.49. JSON Processing Functions**\n\n| Function  Description  Example(s) |\n| --- |\n| `jsonb_set_lax` ( *`target`* `jsonb`, *`path`* `text[]`, *`new_value`* `jsonb` [, *`create_if_missing`* `boolean` [, *`null_value_treatment`* `text` ]] ) → `jsonb`  If *`new_value`* is not `NULL`, behaves identically to `jsonb_set`. Otherwise behaves according to the value of *`null_value_treatment`* which must be one of `'raise_exception'`, `'use_json_null'`, `'delete_key'`, or `'return_target'`. The default is `'use_json_null'`.  `jsonb_set_lax('[{\"f1\":1,\"f2\":null},2,null,3]', '{0,f1}', null)` → `[{\"f1\": null, \"f2\": null}, 2, null, 3]`  `jsonb_set_lax('[{\"f1\":99,\"f2\":null},2]', '{0,f3}', null, true, 'return_target')` → `[{\"f1\": 99, \"f2\": null}, 2]` |"
+        },
+        {
+          "id": "17:functions-json.html#33",
+          "version": 17,
+          "versions": [
+            17
+          ],
+          "page": "functions-json.html",
+          "url": "https://www.postgresql.org/docs/17/functions-json.html#FUNCTIONS-JSON-PROCESSING",
+          "similarity": 0.7236143832824286,
+          "content": "PostgreSQL 17 > 9.16. JSON Functions and Operators > Note\n\n**Table 9.49. JSON Processing Functions**\n\n| Function  Description  Example(s) |\n| --- |\n| `json_strip_nulls` ( `json` ) → `json`  `jsonb_strip_nulls` ( `jsonb` ) → `jsonb`  Deletes all object fields that have null values from the given JSON value, recursively. Null values that are not object fields are untouched.  `json_strip_nulls('[{\"f1\":1, \"f2\":null}, 2, null, 3]')` → `[{\"f1\":1},2,null,3]` |"
+        },
+        {
+          "id": "17:functions-json.html#50",
+          "version": 17,
+          "versions": [
+            17,
+            18
+          ],
+          "page": "functions-json.html",
+          "url": "https://www.postgresql.org/docs/17/functions-json.html#FUNCTIONS-SQLJSON-STRICT-AND-LAX-MODES",
+          "similarity": 0.6637351309858531,
+          "content": "PostgreSQL 17 > 9.16. JSON Functions and Operators > Note > 9.16.2.2. Strict and Lax Modes\n\nThis happens because the `.**` accessor selects both the `segments` array and each of its elements, while the `.HR` accessor automatically unwraps arrays when using lax mode. To avoid surprising results, we recommend using the `.**` accessor only in strict mode. The following query selects each `HR` value just once:\n\n```\n=> select jsonb_path_query(:'json', 'strict $.**.HR');\n jsonb_path_query\n------------------\n 73\n 135\n```\n\nThe unwrapping of arrays can also lead to unexpected results. Consider this example, which selects all the `location` arrays:\n\n```\n=> select jsonb_path_query(:'json', 'lax $.track.segments[*].location');\n jsonb_path_query\n-------------------\n [47.763, 13.4034]\n [47.706, 13.2635]\n(2 rows)\n```\n\nAs expected it returns the full arrays. But applying a filter expression causes the arrays to be unwrapped to evaluate each item, returning only the items that match the expression:\n\n```\n=> select jsonb_path_query(:'json', 'lax $.track.segments[*].location ?(@[*] > 15)');\n jsonb_path_query\n------------------\n 47.763\n 47.706\n(2 rows)\n```\n\nThis despite the fact that the full arrays are selected by the path expression. Use strict mode to restore selecting the arrays:"
+        },
+        {
+          "id": "18:functions-json.html#33",
+          "version": 18,
+          "versions": [
+            18
+          ],
+          "page": "functions-json.html",
+          "url": "https://www.postgresql.org/docs/18/functions-json.html#FUNCTIONS-JSON-PROCESSING",
+          "similarity": 0.748928144382508,
+          "content": "PostgreSQL 18 > 9.16. JSON Functions and Operators > Note\n\n**Table 9.51. JSON Processing Functions**\n\n| Function  Description  Example(s) |\n| --- |\n| `json_strip_nulls` ( *`target`* `json` [,*`strip_in_arrays`* `boolean` ] ) → `json`  `jsonb_strip_nulls` ( *`target`* `jsonb` [,*`strip_in_arrays`* `boolean` ] ) → `jsonb`  Deletes all object fields that have null values from the given JSON value, recursively. If *`strip_in_arrays`* is true (the default is false), null array elements are also stripped. Otherwise they are not stripped. Bare null values are never stripped.  `json_strip_nulls('[{\"f1\":1, \"f2\":null}, 2, null, 3]')` → `[{\"f1\":1},2,null,3]`  `jsonb_strip_nulls('[1,2,null,3,4]', true)` → `[1,2,3,4]` |"
+        }
+      ],
+      "version_presence": {
+        "strip_in_arrays": [
+          18
+        ],
+        "json_strip_nulls": [
+          16,
+          17,
+          18
+        ]
+      },
+      "answer": "The `strip_in_arrays` parameter was added in PostgreSQL 18 [5].\n\nThe term search indicates that `strip_in_arrays` is present in version 18 but not in 16 or 17 (term search). The documentation for PostgreSQL 18 shows the function signature `json_strip_nulls ( target json [,strip_in_arrays boolean] )` [5], whereas the documentation for PostgreSQL 16 and 17 shows the signature without this parameter: `json_strip_nulls ( json )` [1][3].",
+      "seconds": 1.96
+    },
+    {
+      "id": "q080",
+      "category": "version_diff",
+      "question": "Which version introduced array_sample and array_shuffle?",
+      "chunks": [
+        {
+          "id": "16:functions-array.html#6",
+          "version": 16,
+          "versions": [
+            16
+          ],
+          "page": "functions-array.html",
+          "url": "https://www.postgresql.org/docs/16/functions-array.html#FUNCTIONS-ARRAY",
+          "similarity": 0.6841928566751738,
+          "content": "PostgreSQL 16 > 9.19. Array Functions and Operators\n\n**Table 9.54. Array Functions**\n\n| Function  Description  Example(s) |\n| --- |\n| `array_replace` ( `anycompatiblearray`, `anycompatible`, `anycompatible` ) → `anycompatiblearray`  Replaces each array element equal to the second argument with the third argument.  `array_replace(ARRAY[1,2,5,4], 5, 3)` → `{1,2,3,4}` |\n| `array_sample` ( *`array`* `anyarray`, *`n`* `integer` ) → `anyarray`  Returns an array of *`n`* items randomly selected from *`array`*. *`n`* may not exceed the length of *`array`*'s first dimension. If *`array`* is multi-dimensional, an “item” is a slice having a given first subscript.  `array_sample(ARRAY[1,2,3,4,5,6], 3)` → `{2,6,1}`  `array_sample(ARRAY[[1,2],[3,4],[5,6]], 2)` → `{{5,6},{1,2}}` |\n| `array_shuffle` ( `anyarray` ) → `anyarray`  Randomly shuffles the first dimension of the array.  `array_shuffle(ARRAY[[1,2],[3,4],[5,6]])` → `{{5,6},{1,2},{3,4}}` |"
+        },
+        {
+          "id": "16:functions-array.html#8",
+          "version": 16,
+          "versions": [
+            16
+          ],
+          "page": "functions-array.html",
+          "url": "https://www.postgresql.org/docs/16/functions-array.html#FUNCTIONS-ARRAY",
+          "similarity": 0.6490682943822434,
+          "content": "PostgreSQL 16 > 9.19. Array Functions and Operators\n\n**Table 9.54. Array Functions**\n\n| Function  Description  Example(s) |\n| --- |\n| `unnest` ( `anyarray` ) → `setof anyelement`  Expands an array into a set of rows. The array's elements are read out in storage order.  `unnest(ARRAY[1,2])` →   ```  1  2 ```   `unnest(ARRAY[['foo','bar'],['baz','quux']])` →   ```  foo  bar  baz  quux ``` |\n| `unnest` ( `anyarray`, `anyarray` [, ... ] ) → `setof anyelement, anyelement [, ... ]`  Expands multiple arrays (possibly of different data types) into a set of rows. If the arrays are not all the same length then the shorter ones are padded with `NULL`s. This form is only allowed in a query's FROM clause; see [Section 7.2.1.4](queries-table-expressions.html#QUERIES-TABLEFUNCTIONS \"7.2.1.4. Table Functions\").  `select * from unnest(ARRAY[1,2], ARRAY['foo','bar','baz']) as x(a,b)` →   ```  a |  b ---+-----  1 | foo  2 | bar    | baz ``` |\n\nSee also [Section 9.21](functions-aggregate.html \"9.21. Aggregate Functions\") about the aggregate function `array_agg` for use with arrays."
+        },
+        {
+          "id": "17:functions-array.html#6",
+          "version": 17,
+          "versions": [
+            17
+          ],
+          "page": "functions-array.html",
+          "url": "https://www.postgresql.org/docs/17/functions-array.html#FUNCTIONS-ARRAY",
+          "similarity": 0.6861258149147034,
+          "content": "PostgreSQL 17 > 9.19. Array Functions and Operators\n\n**Table 9.55. Array Functions**\n\n| Function  Description  Example(s) |\n| --- |\n| `array_replace` ( `anycompatiblearray`, `anycompatible`, `anycompatible` ) → `anycompatiblearray`  Replaces each array element equal to the second argument with the third argument.  `array_replace(ARRAY[1,2,5,4], 5, 3)` → `{1,2,3,4}` |\n| `array_sample` ( *`array`* `anyarray`, *`n`* `integer` ) → `anyarray`  Returns an array of *`n`* items randomly selected from *`array`*. *`n`* may not exceed the length of *`array`*'s first dimension. If *`array`* is multi-dimensional, an “item” is a slice having a given first subscript.  `array_sample(ARRAY[1,2,3,4,5,6], 3)` → `{2,6,1}`  `array_sample(ARRAY[[1,2],[3,4],[5,6]], 2)` → `{{5,6},{1,2}}` |\n| `array_shuffle` ( `anyarray` ) → `anyarray`  Randomly shuffles the first dimension of the array.  `array_shuffle(ARRAY[[1,2],[3,4],[5,6]])` → `{{5,6},{1,2},{3,4}}` |"
+        },
+        {
+          "id": "17:functions-array.html#8",
+          "version": 17,
+          "versions": [
+            17
+          ],
+          "page": "functions-array.html",
+          "url": "https://www.postgresql.org/docs/17/functions-array.html#FUNCTIONS-ARRAY",
+          "similarity": 0.652195930480957,
+          "content": "PostgreSQL 17 > 9.19. Array Functions and Operators\n\n**Table 9.55. Array Functions**\n\n| Function  Description  Example(s) |\n| --- |\n| `unnest` ( `anyarray` ) → `setof anyelement`  Expands an array into a set of rows. The array's elements are read out in storage order.  `unnest(ARRAY[1,2])` →   ```  1  2 ```   `unnest(ARRAY[['foo','bar'],['baz','quux']])` →   ```  foo  bar  baz  quux ``` |\n| `unnest` ( `anyarray`, `anyarray` [, ... ] ) → `setof anyelement, anyelement [, ... ]`  Expands multiple arrays (possibly of different data types) into a set of rows. If the arrays are not all the same length then the shorter ones are padded with `NULL`s. This form is only allowed in a query's FROM clause; see [Section 7.2.1.4](queries-table-expressions.html#QUERIES-TABLEFUNCTIONS \"7.2.1.4. Table Functions\").  `select * from unnest(ARRAY[1,2], ARRAY['foo','bar','baz']) as x(a,b)` →   ```  a |  b ---+-----  1 | foo  2 | bar    | baz ``` |\n\nSee also [Section 9.21](functions-aggregate.html \"9.21. Aggregate Functions\") about the aggregate function `array_agg` for use with arrays."
+        },
+        {
+          "id": "18:functions-array.html#6",
+          "version": 18,
+          "versions": [
+            18
+          ],
+          "page": "functions-array.html",
+          "url": "https://www.postgresql.org/docs/18/functions-array.html#FUNCTIONS-ARRAY",
+          "similarity": 0.6817971874354606,
+          "content": "PostgreSQL 18 > 9.19. Array Functions and Operators\n\n**Table 9.57. Array Functions**\n\n| Function  Description  Example(s) |\n| --- |\n| `array_replace` ( `anycompatiblearray`, `anycompatible`, `anycompatible` ) → `anycompatiblearray`  Replaces each array element equal to the second argument with the third argument.  `array_replace(ARRAY[1,2,5,4], 5, 3)` → `{1,2,3,4}` |\n| `array_reverse` ( `anyarray` ) → `anyarray`  Reverses the first dimension of the array.  `array_reverse(ARRAY[[1,2],[3,4],[5,6]])` → `{{5,6},{3,4},{1,2}}` |\n| `array_sample` ( *`array`* `anyarray`, *`n`* `integer` ) → `anyarray`  Returns an array of *`n`* items randomly selected from *`array`*. *`n`* may not exceed the length of *`array`*'s first dimension. If *`array`* is multi-dimensional, an “item” is a slice having a given first subscript.  `array_sample(ARRAY[1,2,3,4,5,6], 3)` → `{2,6,1}`  `array_sample(ARRAY[[1,2],[3,4],[5,6]], 2)` → `{{5,6},{1,2}}` |\n| `array_shuffle` ( `anyarray` ) → `anyarray`  Randomly shuffles the first dimension of the array.  `array_shuffle(ARRAY[[1,2],[3,4],[5,6]])` → `{{5,6},{1,2},{3,4}}` |"
+        },
+        {
+          "id": "18:functions-array.html#7",
+          "version": 18,
+          "versions": [
+            18
+          ],
+          "page": "functions-array.html",
+          "url": "https://www.postgresql.org/docs/18/functions-array.html#FUNCTIONS-ARRAY",
+          "similarity": 0.6601493555351903,
+          "content": "PostgreSQL 18 > 9.19. Array Functions and Operators\n\n**Table 9.57. Array Functions**\n\n| Function  Description  Example(s) |\n| --- |\n| `array_sort` ( *`array`* `anyarray` [, *`descending`* `boolean` [, *`nulls_first`* `boolean` ]] ) → `anyarray`  Sorts the first dimension of the array. The sort order is determined by the default sort ordering of the array's element type; however, if the element type is collatable, the collation to use can be specified by adding a `COLLATE` clause to the *`array`* argument.  If *`descending`* is true then sort in descending order, otherwise ascending order. If omitted, the default is ascending order. If *`nulls_first`* is true then nulls appear before non-null values, otherwise nulls appear after non-null values. If omitted, *`nulls_first`* is taken to have the same value as *`descending`*.  `array_sort(ARRAY[[2,4],[2,1],[6,5]])` → `{{2,1},{2,4},{6,5}}` |"
+        }
+      ],
+      "version_presence": {
+        "array_sample": [
+          16,
+          17,
+          18
+        ],
+        "array_shuffle": [
+          16,
+          17,
+          18
+        ]
+      },
+      "answer": "Based on the provided documentation, `array_sample` and `array_shuffle` are available in PostgreSQL 16, 17, and 18 [1][2][3][4][5][6]. The term search confirms their presence in all three versions (16, 17, and 18) [Term search]. Since they are present in version 16, they are available in 16, 17, and 18 and may be older. The provided excerpts do not specify which version originally introduced them, only that they are present in 16.",
+      "seconds": 2.26
+    },
+    {
+      "id": "q081",
+      "category": "version_diff",
+      "question": "Since which version can uuid_extract_timestamp read timestamps from version 7 UUIDs?",
+      "chunks": [
+        {
+          "id": "16:functions-datetime.html#21",
+          "version": 16,
+          "versions": [
+            16,
+            17
+          ],
+          "page": "functions-datetime.html",
+          "url": "https://www.postgresql.org/docs/16/functions-datetime.html#FUNCTIONS-DATETIME-EXTRACT",
+          "similarity": 0.7129118017606866,
+          "content": "PostgreSQL 16 > 9.9. Date/Time Functions and Operators > 9.9.1. `EXTRACT`, `date_part`\n\n    Beware that applying `to_timestamp` to an epoch extracted from a `date` or `timestamp` value could produce a misleading result: the result will effectively assume that the original value had been given in UTC, which might not be the case.\n\n`hour`\n:   The hour field (0–23 in timestamps, unrestricted in intervals)\n\n    ```\n    SELECT EXTRACT(HOUR FROM TIMESTAMP '2001-02-16 20:38:40');\n    Result: 20\n    ```\n\n`isodow`\n:   The day of the week as Monday (`1`) to Sunday (`7`)\n\n    ```\n    SELECT EXTRACT(ISODOW FROM TIMESTAMP '2001-02-18 20:38:40');\n    Result: 7\n    ```\n\n    This is identical to `dow` except for Sunday. This matches the ISO 8601 day of the week numbering.\n\n`isoyear`\n:   The ISO 8601 week-numbering year that the date falls in\n\n    ```\n    SELECT EXTRACT(ISOYEAR FROM DATE '2006-01-01');\n    Result: 2005\n    SELECT EXTRACT(ISOYEAR FROM DATE '2006-01-02');\n    Result: 2006\n    ```\n\n    Each ISO 8601 week-numbering year begins with the Monday of the week containing the 4th of January, so in early January or late December the ISO year may be different from the Gregorian year. See the `week` field for more information.\n\n`julian`\n:   The *Julian Date* corresponding to the date or timestamp. Timestamps that are not local midnight result in a fractional value. See [Section B.7](datetime-julian-dates.html \"B.7. Julian Dates\") for more information.\n\n    ```\n    SELECT EXTRACT(JULIAN FROM DATE '2006-01-01');\n    Result: 2453737\n    SELECT EXTRACT(JULIAN FROM TIMESTAMP '2006-01-01 12:00');\n    Result: 2453737.50000000000000000000\n    ```"
+        },
+        {
+          "id": "16:functions-datetime.html#18",
+          "version": 16,
+          "versions": [
+            16
+          ],
+          "page": "functions-datetime.html",
+          "url": "https://www.postgresql.org/docs/16/functions-datetime.html#FUNCTIONS-DATETIME",
+          "similarity": 0.6969007795630504,
+          "content": "PostgreSQL 16 > 9.9. Date/Time Functions and Operators\n\n```\nSELECT EXTRACT(EPOCH FROM timestamptz '2013-07-01 12:00:00') -\n       EXTRACT(EPOCH FROM timestamptz '2013-03-01 12:00:00');\nResult: 10537200.000000\nSELECT (EXTRACT(EPOCH FROM timestamptz '2013-07-01 12:00:00') -\n        EXTRACT(EPOCH FROM timestamptz '2013-03-01 12:00:00'))\n        / 60 / 60 / 24;\nResult: 121.9583333333333333\nSELECT timestamptz '2013-07-01 12:00:00' - timestamptz '2013-03-01 12:00:00';\nResult: 121 days 23:00:00\nSELECT age(timestamptz '2013-07-01 12:00:00', timestamptz '2013-03-01 12:00:00');\nResult: 4 mons\n```"
+        },
+        {
+          "id": "17:functions-uuid.html#0",
+          "version": 17,
+          "versions": [
+            17
+          ],
+          "page": "functions-uuid.html",
+          "url": "https://www.postgresql.org/docs/17/functions-uuid.html",
+          "similarity": 0.7326834957192258,
+          "content": "PostgreSQL 17 > 9.14. UUID Functions\n\n## 9.14. UUID Functions\n\nPostgreSQL includes one function to generate a UUID:\n\n```\ngen_random_uuid () → uuid\n```\n\nThis function returns a version 4 (random) UUID. This is the most commonly used type of UUID and is appropriate for most applications.\n\nThe [uuid-ossp](uuid-ossp.html \"F.47. uuid-ossp — a UUID generator\") module provides additional functions that implement other standard algorithms for generating UUIDs.\n\nThere are also functions to extract data from UUIDs:\n\n```\nuuid_extract_timestamp (uuid) → timestamp with time zone\n```\n\nThis function extracts a `timestamp with time zone` from UUID version 1. For other versions, this function returns null. Note that the extracted timestamp is not necessarily exactly equal to the time the UUID was generated; this depends on the implementation that generated the UUID.\n\n```\nuuid_extract_version (uuid) → smallint\n```\n\nThis function extracts the version from a UUID of the variant described by [RFC 4122](https://datatracker.ietf.org/doc/html/rfc4122). For other variants, this function returns null. For example, for a UUID generated by `gen_random_uuid`, this function will return 4.\n\nPostgreSQL also provides the usual comparison operators shown in [Table 9.1](functions-comparison.html#FUNCTIONS-COMPARISON-OP-TABLE \"Table 9.1. Comparison Operators\") for UUIDs."
+        },
+        {
+          "id": "18:functions-uuid.html#2",
+          "version": 18,
+          "versions": [
+            18
+          ],
+          "page": "functions-uuid.html",
+          "url": "https://www.postgresql.org/docs/18/functions-uuid.html#FUNCTIONS-UUID",
+          "similarity": 0.7921532988548335,
+          "content": "PostgreSQL 18 > 9.14. UUID Functions > Note\n\n**Table 9.46. UUID Extraction Functions**\n\n| Function  Description  Example(s) |\n| --- |\n| `uuid_extract_timestamp` ( `uuid` ) → `timestamp with time zone`  Extracts a `timestamp with time zone` from a UUID of version 1 or 7. For other versions, this function returns null. Note that the extracted timestamp is not necessarily exactly equal to the time the UUID was generated; this depends on the implementation that generated the UUID.  `uuid_extract_timestamp('019535d9-3df7-79fb-b466-​fa907fa17f9e'::uuid)` → `2025-02-23 21:46:24.503-05` |\n| `uuid_extract_version` ( `uuid` ) → `smallint`  Extracts the version from a UUID of one of the variants described by [RFC 9562](https://datatracker.ietf.org/doc/html/rfc9562). For other variants, this function returns null. For example, for a UUID generated by `gen_random_uuid()`, this function will return 4.  `uuid_extract_version('41db1265-8bc1-4ab3-992f-​885799a4af1d'::uuid)` → `4`  `uuid_extract_version('019535d9-3df7-79fb-b466-​fa907fa17f9e'::uuid)` → `7` |\n\nPostgreSQL also provides the usual comparison operators shown in [Table 9.1](functions-comparison.html#FUNCTIONS-COMPARISON-OP-TABLE \"Table 9.1. Comparison Operators\") for UUIDs.\n\nSee [Section 8.12](datatype-uuid.html \"8.12. UUID Type\") for details on the data type `uuid` in PostgreSQL."
+        },
+        {
+          "id": "18:functions-uuid.html#0",
+          "version": 18,
+          "versions": [
+            18
+          ],
+          "page": "functions-uuid.html",
+          "url": "https://www.postgresql.org/docs/18/functions-uuid.html#FUNCTIONS-UUID",
+          "similarity": 0.7273686690706821,
+          "content": "PostgreSQL 18 > 9.14. UUID Functions\n\n## 9.14. UUID Functions\n\n[Table 9.45](functions-uuid.html#FUNC_UUID_GEN_TABLE \"Table 9.45. UUID Generation Functions\") shows the PostgreSQL functions that can be used to generate UUIDs.\n\n**Table 9.45. UUID Generation Functions**\n\n| Function  Description  Example(s) |\n| --- |\n| `gen_random_uuid` ( ) → `uuid`  `uuidv4` ( ) → `uuid`  Generates a version 4 (random) UUID  `gen_random_uuid()` → `5b30857f-0bfa-48b5-ac0b-5c64e28078d1`  `uuidv4()` → `b42410ee-132f-42ee-9e4f-09a6485c95b8` |\n| `uuidv7` ( [ *`shift`* `interval` ] ) → `uuid`  Generates a version 7 (time-ordered) UUID. The timestamp is computed using UNIX timestamp with millisecond precision + sub-millisecond timestamp + random. The optional parameter *`shift`* will shift the computed timestamp by the given `interval`. Infinite interval values are not accepted. The shifted timestamp must fall within the range supported by UUID version 7's 48-bit millisecond timestamp field: from 1970-01-01 00:00:00 UTC to approximately year 10889. An error is raised if the resulting timestamp is outside this range.  `uuidv7()` → `019535d9-3df7-79fb-b466-fa907fa17f9e` |"
+        }
+      ],
+      "version_presence": {
+        "uuid_extract_timestamp": [
+          17,
+          18
+        ]
+      },
+      "answer": "Based on the provided documentation, `uuid_extract_timestamp` can read timestamps from version 7 UUIDs starting in **PostgreSQL 18**.\n\n*   In **PostgreSQL 17**, the function `uuid_extract_timestamp` extracts a timestamp from UUID version 1 only; for other versions, it returns null [3].\n*   In **PostgreSQL 18**, the function extracts a timestamp from UUIDs of version 1 **or 7** [4].\n\nTherefore, support for version 7 UUIDs was added in PostgreSQL 18.",
+      "seconds": 2.2
+    },
+    {
+      "id": "q082",
+      "category": "version_diff",
+      "question": "Which version added the gamma and lgamma functions?",
+      "chunks": [
+        {
+          "id": "16:functions-geometry.html#0",
+          "version": 16,
+          "versions": [
+            16,
+            17
+          ],
+          "page": "functions-geometry.html",
+          "url": "https://www.postgresql.org/docs/16/functions-geometry.html#FUNCTIONS-GEOMETRY",
+          "similarity": 0.6689275305824012,
+          "content": "PostgreSQL 16 > 9.11. Geometric Functions and Operators\n\n## 9.11. Geometric Functions and Operators\n\nThe geometric types `point`, `box`, `lseg`, `line`, `path`, `polygon`, and `circle` have a large set of native support functions and operators, shown in [Table 9.36](functions-geometry.html#FUNCTIONS-GEOMETRY-OP-TABLE \"Table 9.36. Geometric Operators\"), [Table 9.37](functions-geometry.html#FUNCTIONS-GEOMETRY-FUNC-TABLE \"Table 9.37. Geometric Functions\"), and [Table 9.38](functions-geometry.html#FUNCTIONS-GEOMETRY-CONV-TABLE \"Table 9.38. Geometric Type Conversion Functions\")."
+        },
+        {
+          "id": "16:functions-admin.html#35",
+          "version": 16,
+          "versions": [
+            16
+          ],
+          "page": "functions-admin.html",
+          "url": "https://www.postgresql.org/docs/16/functions-admin.html#FUNCTIONS-ADMIN-DBOBJECT",
+          "similarity": 0.6356152674922518,
+          "content": "PostgreSQL 16 > 9.27. System Administration Functions > 9.27.7. Database Object Management Functions\n\n**Table 9.98. Collation Management Functions**\n\n| Function  Description |\n| --- |\n| `pg_import_system_collations` ( *`schema`* `regnamespace` ) → `integer`  Adds collations to the system catalog `pg_collation` based on all the locales it finds in the operating system. This is what `initdb` uses; see [Section 24.2.2](collation.html#COLLATION-MANAGING \"24.2.2. Managing Collations\") for more details. If additional locales are installed into the operating system later on, this function can be run again to add collations for the new locales. Locales that match existing entries in `pg_collation` will be skipped. (But collation objects based on locales that are no longer present in the operating system are not removed by this function.) The *`schema`* parameter would typically be `pg_catalog`, but that is not a requirement; the collations could be installed into some other schema as well. The function returns the number of new collation objects it created. Use of this function is restricted to superusers. |\n\n[Table 9.99](functions-admin.html#FUNCTIONS-INFO-PARTITION \"Table 9.99. Partitioning Information Functions\") lists functions that provide information about the structure of partitioned tables."
+        },
+        {
+          "id": "17:functions-info.html#51",
+          "version": 17,
+          "versions": [
+            17
+          ],
+          "page": "functions-info.html",
+          "url": "https://www.postgresql.org/docs/17/functions-info.html#FUNCTIONS-INFO-VERSION",
+          "similarity": 0.6739671022931263,
+          "content": "PostgreSQL 17 > 9.27. System Information Functions and Operators > 9.27.11. Version Information Functions\n\n### 9.27.11. Version Information Functions\n\nThe functions shown in [Table 9.91](functions-info.html#FUNCTIONS-VERSION \"Table 9.91. Version Information Functions\") print version information.\n\n**Table 9.91. Version Information Functions**\n\n| Function  Description |\n| --- |\n| `version` () → `text`  Returns a string describing the PostgreSQL server's version. You can also get this information from [server\\_version](runtime-config-preset.html#GUC-SERVER-VERSION), or for a machine-readable version use [server\\_version\\_num](runtime-config-preset.html#GUC-SERVER-VERSION-NUM). Software developers should use `server_version_num` (available since 8.2) or [`PQserverVersion`](libpq-status.html#LIBPQ-PQSERVERVERSION) instead of parsing the text version. |\n| `unicode_version` () → `text`  Returns a string representing the version of Unicode used by PostgreSQL. |\n| `icu_unicode_version` () → `text`  Returns a string representing the version of Unicode used by ICU, if the server was built with ICU support; otherwise returns `NULL` |"
+        },
+        {
+          "id": "18:functions-math.html#6",
+          "version": 18,
+          "versions": [
+            18
+          ],
+          "page": "functions-math.html",
+          "url": "https://www.postgresql.org/docs/18/functions-math.html#FUNCTIONS-MATH",
+          "similarity": 0.7127403788125302,
+          "content": "PostgreSQL 18 > 9.3. Mathematical Functions and Operators\n\n**Table 9.5. Mathematical Functions**\n\n| Function  Description  Example(s) |\n| --- |\n| `lgamma` ( `double precision` ) → `double precision`  Natural logarithm of the absolute value of the gamma function  `lgamma(1000)` → `5905.220423209181` |\n| `ln` ( `numeric` ) → `numeric`  `ln` ( `double precision` ) → `double precision`  Natural logarithm  `ln(2.0)` → `0.6931471805599453` |\n| `log` ( `numeric` ) → `numeric`  `log` ( `double precision` ) → `double precision`  Base 10 logarithm  `log(100)` → `2` |\n| `log10` ( `numeric` ) → `numeric`  `log10` ( `double precision` ) → `double precision`  Base 10 logarithm (same as `log`)  `log10(1000)` → `3` |\n| `log` ( *`b`* `numeric`, *`x`* `numeric` ) → `numeric`  Logarithm of *`x`* to base *`b`*  `log(2.0, 64.0)` → `6.0000000000000000` |\n| `min_scale` ( `numeric` ) → `integer`  Minimum scale (number of fractional decimal digits) needed to represent the supplied value precisely  `min_scale(8.4100)` → `2` |"
+        },
+        {
+          "id": "18:functions-info.html#53",
+          "version": 18,
+          "versions": [
+            18
+          ],
+          "page": "functions-info.html",
+          "url": "https://www.postgresql.org/docs/18/functions-info.html#FUNCTIONS-INFO-VERSION",
+          "similarity": 0.6695820891359007,
+          "content": "PostgreSQL 18 > 9.27. System Information Functions and Operators > 9.27.11. Version Information Functions\n\n### 9.27.11. Version Information Functions\n\nThe functions shown in [Table 9.93](functions-info.html#FUNCTIONS-VERSION \"Table 9.93. Version Information Functions\") print version information.\n\n**Table 9.93. Version Information Functions**\n\n| Function  Description |\n| --- |\n| `version` () → `text`  Returns a string describing the PostgreSQL server's version. You can also get this information from [server\\_version](runtime-config-preset.html#GUC-SERVER-VERSION), or for a machine-readable version use [server\\_version\\_num](runtime-config-preset.html#GUC-SERVER-VERSION-NUM). Software developers should use `server_version_num` (available since 8.2) or [`PQserverVersion`](libpq-status.html#LIBPQ-PQSERVERVERSION) instead of parsing the text version. |\n| `unicode_version` () → `text`  Returns a string representing the version of Unicode used by PostgreSQL. |\n| `icu_unicode_version` () → `text`  Returns a string representing the version of Unicode used by ICU, if the server was built with ICU support; otherwise returns `NULL` |"
+        }
+      ],
+      "version_presence": {
+        "gamma": [
+          18
+        ],
+        "lgamma": [
+          18
+        ]
+      },
+      "answer": "The `lgamma` function was added in PostgreSQL 18 [4].\n\nThe term search indicates that `gamma` is present in PostgreSQL 18 but not in 16 or 17 [Term search]. However, the provided documentation excerpts for PostgreSQL 18 do not list a `gamma` function in the Mathematical Functions table (Table 9.5) [4]. Therefore, while the term search confirms its presence in version 18, the specific documentation excerpt provided does not describe the `gamma` function itself.\n\nThe `lgamma` function is explicitly documented as available in PostgreSQL 18 [4]. It is not listed in the excerpts for PostgreSQL 16 or 17.\n\nSummary:\n- **PostgreSQL 18**: Added `lgamma` [4] and contains `gamma` (per term search) [Term search].\n- **PostgreSQL 16, 17**: Do not contain `gamma` or `lgamma` (per term search) [Term search].",
+      "seconds": 3.62
+    }
+  ]
+}

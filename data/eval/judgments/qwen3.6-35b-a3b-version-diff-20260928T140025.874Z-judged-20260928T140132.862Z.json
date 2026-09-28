@@ -1,0 +1,513 @@
+{
+  "timestamp": "20260928T140132.862Z",
+  "git_commit": "07fb655",
+  "answers_file": "data/eval/answers/qwen3.6-35b-a3b-version-diff-20260928T140025.874Z.json",
+  "name": "qwen3.6-35b-a3b-version-diff",
+  "served_model": "/models/Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf",
+  "judge_url": "http://192.168.3.195:8095/v1/chat/completions",
+  "overall_answerable": {
+    "n": 14,
+    "graded": 14,
+    "correct": 0.5714285714285714,
+    "partial": 0.35714285714285715,
+    "incorrect": 0.07142857142857142,
+    "refused": 0.0,
+    "faithfulness": 0.9761904761904762,
+    "fully_faithful": 0.9285714285714286,
+    "bad_citations": 0
+  },
+  "by_category": {
+    "version_diff": {
+      "n": 14,
+      "graded": 14,
+      "correct": 0.5714285714285714,
+      "partial": 0.35714285714285715,
+      "incorrect": 0.07142857142857142,
+      "refused": 0.0,
+      "faithfulness": 0.9761904761904762,
+      "fully_faithful": 0.9285714285714286,
+      "bad_citations": 0
+    }
+  },
+  "questions": [
+    {
+      "id": "q069",
+      "category": "version_diff",
+      "bad_citations": [],
+      "cited": 3,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "PostgreSQL 18 added the RETURNING clause to MERGE.",
+            "support": "supported",
+            "reference": "contradicts"
+          },
+          {
+            "claim": "In PostgreSQL 16 and 17, MERGE did not support a RETURNING clause.",
+            "support": "supported",
+            "reference": "contradicts"
+          }
+        ],
+        "coverage": "none",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "incorrect",
+      "claims": 2,
+      "supported": 2
+    },
+    {
+      "id": "q070",
+      "category": "version_diff",
+      "bad_citations": [],
+      "cited": 2,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "JSON_TABLE was introduced in PostgreSQL 17.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "JSON_TABLE is available in PostgreSQL 17 and 18.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "JSON_TABLE is not available in PostgreSQL 16.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 3,
+      "supported": 3
+    },
+    {
+      "id": "q071",
+      "category": "version_diff",
+      "bad_citations": [],
+      "cited": 7,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "uuidv4() was added in PostgreSQL 18.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "uuidv4() is not available in PostgreSQL 16 or 17.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "uuidv7() was added in PostgreSQL 18.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "uuidv7() is not available in PostgreSQL 16 or 17.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "In PostgreSQL 18, uuidv4() generates a version 4 (random) UUID.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "In PostgreSQL 18, uuidv7() generates a version 7 (time-ordered) UUID.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 6,
+      "supported": 6
+    },
+    {
+      "id": "q072",
+      "category": "version_diff",
+      "bad_citations": [],
+      "cited": 1,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The casefold() function was added in PostgreSQL 18.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The casefold() function is not available in PostgreSQL 16 or 17.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 2,
+      "supported": 2
+    },
+    {
+      "id": "q073",
+      "category": "version_diff",
+      "bad_citations": [],
+      "cited": 2,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The SERIALIZE option for EXPLAIN is supported starting in PostgreSQL 17.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The SERIALIZE option is not available in PostgreSQL 16.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 2,
+      "supported": 2
+    },
+    {
+      "id": "q074",
+      "category": "version_diff",
+      "bad_citations": [],
+      "cited": 3,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The `any_value` aggregate function is available in PostgreSQL 16.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The `any_value` aggregate function is available in PostgreSQL 17.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The `any_value` aggregate function is available in PostgreSQL 18.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "partial",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "partial",
+      "claims": 3,
+      "supported": 3
+    },
+    {
+      "id": "q075",
+      "category": "version_diff",
+      "bad_citations": [],
+      "cited": 0,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "SET EXPRESSION is available in PostgreSQL 17 and 18.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "SET EXPRESSION is not available in PostgreSQL 16.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The feature was added in PostgreSQL 17.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The provided excerpts do not contain the specific description for SET EXPRESSION to confirm the syntax or details.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 4,
+      "supported": 4
+    },
+    {
+      "id": "q076",
+      "category": "version_diff",
+      "bad_citations": [],
+      "cited": 2,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The `crc32` and `crc32c` functions were added in PostgreSQL 18.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The `crc32` and `crc32c` functions are not available in PostgreSQL 16 or 17.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "partial",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "partial",
+      "claims": 2,
+      "supported": 2
+    },
+    {
+      "id": "q077",
+      "category": "version_diff",
+      "bad_citations": [],
+      "cited": 0,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The `NOT ENFORCED` clause is available in PostgreSQL 18.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The `NOT ENFORCED` clause is not present in PostgreSQL 16 or 17.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "A NOT ENFORCED constraint is recorded but not checked.",
+            "support": "unsupported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "partial",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "partial",
+      "claims": 3,
+      "supported": 2
+    },
+    {
+      "id": "q078",
+      "category": "version_diff",
+      "bad_citations": [],
+      "cited": 2,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The AT LOCAL operator was added in PostgreSQL 17.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The AT LOCAL operator is available in versions 17 and 18.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The AT LOCAL operator is not available in version 16.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "partial",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "partial",
+      "claims": 3,
+      "supported": 3
+    },
+    {
+      "id": "q079",
+      "category": "version_diff",
+      "bad_citations": [],
+      "cited": 4,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The `strip_in_arrays` parameter was added in PostgreSQL 18.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The term search indicates that `strip_in_arrays` is present in version 18 but not in 16 or 17.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The documentation for PostgreSQL 18 shows the function signature `json_strip_nulls ( target json [,strip_in_arrays boolean] )`.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The documentation for PostgreSQL 16 shows the signature without this parameter: `json_strip_nulls ( json )`.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The documentation for PostgreSQL 17 shows the signature without this parameter: `json_strip_nulls ( json )`.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 5,
+      "supported": 5
+    },
+    {
+      "id": "q080",
+      "category": "version_diff",
+      "bad_citations": [],
+      "cited": 6,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "array_sample and array_shuffle are available in PostgreSQL 16, 17, and 18.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The provided excerpts do not specify which version originally introduced them.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The excerpts only confirm their presence in version 16 (and later).",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 3,
+      "supported": 3
+    },
+    {
+      "id": "q081",
+      "category": "version_diff",
+      "bad_citations": [],
+      "cited": 2,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "uuid_extract_timestamp can read timestamps from version 7 UUIDs starting in PostgreSQL 18.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "In PostgreSQL 17, uuid_extract_timestamp extracts a timestamp from UUID version 1 only.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "In PostgreSQL 17, uuid_extract_timestamp returns null for other versions.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "In PostgreSQL 18, uuid_extract_timestamp extracts a timestamp from UUIDs of version 1 or 7.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "In PostgreSQL 18, uuid_extract_timestamp returns null for other versions.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 5,
+      "supported": 5
+    },
+    {
+      "id": "q082",
+      "category": "version_diff",
+      "bad_citations": [],
+      "cited": 4,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The `lgamma` function was added in PostgreSQL 18.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The term search indicates that `gamma` is present in PostgreSQL 18 but not in 16 or 17.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The provided documentation excerpts for PostgreSQL 18 do not list a `gamma` function in the Mathematical Functions table (Table 9.5).",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The `lgamma` function is explicitly documented as available in PostgreSQL 18.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The `lgamma` function is not listed in the excerpts for PostgreSQL 16 or 17.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "PostgreSQL 18 added `lgamma`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "PostgreSQL 18 contains `gamma` (per term search).",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "PostgreSQL 16 and 17 do not contain `gamma` or `lgamma`.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "partial",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "partial",
+      "claims": 8,
+      "supported": 8
+    }
+  ]
+}
