@@ -69,7 +69,7 @@ question ──embed──▶ nearest chunks ───────────�
 | cross_page | 10 | Answers spread across several pages |
 | unanswerable | 8 | Topics outside the corpus, for later "I don't know" handling |
 
-Labels are page-level (`18:sql-merge.html`) so they survive re-chunking. Every label carries a quote that `validate_questions.py` checks against the corpus; version questions also carry quotes that must be *absent* from the versions lacking the feature.
+Labels are page-level (`18:sql-merge.html`) so they survive re-chunking. Every label carries a quote from the passage that answers the question (or a list of quotes when several passages do), which `validate_questions.py` checks against the corpus; version questions also carry quotes that must be *absent* from the versions lacking the feature.
 
 Results (vector search, top 10, 92 answerable questions). `eval_retrieval.py` runs the same search code as `/query`; with dedup, a merged result counts for every version it lists:
 
@@ -80,9 +80,20 @@ Results (vector search, top 10, 92 answerable questions). `eval_retrieval.py` ru
 | + cross-version dedup | 0.71 | 0.93 | 0.96 | 0.797 |
 | + version filter + dedup (what `/query` does) | 0.72 | 0.93 | 0.96 | 0.808 |
 
+A page-level hit overstates retrieval on long pages: `functions-json.html` has 85 chunks, and any of them counts. The chunk-level hit also requires the retrieved chunk to contain one of the page's evidence quotes, i.e. the passage that actually answers the question:
+
+| Chunk-level | hit@1 | hit@5 | hit@10 | MRR |
+|---|---|---|---|---|
+| Vector search | 0.54 | 0.74 | 0.84 | 0.618 |
+| + version filter | 0.55 | 0.74 | 0.85 | 0.632 |
+| + cross-version dedup | 0.54 | 0.84 | 0.87 | 0.656 |
+| + version filter + dedup (what `/query` does) | 0.55 | 0.84 | 0.88 | 0.665 |
+
+The quotes were first single words (`rows`, `WHERE`, `GRANT`) found in up to 37 chunks of their page, which made a chunk hit almost free; they are now the answering sentence, found in exactly one chunk per version. With `/query`'s settings, 7 questions retrieve the right page but none of its answering chunks in the top 10 (`->>`, `pg_total_relation_size`, `pg_cancel_backend`, among others).
+
 All rows use `ef_search = 200`. With pgvector's default of 40 (the first measurements) the same four rows had MRR 0.721, 0.736, 0.749 and 0.759: part of what looked like embedding-model misses was the index skipping the right chunk (see HNSW recall).
 
-Paraphrased questions are the weak spot (hit@5 0.82 with dedup, but hit@1 only 0.43): the right page is usually retrieved but not ranked first, which reranking targets next. Top-1 similarity barely separates answerable questions (median 0.757) from unanswerable ones (median 0.711), so a similarity threshold alone won't detect out-of-scope questions.
+Paraphrased questions are the weak spot (hit@5 0.82 with dedup, but hit@1 only 0.43; at chunk level hit@5 0.68 and hit@1 0.25): the right page is usually retrieved but not ranked first, and often not the passage that answers, which reranking targets next. Top-1 similarity barely separates answerable questions (median 0.757) from unanswerable ones (median 0.711), so a similarity threshold alone won't detect out-of-scope questions.
 
 ### Answer quality
 
@@ -111,7 +122,7 @@ Two models answering, both judged by Qwen3.6-35B-A3B (92 answerable questions): 
 
 Both models declined all 8 unanswerable questions without invented facts. The 9B is close overall; it falls behind on cross_page (mostly partial answers that cover one of the pages) and on version_diff, where it makes the most mistakes: it claims JSON_TABLE, EXPLAIN SERIALIZE and NOT ENFORCED exist in PostgreSQL 16 (incorrect 0.21 vs 0.07). The 35B's own errors include virtual generated columns in 17 and EXPLAIN SERIALIZE in 16.
 
-Of the 35B's 16 refused answerable questions, 6 had no expected page in the top 5 (a correct refusal of bad retrieval), 3 had the right page but not the chunk with the answer (e.g. `functions-json.html` without the `->>` row: page-level hit@k overstates retrieval on long pages), and 6 were "which version added X?" questions. The docs never say "added in 17", and 5 chunks can't show that a feature is *absent* from 16, so the model declines to infer it. Retrieval, not the model, is the main limit.
+Of the 35B's 16 refused answerable questions, 6 had no expected page in the top 5 (a correct refusal of bad retrieval), 3 had the right page but not the chunk with the answer (e.g. `functions-json.html` without the `->>` row, which the chunk-level hit now measures), and 6 were "which version added X?" questions. The docs never say "added in 17", and 5 chunks can't show that a feature is *absent* from 16, so the model declines to infer it. Retrieval, not the model, is the main limit.
 
 **Checking the judge.** `hand_grade.py` picks 21 judged answers stratified by verdict and category and writes a local web page to grade them blind (question, reference, excerpts and answer, no verdict). Blind agreement with the judge was low: 7/21 (33%), Cohen's kappa 0.08. Most of the gap was the rubric, not the judge: the hand grades marked "declined although the answer exists" as `incorrect` where the rubric says `refused`, and drew the correct/partial line differently. A second page shows each disagreement with both grades and the judge's labels, and the hand grades were settled after reading them. The disagreements and the 9B run also exposed judge bugs (notes counted as contradictions, conflicts with the excerpts graded as wrong answers, clean refusals missed), fixed with the per-claim reference labels and verdict rules above. The current judge agrees with 18/21 settled grades (86%, kappa 0.80), an upper bound since the grades were settled after seeing the judge's reasoning. One remaining judge error: it accepted "a primary key can't prevent overlaps, use EXCLUDE" for a PostgreSQL 18 question whose answer is `PRIMARY KEY (..., WITHOUT OVERLAPS)`.
 
@@ -214,7 +225,7 @@ fetch_parse_docs.py   crawl postgresql.org and convert pages to markdown
 chunk_docs.py         split pages into embedding-sized chunks
 embed_ingest.py       load into Postgres and embed chunks
 validate_questions.py check eval labels against the corpus
-eval_retrieval.py     retrieval metrics (hit@k, MRR) on the eval set
+eval_retrieval.py     retrieval metrics (hit@k, MRR, page- and chunk-level) on the eval set
 generate_answers.py   answer every eval question with an LLM
 judge_answers.py      grade saved answers with an LLM judge and citation checks
 hand_grade.py         blind hand-grading page and agreement with the judge
