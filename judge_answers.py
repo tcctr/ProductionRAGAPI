@@ -116,14 +116,18 @@ def contradictions(grade: dict) -> list[str]:
     return [c["claim"] for c in grade["claims"] if c["reference"] == "contradicts"]
 
 
-def verdict(category: str, grade: dict) -> str:
+def verdict(category: str, grade: dict, refusal_phrase: bool = False) -> str:
     unsupported = any(c["support"] == "unsupported" for c in grade["claims"])
     if category == "unanswerable":
-        # Declining is the right answer, but not if it then answers anyway from memory.
-        return "correct" if declined(grade) and not unsupported else "incorrect"
+        # Declining is the right answer, but not if it then answers anyway from memory. The judge
+        # misses some clean refusals (q093), so an opening refusal phrase also counts as declining.
+        return "correct" if (declined(grade) or refusal_phrase) and not unsupported else "incorrect"
+    # A wrong claim outweighs a hedge: "the excerpts don't say, but it's in 16" is incorrect, not refused.
+    if contradictions(grade):
+        return "incorrect"
     if declined(grade):
         return "refused"
-    if contradictions(grade) or grade["coverage"] == "none":
+    if grade["coverage"] == "none":
         return "incorrect"
     return "correct" if grade["coverage"] == "full" else "partial"
 
@@ -180,7 +184,7 @@ def main() -> None:
             except (requests.RequestException, ValueError) as e:
                 row["skipped"] = "judge failed: " + str(e)
             else:
-                row.update(grade=grade, verdict=verdict(rec["category"], grade), claims=len(grade["claims"]),
+                row.update(grade=grade, verdict=verdict(rec["category"], grade, row["refusal_phrase"]), claims=len(grade["claims"]),
                            supported=sum(c["support"] == "supported" for c in grade["claims"]))
         rows.append(row)
         status = row.get("verdict") or "SKIPPED"
