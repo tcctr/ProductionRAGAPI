@@ -29,7 +29,7 @@ question ──embed──▶ nearest chunks ───────────�
 | Evaluation question set and retrieval eval | Done |
 | FastAPI `/ingest` and `/query` | Done |
 | Answer generation with a local LLM | Done |
-| Answer evaluation (LLM judge) | In progress |
+| Answer evaluation (LLM judge) | Done |
 | Hybrid search, reranking | Planned |
 | Auth, rate limiting, caching | Planned |
 | Observability, A/B testing | Planned |
@@ -89,23 +89,31 @@ Paraphrased questions are the weak spot (hit@5 0.82 with dedup, but hit@1 only 0
 `generate_answers.py` answers every question the way `/query` does (version filter + dedup, top 5) and saves each answer with the exact chunks the model saw. `judge_answers.py` then grades them:
 
 - **Free checks:** every `[n]` citation must point to a retrieved chunk, and a regex spots refusals ("the excerpts do not cover …") as a cross-check on the judge.
-- **LLM judge:** a local model gets the question, the reference answer, the numbered excerpts and the answer, and returns small labels constrained by a JSON schema (llama-server compiles it into a grammar, so the output always parses): each factual claim, SQL examples included, as supported or unsupported by the excerpts and as agreeing with, contradicting or not mentioned by the reference; coverage of the reference's key points (full/partial/none); and whether the answer says the excerpts don't answer the question. There is no free text beyond the claims: an earlier version had a free-text list of contradictions, and the judge filled it with notes like "the reference does not mention this", each of which counted as a contradiction. The verdict follows from fixed rules: a refusal is `refused` (correct only for unanswerable questions, and only with no unsupported claims), a contradiction or no coverage is `incorrect`, full coverage `correct`, partial coverage `partial`.
+- **LLM judge:** a local model gets the question, the reference answer, the numbered excerpts and the answer, and returns small labels constrained by a JSON schema (llama-server compiles it into a grammar, so the output always parses): each factual claim, SQL examples included, as supported or unsupported by the excerpts and as agreeing with, contradicting or not mentioned by the reference; coverage of the reference's key points (full/partial/none); and whether the answer says the excerpts don't answer the question. There is no free text beyond the claims: an earlier version had a free-text list of contradictions, and the judge filled it with notes like "the reference does not mention this", each of which counted as a contradiction. The verdict follows from fixed rules, in order: a claim that contradicts the reference is `incorrect` ("the excerpts don't say, but it's in 16" is a wrong answer, not a refusal); a refusal is `refused`; no coverage is `incorrect`; full coverage `correct`, partial `partial`. An unanswerable question is `correct` only if the answer declines (by the judge's label or the refusal regex, since the judge missed some clean refusals) with no unsupported claims. Contradicting claims that are themselves refusal sentences ("the excerpts do not state which version…") don't count: the judge sometimes labels them that way.
 
 Correctness and faithfulness are kept apart: an answer can match the reference and still add an unsupported SQL example, and the judge caught exactly that (an invalid `COPY ... ON_ERROR = ignore REJECT_LIMIT = 10`).
 
-First run, Qwen3.6-35B-A3B answering and judging its own answers (92 answerable questions):
+Two models answering, both judged by Qwen3.6-35B-A3B (92 answerable questions): Qwen3.6-35B-A3B (MoE, Q4, on a Linux PC) and Qwen3.5-9B (dense, Q8, on the Mac).
 
-| | correct | partial | incorrect | refused | faithfulness |
-|---|---|---|---|---|---|
-| overall | 0.55 | 0.20 | 0.07 | 0.18 | 0.97 |
-| direct | 0.77 | 0.23 | 0.00 | 0.00 | 1.00 |
-| version_specific | 0.81 | 0.06 | 0.12 | 0.00 | 0.97 |
-| paraphrase | 0.46 | 0.21 | 0.07 | 0.25 | 0.97 |
-| version_diff | 0.21 | 0.07 | 0.07 | 0.64 | 0.92 |
+| | correct | partial | incorrect | refused | faithfulness | s/answer |
+|---|---|---|---|---|---|---|
+| **35B-A3B** overall | 0.54 | 0.22 | 0.07 | 0.17 | 0.97 | 5.5 |
+| **9B** overall | 0.50 | 0.24 | 0.08 | 0.18 | 0.95 | 13.8 |
 
-All 8 unanswerable questions were refused without invented facts. Of the 17 refused answerable questions, 6 had no expected page in the top 5 (a correct refusal of bad retrieval), 3 had the right page but not the chunk with the answer (e.g. `functions-json.html` without the `->>` row: page-level hit@k overstates retrieval on long pages), and 7 were "which version added X?" questions. The docs never say "added in 17", and 5 chunks can't show that a feature is *absent* from 16, so the model declines to infer it. The judge also makes mistakes (it graded one answer that agreed with the reference as `incorrect`).
+| correct, by category | 35B-A3B | 9B |
+|---|---|---|
+| direct | 0.77 | 0.77 |
+| version_specific | 0.81 | 0.75 |
+| identifier | 0.64 | 0.55 |
+| paraphrase | 0.43 | 0.46 |
+| cross_page | 0.40 | 0.20 |
+| version_diff | 0.29 | 0.21 |
 
-**Checking the judge.** `hand_grade.py` picks 21 judged answers stratified by verdict and category and writes a local web page to grade them blind (question, reference, excerpts and answer, no verdict). Blind agreement with the judge was low: 7/21 (33%), Cohen's kappa 0.09. Most of the gap was the rubric, not the judge: the hand grades marked "declined although the answer exists" as `incorrect` where the rubric says `refused`, and drew the correct/partial line differently. A second page shows each disagreement with both grades and the judge's labels; after reading them the judge's grade held on all 14, so settled agreement is 21/21. That number is an upper bound (grades set after seeing the judge's reasoning), but it was enough to use the judge for comparing models. Next: the same run with a 9B dense model.
+Both models declined all 8 unanswerable questions without invented facts. The 9B is close overall; it falls behind on cross_page (mostly partial answers that cover one of the pages) and on version_diff, where it makes the most mistakes: it claims JSON_TABLE, EXPLAIN SERIALIZE and NOT ENFORCED exist in PostgreSQL 16 (incorrect 0.21 vs 0.07). The 35B's own errors include virtual generated columns in 17 and EXPLAIN SERIALIZE in 16.
+
+Of the 35B's 16 refused answerable questions, 6 had no expected page in the top 5 (a correct refusal of bad retrieval), 3 had the right page but not the chunk with the answer (e.g. `functions-json.html` without the `->>` row: page-level hit@k overstates retrieval on long pages), and 6 were "which version added X?" questions. The docs never say "added in 17", and 5 chunks can't show that a feature is *absent* from 16, so the model declines to infer it. Retrieval, not the model, is the main limit.
+
+**Checking the judge.** `hand_grade.py` picks 21 judged answers stratified by verdict and category and writes a local web page to grade them blind (question, reference, excerpts and answer, no verdict). Blind agreement with the judge was low: 7/21 (33%), Cohen's kappa 0.08. Most of the gap was the rubric, not the judge: the hand grades marked "declined although the answer exists" as `incorrect` where the rubric says `refused`, and drew the correct/partial line differently. A second page shows each disagreement with both grades and the judge's labels, and the hand grades were settled after reading them. The disagreements and the 9B run also exposed judge bugs (notes counted as contradictions, conflicts with the excerpts graded as wrong answers, clean refusals missed), fixed with the per-claim reference labels and verdict rules above. The current judge agrees with 18/21 settled grades (86%, kappa 0.80), an upper bound since the grades were settled after seeing the judge's reasoning. One remaining judge error: it accepted "a primary key can't prevent overlaps, use EXCLUDE" for a PostgreSQL 18 question whose answer is `PRIMARY KEY (..., WITHOUT OVERLAPS)`.
 
 ## Setup
 

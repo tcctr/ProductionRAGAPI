@@ -1,0 +1,5253 @@
+{
+  "timestamp": "20260928T120128.321Z",
+  "git_commit": "a4808dd",
+  "verdicts_rescored_at_commit": "1d0766f",
+  "answers_file": "data/eval/answers/qwen3.5-9b-20260927T205621.248Z.json",
+  "name": "qwen3.5-9b",
+  "served_model": "qwen3.5-9b",
+  "judge_url": "http://192.168.3.195:8095/v1/chat/completions",
+  "overall_answerable": {
+    "n": 92,
+    "graded": 92,
+    "correct": 0.5,
+    "partial": 0.2391304347826087,
+    "incorrect": 0.07608695652173914,
+    "refused": 0.18478260869565216,
+    "faithfulness": 0.9497009739337104,
+    "fully_faithful": 0.7717391304347826,
+    "bad_citations": 1
+  },
+  "by_category": {
+    "direct": {
+      "n": 13,
+      "graded": 13,
+      "correct": 0.7692307692307693,
+      "partial": 0.23076923076923078,
+      "incorrect": 0.0,
+      "refused": 0.0,
+      "faithfulness": 1.0,
+      "fully_faithful": 1.0,
+      "bad_citations": 0
+    },
+    "paraphrase": {
+      "n": 28,
+      "graded": 28,
+      "correct": 0.4642857142857143,
+      "partial": 0.21428571428571427,
+      "incorrect": 0.07142857142857142,
+      "refused": 0.25,
+      "faithfulness": 0.9459467120181406,
+      "fully_faithful": 0.7142857142857143,
+      "bad_citations": 0
+    },
+    "identifier": {
+      "n": 11,
+      "graded": 11,
+      "correct": 0.5454545454545454,
+      "partial": 0.36363636363636365,
+      "incorrect": 0.0,
+      "refused": 0.09090909090909091,
+      "faithfulness": 1.0,
+      "fully_faithful": 1.0,
+      "bad_citations": 0
+    },
+    "version_specific": {
+      "n": 16,
+      "graded": 16,
+      "correct": 0.75,
+      "partial": 0.125,
+      "incorrect": 0.0625,
+      "refused": 0.0625,
+      "faithfulness": 0.9416666666666667,
+      "fully_faithful": 0.75,
+      "bad_citations": 1
+    },
+    "version_diff": {
+      "n": 14,
+      "graded": 14,
+      "correct": 0.21428571428571427,
+      "partial": 0.0,
+      "incorrect": 0.21428571428571427,
+      "refused": 0.5714285714285714,
+      "faithfulness": 0.9212585034013605,
+      "fully_faithful": 0.7142857142857143,
+      "bad_citations": 0
+    },
+    "cross_page": {
+      "n": 10,
+      "graded": 10,
+      "correct": 0.2,
+      "partial": 0.7,
+      "incorrect": 0.1,
+      "refused": 0.0,
+      "faithfulness": 0.8921695951107715,
+      "fully_faithful": 0.5,
+      "bad_citations": 0
+    },
+    "unanswerable": {
+      "n": 8,
+      "graded": 8,
+      "correct": 1.0,
+      "partial": 0.0,
+      "incorrect": 0.0,
+      "refused": 0.0,
+      "faithfulness": 1.0,
+      "fully_faithful": 1.0,
+      "bad_citations": 0
+    }
+  },
+  "questions": [
+    {
+      "id": "q001",
+      "category": "direct",
+      "bad_citations": [],
+      "cited": 5,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The ABORT command rolls back the current transaction and causes all the updates made by the transaction to be discarded.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The ABORT command is identical in behavior to the standard SQL command ROLLBACK.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The ABORT command is present only for historical reasons.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Issuing ABORT outside of a transaction block emits a warning and otherwise has no effect.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "If AND CHAIN is specified, a new transaction is immediately started with the same transaction characteristics as the just finished one; otherwise, no new transaction is started.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "To successfully terminate a transaction, use COMMIT instead.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The syntax for ABORT is ABORT;",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 7,
+      "supported": 7
+    },
+    {
+      "id": "q002",
+      "category": "paraphrase",
+      "bad_citations": [],
+      "cited": 10,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "To build an index on a large table without blocking inserts and updates, you should use the `CONCURRENTLY` option with the `CREATE INDEX` command.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "By default, PostgreSQL blocks writes (`INSERT`, `UPDATE`, `DELETE`) until the index build is finished.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Using the `CONCURRENTLY` option allows normal operations, including writes, to continue while the index is being built.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "This method requires PostgreSQL to perform two scans of the table.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "This method requires waiting for existing transactions that could modify or use the index to terminate.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "This method takes significantly longer than a standard index build.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The process involves entering the index as 'invalid' into the system catalogs.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The process involves performing the scans, waiting for specific transactions to terminate, and finally marking the index 'valid'.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "If the build fails (e.g., due to a deadlock), the command leaves behind an 'invalid' index that consumes update overhead but is ignored for querying.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The recommended recovery is to drop the index and try again.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The SQL example `CREATE INDEX CONCURRENTLY index_name ON table_name (column_name);` is valid syntax.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "It cannot run inside a transaction block.",
+            "support": "unsupported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "partial",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "partial",
+      "claims": 12,
+      "supported": 11
+    },
+    {
+      "id": "q003",
+      "category": "direct",
+      "bad_citations": [],
+      "cited": 14,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "A plain VACUUM reclaims storage occupied by dead tuples and makes it available for re-use within the same table.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "A plain VACUUM does not return extra space to the operating system.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "VACUUM FULL rewrites the entire contents of the table into a new disk file with no extra space.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "VACUUM FULL allows unused space to be returned to the operating system.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "VACUUM FULL is much slower than a plain VACUUM.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "A plain VACUUM can operate in parallel with normal reading and writing of the table because it does not obtain an exclusive lock.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "VACUUM FULL requires an ACCESS EXCLUSIVE lock on each table while it is being processed.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Backends running a plain VACUUM report progress in the pg_stat_progress_vacuum view.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Backends running VACUUM FULL report progress in the pg_stat_progress_cluster view.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The FULL option is not recommended for routine use.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "VACUUM FULL might be useful in special cases, such as when most rows have been deleted or updated and the table needs to physically shrink.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 11,
+      "supported": 11
+    },
+    {
+      "id": "q004",
+      "category": "identifier",
+      "bad_citations": [],
+      "cited": 6,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "When RESTART IDENTITY is specified with TRUNCATE, it automatically restarts sequences owned by columns of the truncated table(s).",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The implied ALTER SEQUENCE RESTART operations are performed transactionally; they will be rolled back if the surrounding transaction does not commit.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "If additional sequence operations are performed on the restarted sequences before the transaction rolls back, the effects of those operations on the sequences are rolled back, but the effects on currval() are not.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "When RESTART IDENTITY is specified, any sequences that are to be restarted are likewise locked exclusively.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "partial",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "partial",
+      "claims": 4,
+      "supported": 4
+    },
+    {
+      "id": "q005",
+      "category": "paraphrase",
+      "bad_citations": [],
+      "cited": 5,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "To get the auto-generated ID back after inserting a row, you can use the `RETURNING` clause.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The example `INSERT INTO distributors (did, dname) VALUES (DEFAULT, 'XYZ Widgets') RETURNING did;` returns the sequence number generated by the DEFAULT clause.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The example `INSERT INTO distributors (did, dname) VALUES (DEFAULT, 'XYZ Widgets') RETURNING did;` applies to PostgreSQL 16, 17, and 18.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "For an `INSERT` with an `ON CONFLICT DO UPDATE` clause, old values may be non-`NULL` and can be returned using the `OLD` qualifier.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The example `INSERT INTO distributors ... ON CONFLICT ... RETURNING old.did ...` applies to PostgreSQL 18.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The `RETURNING` clause allows you to compute and return any column names of the table named by `table_name`.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "An unqualified column name or `*` returns new values.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "For a simple `INSERT`, all old values will be `NULL`.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "For an `INSERT` with an `ON CONFLICT DO UPDATE` clause, the old values may be non-`NULL`.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "partial",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "partial",
+      "claims": 9,
+      "supported": 9
+    },
+    {
+      "id": "q006",
+      "category": "identifier",
+      "bad_citations": [],
+      "cited": 5,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "SELECT DISTINCT ON ( expression [, ...] ) keeps only the first row of each set of rows where the given expressions evaluate to equal.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The 'first row' of each set is unpredictable unless an ORDER BY clause is used to ensure the desired row appears first.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The DISTINCT ON expressions must match the leftmost ORDER BY expression(s).",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The ORDER BY clause normally contains additional expression(s) that determine the desired precedence of rows within each DISTINCT ON group.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The example SELECT DISTINCT ON (location) location, time, report FROM weather_reports ORDER BY location, time DESC; retrieves the most recent weather report for each location.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 5,
+      "supported": 5
+    },
+    {
+      "id": "q007",
+      "category": "paraphrase",
+      "bad_citations": [],
+      "cited": 6,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "To lock the rows you read so another transaction cannot change them until you commit, you should use a locking clause in your SELECT statement.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Use FOR UPDATE, FOR NO KEY UPDATE, FOR SHARE, or FOR KEY SHARE in the SELECT statement.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "These are locking clauses that affect how SELECT locks rows as they are obtained from the table.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The locking clause must be applied to a table alias or non-hidden table name referenced in the FROM clause.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "By default, acquiring these row-level locks also takes the required ROW SHARE table-level lock in the ordinary way.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "If you are running a transaction at the READ COMMITTED isolation level and need to ensure data remains stable, you can obtain a SHARE lock mode over the table using LOCK TABLE before querying.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "This prevents concurrent data changes and ensures subsequent reads see a stable view of committed data because SHARE lock mode conflicts with the ROW EXCLUSIVE lock acquired by writers.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "If you are running a transaction at REPEATABLE READ or SERIALIZABLE, you must execute LOCK TABLE before executing any SELECT or data modification statement to freeze the view of data.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "A LOCK TABLE later in such a transaction will not ensure reads correspond to the latest committed values.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "To prevent the operation from waiting for other transactions to commit, you can use the NOWAIT or SKIP LOCKED option with the locking clause.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "NOWAIT reports an error if a row cannot be locked immediately.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "SKIP LOCKED skips rows that cannot be locked.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 12,
+      "supported": 12
+    },
+    {
+      "id": "q008",
+      "category": "paraphrase",
+      "bad_citations": [],
+      "cited": 6,
+      "refusal_phrase": true,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The provided documentation excerpts do not contain instructions or examples on how to write a query that walks a parent/child tree of rows.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Excerpt [1] shows an EXPLAIN plan for an UPDATE statement that affects a parent and multiple child tables.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Excerpt [1] does not explain how to construct the query to traverse the tree structure itself.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The other excerpts discuss JSON functions [2], B-tree index usage [3], and multicolumn index optimizations [4][5].",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "None of the other excerpts address tree traversal queries.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": true
+      },
+      "verdict": "refused",
+      "claims": 5,
+      "supported": 5
+    },
+    {
+      "id": "q009",
+      "category": "direct",
+      "bad_citations": [],
+      "cited": 10,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "An UNLOGGED table is a table created with the `UNLOGGED` clause where data written to it is not written to the write-ahead log.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "This makes them considerably faster than ordinary tables.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "They are not crash-safe; an unlogged table is automatically truncated after a crash or unclean shutdown.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The contents of an unlogged table are not replicated to standby servers.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Any indexes created on an unlogged table are automatically unlogged as well.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 5,
+      "supported": 5
+    },
+    {
+      "id": "q010",
+      "category": "paraphrase",
+      "bad_citations": [],
+      "cited": 13,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "To split a big table into partitions by date range, you use the `CREATE TABLE ... PARTITION OF ... FOR VALUES FROM ... TO ...` syntax.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The parent table is created with a `PARTITION BY RANGE` clause specifying the date column.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The partition key can include multiple columns or expressions (up to 32).",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Range partitioning requires a btree operator class.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The parent table is created empty.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Partitions are created using separate `CREATE TABLE` commands.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The syntax `FOR VALUES FROM ('start_date') TO ('end_date')` is used to define the range for each partition.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The `partition_bound_expr` (the date values) must be a variable-free expression.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The data type of the partition bound expression must match the data type of the corresponding partition key column.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The specified range must not overlap with any existing partition of the parent table.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Any indexes, constraints, and user-defined row-level triggers from the parent table are cloned onto the new partition.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "If a data row is inserted into the parent table and no existing partition matches the values in the partition key, an error will be reported.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "You can create a default partition using `DEFAULT`.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 13,
+      "supported": 13
+    },
+    {
+      "id": "q011",
+      "category": "paraphrase",
+      "bad_citations": [],
+      "cited": 15,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "To add a foreign key without scanning it immediately, use the `NOT VALID` option.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Using `NOT VALID` allows the command to be committed immediately without verifying existing rows.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "You can validate the constraint later using the `VALIDATE CONSTRAINT` command.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The initial `ADD CONSTRAINT` with `NOT VALID` acquires a `SHARE ROW EXCLUSIVE` lock on the table being altered.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The initial `ADD CONSTRAINT` with `NOT VALID` acquires a `ROW SHARE` lock on the referenced table.",
+            "support": "unsupported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The `VALIDATE CONSTRAINT` command acquires a `SHARE UPDATE EXCLUSIVE` lock on the table being altered.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The `VALIDATE CONSTRAINT` command does not lock out concurrent updates.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "This approach is useful if the table is known to contain pre-existing violations.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Foreign key constraints on partitioned tables may not be declared `NOT VALID` at present.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 9,
+      "supported": 8
+    },
+    {
+      "id": "q012",
+      "category": "identifier",
+      "bad_citations": [],
+      "cited": 10,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "REINDEX CONCURRENTLY rebuilds an index without taking locks that prevent concurrent inserts, updates, or deletes on the table.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "A standard index rebuild locks out writes (but not reads) on the table until it is finished.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Indexes for exclusion constraints cannot be reindexed concurrently.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "If an exclusion constraint index is named directly in a concurrent reindex, an error is raised.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "If a table or database with exclusion constraint indexes is reindexed concurrently, those indexes are skipped.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "For temporary tables, REINDEX is always non-concurrent.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "If an index build fails with the CONCURRENTLY option, the index is left as 'invalid'.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "An invalid index created by a failed concurrent build can be rebuilt using REINDEX INDEX.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Each backend running REINDEX reports its progress in the pg_stat_progress_create_index view.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "partial",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "partial",
+      "claims": 9,
+      "supported": 9
+    },
+    {
+      "id": "q013",
+      "category": "paraphrase",
+      "bad_citations": [],
+      "cited": 11,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "To see the query plan along with actual run times, use the `EXPLAIN ANALYZE` command.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The command syntax is `EXPLAIN ANALYZE <your_query>;`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The output shows the structure of the query plan as a tree of plan nodes.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The output displays 'actual time' values in milliseconds of real time.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The output includes estimated row counts, which are important to check against reality.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "For nodes executed multiple times, displayed time and row values are averages per-execution, and must be multiplied by the `loops` value to get total time.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The output includes `Planning time` (time to generate the plan).",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The output includes `Execution time` (time to run the plan, including executor start-up/shut-down and `BEFORE` triggers).",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "`EXPLAIN ANALYZE` does not include time for parsing, rewriting, or sending output data to the client.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The answer does not mention that data-modifying statements should be wrapped in a transaction and rolled back.",
+            "support": "unsupported",
+            "reference": "contradicts"
+          }
+        ],
+        "coverage": "partial",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "partial",
+      "claims": 10,
+      "supported": 9
+    },
+    {
+      "id": "q014",
+      "category": "paraphrase",
+      "bad_citations": [],
+      "cited": 10,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "For a freshly created table, the fastest method is to create the table, bulk load the data using COPY, and then create any needed indexes.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Creating an index on pre-existing data is slower than updating it incrementally as each row is loaded.",
+            "support": "unsupported",
+            "reference": "contradicts"
+          },
+          {
+            "claim": "For an existing table with large amounts of data to add, it may be faster to drop indexes, load the table, and then recreate the indexes.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Loading data with existing indexes requires checking foreign key constraints row-by-row, which can cause the trigger event queue to overflow memory during massive loads.",
+            "support": "unsupported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "In CSV format, values are separated by the DELIMITER character.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "If a value contains the delimiter, quote character, null string, carriage return, or line feed, it is prefixed and suffixed by the QUOTE character.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "NULL values are output as the NULL parameter string (unquoted), while empty strings are written with double quotes (\"\") by default.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "All characters are significant; quoted values include surrounding whitespace.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Temporarily increasing maintenance_work_mem speeds up CREATE INDEX and ALTER TABLE ADD FOREIGN KEY commands.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Temporarily increasing max_wal_size reduces the frequency of checkpoints required during large data loads.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "partial",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "incorrect",
+      "claims": 10,
+      "supported": 8
+    },
+    {
+      "id": "q015",
+      "category": "identifier",
+      "bad_citations": [],
+      "cited": 10,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "In PostgreSQL 17 and 18, you must have the MAINTAIN privilege on the materialized view to execute REFRESH MATERIALIZED VIEW CONCURRENTLY.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "In PostgreSQL 16, you must be the owner of the materialized view to execute REFRESH MATERIALIZED VIEW CONCURRENTLY.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "REFRESH MATERIALIZED VIEW CONCURRENTLY requires at least one UNIQUE index on the materialized view which uses only column names and includes all rows.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The UNIQUE index cannot be an expression index or include a WHERE clause.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The materialized view must already be populated to use CONCURRENTLY.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Only one REFRESH at a time may run against any one materialized view when using CONCURRENTLY.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "CONCURRENTLY cannot be specified together with WITH NO DATA.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "partial",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "partial",
+      "claims": 7,
+      "supported": 7
+    },
+    {
+      "id": "q016",
+      "category": "paraphrase",
+      "bad_citations": [],
+      "cited": 5,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "To run a function automatically every time a row is inserted, you can create an AFTER INSERT trigger.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The syntax for creating such a trigger is `CREATE TRIGGER trigger_name AFTER INSERT ON table_name FOR EACH ROW EXECUTE FUNCTION function_name();`",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "AFTER INSERT timing is used to run the function after the row is inserted.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "FOR EACH ROW ensures the function runs for every individual row being inserted.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "EXECUTE FUNCTION is followed by the name of the function.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The RETURNING clause in the INSERT command can be used to execute logic.",
+            "support": "unsupported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The RETURNING clause is typically used for retrieving data rather than running side-effect functions.",
+            "support": "unsupported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 7,
+      "supported": 5
+    },
+    {
+      "id": "q017",
+      "category": "paraphrase",
+      "bad_citations": [],
+      "cited": 6,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "You can use the `DO` command to execute an anonymous code block.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The anonymous code block acts as a transient anonymous function with no parameters and a `void` return type.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The block is parsed and executed a single time.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The syntax is `DO [ LANGUAGE lang_name ] code`.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "`code` is the procedural language code to be executed, specified as a string literal.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Dollar-quoted literals are recommended for `code`.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "`lang_name` is the name of the procedural language.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "If `lang_name` is omitted, the default is `plpgsql`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The procedural language must be installed in the current database via `CREATE EXTENSION`.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "`plpgsql` is installed by default.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The user must have `USAGE` privilege for the language, or be a superuser if the language is untrusted.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "If executed within a transaction block, the code cannot contain transaction control statements.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Transaction control statements are only allowed if `DO` is run in its own transaction.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The provided example grants all privileges on all views in schema `public` to role `webuser`.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 14,
+      "supported": 14
+    },
+    {
+      "id": "q018",
+      "category": "direct",
+      "bad_citations": [],
+      "cited": 6,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "To turn on row-level security policies for a table, you must enable row-level security on the table using the ALTER TABLE command.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Use the ALTER TABLE ... ENABLE ROW LEVEL SECURITY command to control the application of row security policies belonging to the table.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "If enabled and no policies exist for the table, a default-deny policy is applied.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Policies can exist for a table even if row-level security is disabled; in this case, the policies will not be applied and will be ignored.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Row-level security must be enabled on the table (using ALTER TABLE ... ENABLE ROW LEVEL SECURITY) in order for created policies to be applied.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 5,
+      "supported": 5
+    },
+    {
+      "id": "q019",
+      "category": "paraphrase",
+      "bad_citations": [],
+      "cited": 4,
+      "refusal_phrase": true,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The provided documentation does not contain instructions on how to show a default value instead of NULL in a query result.",
+            "support": "unsupported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The `DEFAULT` option can be used in `XMLTABLE` to provide a value if a path does not match.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The `COALESCE` function is referenced in the context of `NULLIF`.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The documentation does not explain how to use `COALESCE` to replace NULLs with default values.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Aggregate final functions can return null (e.g., `avg` with zero rows).",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "none",
+        "says_excerpts_dont_answer": true
+      },
+      "verdict": "refused",
+      "claims": 5,
+      "supported": 4
+    },
+    {
+      "id": "q020",
+      "category": "identifier",
+      "bad_citations": [],
+      "cited": 4,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The NULLIF function returns a null value if its first argument (value1) equals its second argument (value2); otherwise, it returns value1.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The arguments are compared exactly as if written as value1 = value2, requiring a suitable = operator.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The result has the same type as the first argument, though it may be promoted to match the second argument's type if necessary (e.g., NULLIF(1, 2.2) yields numeric).",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "It can be used to return null for a specific value, such as SELECT NULLIF(value, '(none)'), which returns null if value is '(none)'.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "partial",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "partial",
+      "claims": 4,
+      "supported": 4
+    },
+    {
+      "id": "q021",
+      "category": "paraphrase",
+      "bad_citations": [],
+      "cited": 5,
+      "refusal_phrase": true,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The provided documentation does not contain a direct example of formatting a timestamp as text in the specific format '2024-03-01 14:05'.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The documentation indicates that the `to_char` function is used for formatting.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "`to_char(..., 'ID')` handles the day of the week numbering.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "`to_char(interval)` formats `HH` and `HH12` as shown on a 12-hour clock, while `HH24` outputs the full hour value.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Table 9.29 shows the template patterns available for formatting numeric values.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The table content of Table 9.29 is not provided in the excerpts.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The exact syntax for date components (like `YYYY`, `MM`, `DD`) is not explicitly defined in the provided text.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "none",
+        "says_excerpts_dont_answer": true
+      },
+      "verdict": "refused",
+      "claims": 7,
+      "supported": 7
+    },
+    {
+      "id": "q022",
+      "category": "identifier",
+      "bad_citations": [],
+      "cited": 13,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The `date_trunc` function truncates a value to a specified precision, setting all fields less significant than the selected one to zero (or one, for day and month).",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "It accepts values of type `timestamp`, `timestamp with time zone`, or `interval`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Values of type `date` and `time` are cast automatically to `timestamp` or `interval`, respectively.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The return value is of the same type as the input (`timestamp`, `timestamp with time zone`, or `interval`).",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "If the input is `timestamp with time zone`, truncation is performed with respect to a specific time zone.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "By default, it uses the current `TimeZone` setting, but an optional `time_zone` argument can specify a different zone.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "A time zone cannot be specified when processing `timestamp without time zone` or `interval` inputs; these are always taken at face value.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The `field` argument can be one of: `microseconds`, `milliseconds`, `second`, `minute`, `hour`, `day`, `week`, `month`, `quarter`, `year`, `decade`, `century`, or `millennium`.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Example: `SELECT date_trunc('hour', TIMESTAMP '2001-02-16 20:38:40');` results in `2001-02-16 20:00:00`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Example: `SELECT date_trunc('year', TIMESTAMP '2001-02-16 20:38:40');` results in `2001-01-01 00:00:00`.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Example: `SELECT date_trunc('day', TIMESTAMP WITH TIME ZONE '2001-02-16 20:38:40+00', 'Australia/Sydney');` results in `2001-02-16 08:00:00-05`.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Example: `SELECT date_trunc('hour', INTERVAL '3 days 02:47:33');` results in `3 days 02:00:00`.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 12,
+      "supported": 12
+    },
+    {
+      "id": "q023",
+      "category": "paraphrase",
+      "bad_citations": [],
+      "cited": 4,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "To calculate someone's age from their birth date in PostgreSQL, you can use the `age` function.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The `age` function subtracts the birth date argument from the current date (at midnight) to produce a 'symbolic' result using years, months, and days.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The function performs field-by-field subtraction and adjusts for negative field values.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "It handles ambiguity in the `months` field by using the month from the earlier of the two dates when calculating partial months.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The example query `SELECT age(timestamp '1957-06-13');` returns an interval such as `62 years 6 mons 10 days`.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 5,
+      "supported": 5
+    },
+    {
+      "id": "q024",
+      "category": "paraphrase",
+      "bad_citations": [],
+      "cited": 7,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "To combine values from many rows into one comma-separated string, use the `string_agg` function with a comma as the delimiter.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The syntax for `string_agg` is `string_agg(value text, delimiter text)`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "`string_agg` concatenates the non-null input values into a string.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Each value after the first is preceded by the corresponding delimiter (if it's not null).",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The example `SELECT string_agg(column_name, ',') FROM table_name;` is valid.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "In PostgreSQL 18, `string_agg` supports `bytea` types.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "In PostgreSQL 18, `string_agg` supports an optional `ORDER BY` clause.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 7,
+      "supported": 7
+    },
+    {
+      "id": "q025",
+      "category": "paraphrase",
+      "bad_citations": [],
+      "cited": 5,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "To rank rows within each group so that ties get the same rank, use the `dense_rank` function.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "`dense_rank` computes the rank of the hypothetical row, without gaps.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "`dense_rank` effectively counts peer groups.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Rows that are not distinct when considering only the `ORDER BY` columns are said to be *peers*.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The four ranking functions (which include `dense_rank`) are defined so that they give the same answer for all rows of a peer group.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The syntax for `dense_rank` is `dense_rank ( *args* ) WITHIN GROUP ( ORDER BY *sorted_args* )`.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "partial",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "partial",
+      "claims": 6,
+      "supported": 6
+    },
+    {
+      "id": "q026",
+      "category": "identifier",
+      "bad_citations": [],
+      "cited": 5,
+      "refusal_phrase": true,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The provided documentation excerpts do not contain information about the `->>` operator.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The excerpts describe the `jsonb_set` function.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The excerpts describe comparison operators.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The excerpts describe deletion operators (`-`, `#-`).",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The excerpts do not define the behavior of `->>`.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "none",
+        "says_excerpts_dont_answer": true
+      },
+      "verdict": "refused",
+      "claims": 5,
+      "supported": 5
+    },
+    {
+      "id": "q027",
+      "category": "identifier",
+      "bad_citations": [],
+      "cited": 14,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "jsonb_set returns the target JSONB object with the item designated by the path replaced by the new_value.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "If create_if_missing is true (default) and the item does not exist, it adds the new_value.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "All earlier steps in the path must exist; otherwise, the target is returned unchanged.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Negative integers in the path count from the end of JSON arrays.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "If the last path step is an array index that is out of range and create_if_missing is true, the new value is added at the beginning of the array if the index is negative, or at the end of the array if it is positive.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The behavior applies to PostgreSQL versions 16, 17, and 18.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 6,
+      "supported": 6
+    },
+    {
+      "id": "q028",
+      "category": "identifier",
+      "bad_citations": [],
+      "cited": 12,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "jsonb_path_query_first returns the first JSON item returned by the JSON path for the specified JSON value.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "If there are no results, it returns NULL.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The function accepts a `target` (jsonb) parameter.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The function accepts a `path` (jsonpath) parameter.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The function accepts an optional `vars` (jsonb) parameter.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The function accepts an optional `silent` (boolean) parameter.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The `silent` argument acts the same as for `jsonb_path_exists` in PostgreSQL 16.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The function returns a `jsonb` type.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The example `SELECT jsonb_path_query_first('{",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 9,
+      "supported": 9
+    },
+    {
+      "id": "q029",
+      "category": "paraphrase",
+      "bad_citations": [],
+      "cited": 5,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "To turn a JSON array into a set of rows, you can use the `json_array_elements` or `jsonb_array_elements` functions.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "`json_array_elements` expands the top-level JSON array into a set of `json` values.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The syntax for `json_array_elements` is `json_array_elements ( json ) → setof json`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The example `select * from json_array_elements('[1,true, [2,false]]')` is valid for `json_array_elements`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "`jsonb_array_elements` expands the top-level JSON array into a set of `jsonb` values.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The syntax for `jsonb_array_elements` is `jsonb_array_elements ( jsonb ) → setof jsonb`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "If you need the values as text instead of JSON/JSONB, you can use `json_array_elements_text`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "`json_array_elements_text` expands the top-level JSON array into a set of `text` values.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The syntax for `json_array_elements_text` is `json_array_elements_text ( json ) → setof text`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The example `select * from json_array_elements_text('[",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 10,
+      "supported": 10
+    },
+    {
+      "id": "q030",
+      "category": "paraphrase",
+      "bad_citations": [],
+      "cited": 4,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "To perform a case-insensitive LIKE match, you can use a collation that is case-insensitive (e.g., case_insensitive) by appending COLLATE case_insensitive to the pattern.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Example: 'AbC' LIKE 'abc' COLLATE case_insensitive returns true.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The example returns true according to excerpts [1][2][3].",
+            "support": "unsupported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Alternatively, you can use the ILIKE operator.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "ILIKE is generally treated as an operator in PostgreSQL syntax.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "ILIKE performs case-insensitive matching.",
+            "support": "unsupported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "partial",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "partial",
+      "claims": 6,
+      "supported": 4
+    },
+    {
+      "id": "q031",
+      "category": "paraphrase",
+      "bad_citations": [],
+      "cited": 0,
+      "refusal_phrase": true,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The provided documentation does not cover how to produce one row for every day between two dates.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The documentation describes date formatting patterns.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The documentation describes the OVERLAPS operator.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The documentation contains specific to_date examples.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The documentation does not contain instructions or functions for generating a series of dates.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": true
+      },
+      "verdict": "refused",
+      "claims": 5,
+      "supported": 5
+    },
+    {
+      "id": "q032",
+      "category": "paraphrase",
+      "bad_citations": [],
+      "cited": 8,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "To reset a sequence so that the next value it hands out is 1, you can use the ALTER SEQUENCE command with the RESTART clause.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The SQL command to reset the sequence to 1 is ALTER SEQUENCE your_sequence_name RESTART WITH 1;",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The RESTART [ WITH restart ] clause changes the current value of the sequence.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The specified value (1) will be returned by the next call of nextval.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Writing RESTART with no value is equivalent to supplying the start value recorded by CREATE SEQUENCE or last set by ALTER SEQUENCE START WITH.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The RESTART operation is transactional and blocks concurrent transactions from obtaining numbers from the same sequence.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Alternatively, you can use the setval function.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "RESTART is generally preferred for this specific action as it is transactional and blocks concurrent access, whereas setval does not block concurrent transactions in the same way.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 8,
+      "supported": 8
+    },
+    {
+      "id": "q033",
+      "category": "paraphrase",
+      "bad_citations": [],
+      "cited": 9,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "To check how much disk space a table takes, including its indexes, you can use the `pg_indexes_size` function.",
+            "support": "unsupported",
+            "reference": "contradicts"
+          },
+          {
+            "claim": "The function `pg_indexes_size(regclass)` computes the total disk space used by indexes attached to the specified table.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "To get the total space for the database (which includes the table data and all its indexes), you can use `pg_database_size(name)` or `pg_database_size(oid)`.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "`pg_database_size` computes the total disk space used by the database.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "`pg_column_size` shows the number of bytes used to store any individual data value, not the total table size.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "none",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "incorrect",
+      "claims": 5,
+      "supported": 4
+    },
+    {
+      "id": "q034",
+      "category": "paraphrase",
+      "bad_citations": [],
+      "cited": 0,
+      "refusal_phrase": true,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The provided documentation excerpts do not contain information on how to stop a long-running query that another session is running.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The excerpts cover topics such as disabling WAL archival, trigger functions, session information functions, and index corruption recovery.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The excerpts do not address terminating queries from other sessions.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": true
+      },
+      "verdict": "refused",
+      "claims": 3,
+      "supported": 3
+    },
+    {
+      "id": "q035",
+      "category": "paraphrase",
+      "bad_citations": [],
+      "cited": 4,
+      "refusal_phrase": true,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The provided documentation does not contain information on how to compute the median of a numeric column.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The documentation lists various mathematical functions such as `mod`, `pi`, `power`, `round`, `abs`, `ceil`, `floor`, `log`, and `gcd`.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "None of the listed mathematical functions are described as computing a median.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": true
+      },
+      "verdict": "refused",
+      "claims": 3,
+      "supported": 3
+    },
+    {
+      "id": "q036",
+      "category": "identifier",
+      "bad_citations": [],
+      "cited": 7,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "Ordinary comparison operators (including `<>`) yield `null` when either input is `null`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "`IS DISTINCT FROM` treats `null` as a normal data value rather than 'unknown'.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "If only one input is `null`, `IS DISTINCT FROM` returns `true`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "If both inputs are `null`, `IS DISTINCT FROM` returns `false`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "For non-null inputs, `IS DISTINCT FROM` is the same as the `<>` operator.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Comparison operators like `<>` return values of type `boolean` but can yield `null`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "`IS DISTINCT FROM` result will either be `true` or `false`, never `null`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The behavior of `IS DISTINCT FROM` (never yielding null) applies to row constructor comparisons.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 8,
+      "supported": 8
+    },
+    {
+      "id": "q037",
+      "category": "paraphrase",
+      "bad_citations": [],
+      "cited": 3,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "For a column queried with <, >, BETWEEN, and ORDER BY, you should use a B-tree index.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "B-tree indexes can handle equality and range queries using operators <, <=, =, >=, and >.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Constructs equivalent to combinations of these operators, such as BETWEEN and IN, can also be implemented with a B-tree index search.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "B-tree indexes can retrieve data in sorted order to satisfy ORDER BY specifications.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Hash indexes can only handle simple equality comparisons using the = operator.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Hash indexes cannot support range queries or sorting.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Of the supported index types, only B-tree can produce sorted output for ORDER BY clauses.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Other index types return rows in an unspecified order.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 8,
+      "supported": 8
+    },
+    {
+      "id": "q038",
+      "category": "direct",
+      "bad_citations": [],
+      "cited": 9,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "A BRIN index is most effective for columns whose values are well-correlated with the physical order of the table rows.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "For data types with a linear sort order, a BRIN index stores the minimum and maximum values of the column for each block range.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "BRIN indexes store summaries about the values stored in consecutive physical block ranges of a table.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "partial",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "partial",
+      "claims": 3,
+      "supported": 3
+    },
+    {
+      "id": "q039",
+      "category": "direct",
+      "bad_citations": [],
+      "cited": 3,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "You should use a GIN index when dealing with data values that contain multiple component values, such as arrays.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "GIN indexes are 'inverted indexes'.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "GIN indexes contain a separate entry for each component value.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "GIN indexes allow them to efficiently handle queries that test for the presence of specific component values.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "partial",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "partial",
+      "claims": 4,
+      "supported": 4
+    },
+    {
+      "id": "q040",
+      "category": "direct",
+      "bad_citations": [],
+      "cited": 7,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The column order matters in a multicolumn B-tree index.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The index is most efficient when there are constraints on the leading (leftmost) columns.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Equality constraints on leading columns, plus any inequality constraints on the first column that does not have an equality constraint, are used to limit the portion of the index that is scanned.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Constraints on columns to the right of the leading columns do not reduce the portion of the index that has to be scanned.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Constraints on columns to the right of the leading columns save visits to the table proper.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "In multicolumn indexes, specific sort order options (ASC, DESC, NULLS FIRST, NULLS LAST) can be useful to satisfy specific query orderings that cannot be met by a plain index.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 6,
+      "supported": 6
+    },
+    {
+      "id": "q041",
+      "category": "paraphrase",
+      "bad_citations": [],
+      "cited": 5,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "An index can make ORDER BY ... LIMIT queries faster.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "If there is an index matching the ORDER BY specification, the first n rows can be retrieved directly without scanning the remainder of the data.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "An explicit sort must process all the data to identify the first n rows.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Sorting incrementally enables optimizations with LIMIT queries by returning tuples before the entire result set has been sorted.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Sorting incrementally can reduce memory usage and the likelihood of spilling sorts to disk.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Only B-tree indexes can produce sorted output to satisfy an ORDER BY specification without a separate sorting step.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Other index types return rows in an unspecified order.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The ordering of a B-tree index can be adjusted using ASC, DESC, NULLS FIRST, and/or NULLS LAST options during creation.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 8,
+      "supported": 8
+    },
+    {
+      "id": "q042",
+      "category": "direct",
+      "bad_citations": [],
+      "cited": 10,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "PostgreSQL combines multiple indexes by scanning each needed index and preparing a bitmap in memory that gives the locations of table rows matching that index's conditions.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "These bitmaps are then ANDed and ORed together as needed by the query.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Finally, the actual table rows are visited and returned.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "A query like `WHERE x = 42 OR x = 47` can be broken into separate scans, with results ORed together.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "`WHERE x = 5 AND y = 6` can use separate indexes on `x` and `y`, with results ANDed together.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Because the table rows are visited in physical order based on how the bitmap is laid out, any ordering of the original indexes is lost.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "A separate sort step is needed if the query has an `ORDER BY` clause.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Since each additional index scan adds time and ordering is lost, the planner may sometimes choose a simple index scan even if multiple indexes are available.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Developers must decide between creating multicolumn indexes or separate indexes relying on index combination.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Separate indexes combined via bitmaps can be efficient for mixed workloads (queries using only column `x`, only `y`, or both), whereas a single multicolumn index might be less useful for queries involving only one column.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The system does not understand relationships among partial indexes and will laboriously test each one to see if it applies, which can be inefficient.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Using many non-overlapping partial indexes is generally discouraged in favor of a single non-partial index or table partitioning.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 12,
+      "supported": 12
+    },
+    {
+      "id": "q043",
+      "category": "paraphrase",
+      "bad_citations": [],
+      "cited": 5,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "To index only the rows where status = 'active', you should create a partial index using a WHERE clause.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The syntax for creating a partial index is CREATE INDEX index_name ON table (column) WHERE condition.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The example CREATE INDEX orders_unbilled_index ON orders (order_nr) WHERE billed is not true; is valid syntax for a partial index.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Partial indexes allow you to exclude values from the index that are not of interest.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The index will only contain entries for rows where the WHERE clause evaluates to true.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Queries that filter on the indexed columns and the WHERE condition can utilize this index for an index-only scan.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Queries that do not involve the filtering condition or the indexed columns in a compatible way may not use the index.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "partial",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "partial",
+      "claims": 7,
+      "supported": 7
+    },
+    {
+      "id": "q044",
+      "category": "paraphrase",
+      "bad_citations": [],
+      "cited": 6,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "To make case-insensitive lookups on an email column use an index, you should create an index on the result of a function that performs the case conversion (e.g., `lower`).",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "An index can be defined as `CREATE INDEX test1_lower_col1_idx ON test1 (lower(col1));`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Queries like `SELECT * FROM test1 WHERE lower(col1) = 'value';` can use the index.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The index stores the computed expression (`lower(col1)`), so the system can match the query condition directly against the index without recomputing the expression during the search.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "If you declare the index `UNIQUE`, it will prevent the creation of rows whose values differ only in case, as well as rows that are actually identical.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 5,
+      "supported": 5
+    },
+    {
+      "id": "q045",
+      "category": "direct",
+      "bad_citations": [],
+      "cited": 12,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "An index-only scan answers queries using only the index data, returning values directly from index entries without accessing the table's main data area (the heap).",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The index type must support index-only scans.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "B-tree indexes always support index-only scans.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "GiST and SP-GiST indexes support index-only scans for some operator classes but not others.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "GIN indexes cannot support index-only scans.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The query must reference only columns stored in the index.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "PostgreSQL must verify that each retrieved row is visible to the query's MVCC snapshot.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Visibility information is stored in the visibility map, which tracks whether all rows in a heap page are visible.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "If the visibility map bit is set, the row is known visible and no heap access is needed.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "If the visibility map bit is not set, the heap entry must be visited to check visibility.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "An index-only scan is only a performance win if a significant fraction of the table's heap pages have their all-visible map bits set.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "A covering index can be created using the INCLUDE clause to store extra payload columns.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Payload columns do not need to be of a data type the index can handle for searching.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Explicitly defining payload columns as non-key columns reliably keeps tuples in upper B-Tree levels small.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The planner considers a query executable by index-only scan only when all columns needed are available from the index.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The planner may not recognize that a column is only needed in the context of an expression (e.g., f(x)).",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The planner may not match uses of expressions that are not in indexable WHERE clauses to the index column, particularly in queries involving joins.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "For partial indexes, the planner allows index-only scans even if the WHERE clause references a column not in the index, provided the PostgreSQL version is 9.6 or later.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 18,
+      "supported": 18
+    },
+    {
+      "id": "q046",
+      "category": "paraphrase",
+      "bad_citations": [],
+      "cited": 2,
+      "refusal_phrase": true,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The provided documentation does not explain why a `LIKE 'abc%'` query would fail to use an index when the database is not using the C locale.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The excerpts mention that the `locale` parameter affects the sort order applied to strings in queries with `ORDER BY` and the order used in indexes on text columns.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The excerpts note that `lc_ctype` sets the default character classification.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "None of the provided text discusses the specific behavior of `LIKE` pattern matching or index usage relative to non-C locales.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": true
+      },
+      "verdict": "refused",
+      "claims": 4,
+      "supported": 4
+    },
+    {
+      "id": "q047",
+      "category": "direct",
+      "bad_citations": [],
+      "cited": 12,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "You can examine index usage for an individual query by using the EXPLAIN command.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "You can gather overall statistics about index usage in a running server.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Overall statistics are described in Section 27.2 for PostgreSQL 17/18.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Overall statistics are described in Section 28.2 for PostgreSQL 16.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "You can force index usage by setting run-time parameters that disable certain plan types (e.g., enable_seqscan and enable_nestloop).",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Forcing index usage helps identify if the system is correctly choosing not to use an index or if there's a fundamental issue like a mismatched query condition.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "You can compare query performance with and without the index using the EXPLAIN ANALYZE command.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Before examining index usage, always run the ANALYZE command to collect up-to-date statistics.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Without running ANALYZE, the planner may make inaccurate cost estimates, leading to incorrect query plans.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "You should use real data rather than small or skewed test datasets when experimenting with indexes.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Small or improperly distributed data can lead to misleading conclusions about index effectiveness.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 11,
+      "supported": 11
+    },
+    {
+      "id": "q048",
+      "category": "direct",
+      "bad_citations": [],
+      "cited": 8,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The query planner uses the total number of entries in each table and index to estimate rows.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The total number of entries is stored in the pg_class table in the column reltuples.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The query planner uses the number of disk blocks occupied by each table and index to estimate rows.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The number of disk blocks is stored in the pg_class table in the column relpages.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The planner uses information stored in the pg_statistic table.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The pg_statistic table contains the most_common_vals and histogram_bounds arrays for each column.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The amount of information in pg_statistic can be configured via ALTER TABLE SET STATISTICS or default_statistics_target.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "partial",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "partial",
+      "claims": 7,
+      "supported": 7
+    },
+    {
+      "id": "q049",
+      "category": "identifier",
+      "bad_citations": [],
+      "cited": 8,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "join_collapse_limit controls when the PostgreSQL planner will 'flatten out' explicit joins.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Setting join_collapse_limit to 1 forces the planner to treat explicit JOIN clauses as constraining the join order.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Setting join_collapse_limit to 1 prevents explicit JOINs from being flattened into a plain FROM list.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Setting join_collapse_limit to 1 reduces the number of possible join orders the planner must consider.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Reducing the number of possible join orders can reduce planning time.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Reducing the number of possible join orders can direct the planner toward a specific (potentially better) query plan.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "If join_collapse_limit is set to a value greater than 1, the planner may still flatten some joins.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Flattening joins can increase planning time due to the exponential growth of join possibilities.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Allowing the optimizer to reorder tables (by flattening) might result in a better plan.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "This parameter applies to PostgreSQL versions 16, 17, and 18.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 10,
+      "supported": 10
+    },
+    {
+      "id": "q050",
+      "category": "direct",
+      "bad_citations": [],
+      "cited": 11,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "Placing the database cluster's data directory in a memory-backed file system (RAM disk) eliminates all database disk I/O.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Turning off fsync disables flushing data to disk.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Turning off synchronous_commit disables forcing WAL writes to disk on every commit.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Turning off synchronous_commit risks transaction loss (though not data corruption) in case of a database crash.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Turning off full_page_writes disables guarding against partial page writes.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Increasing max_wal_size and checkpoint_timeout reduces the frequency of checkpoints.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Increasing max_wal_size and checkpoint_timeout increases the storage requirements of /pg_wal.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Creating unlogged tables avoids WAL writes.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Unlogged tables are non-crash-safe.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Increasing maintenance_work_mem temporarily can speed up CREATE INDEX and ALTER TABLE ADD FOREIGN KEY commands.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Increasing max_wal_size temporarily during bulk loads reduces the number of required checkpoints.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Disabling WAL Archival and Streaming Replication involves setting wal_level to minimal, archive_mode to off, and max_wal_senders to zero.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Disabling WAL Archival and Streaming Replication prevents incremental WAL logging and can make certain commands faster because they do not write WAL at all if wal_level is minimal.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Dropping indexes and foreign key constraints before loading data and recreating them afterward can be faster than updating them incrementally.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Using pg_restore's --jobs option allows concurrent data loading and index creation.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 15,
+      "supported": 15
+    },
+    {
+      "id": "q051",
+      "category": "paraphrase",
+      "bad_citations": [],
+      "cited": 10,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "EXPLAIN ANALYZE causes the statement to be actually executed, whereas a plain EXPLAIN only plans the statement.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "EXPLAIN ANALYZE adds the total elapsed time expended within each plan node (in milliseconds).",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "EXPLAIN ANALYZE displays the total number of rows actually returned.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "EXPLAIN ANALYZE displays the true row counts and true run time accumulated within each plan node, alongside the estimates shown by a plain EXPLAIN.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "In PostgreSQL 18, the ANALYZE option implicitly enables the BUFFERS option, which provides additional detail about I/O operations (count of non-distinct buffers hit, read, dirtied, and written) for the given node and its children.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 5,
+      "supported": 5
+    },
+    {
+      "id": "q052",
+      "category": "direct",
+      "bad_citations": [],
+      "cited": 8,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "Dropping indexes before loading large amounts of data into an existing table can be beneficial for performance.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "It might be a win to drop indexes, load the table, and then recreate them when adding large amounts of data to an existing table.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Creating an index on pre-existing data is quicker than updating it incrementally as each row is loaded.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Database performance for other users might suffer during the time the indexes are missing.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "You should think twice before dropping a unique index, as the error checking afforded by the unique constraint will be lost while the index is missing.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Dropping foreign key constraints can be useful for bulk loading.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Loading data with existing foreign key constraints can cause the server's list of pending trigger events to overflow available memory, leading to swapping or command failure.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "It may be necessary to drop and re-apply foreign keys when loading large amounts of data.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "To remove an index, you can use the DROP INDEX command.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "A normal DROP INDEX acquires an ACCESS EXCLUSIVE lock on the table, blocking other accesses until the drop is completed.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "DROP INDEX CONCURRENTLY drops the index without locking out concurrent operations.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "DROP INDEX CONCURRENTLY does not support the CASCADE option.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "DROP INDEX CONCURRENTLY does not work on indexes on partitioned tables.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 13,
+      "supported": 13
+    },
+    {
+      "id": "q053",
+      "category": "version_specific",
+      "bad_citations": [],
+      "cited": 2,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "In PostgreSQL 18, a generated column is virtual by default.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "For standard CREATE TABLE statements, VIRTUAL is the default.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "For CREATE FOREIGN TABLE statements, VIRTUAL is the default.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 3,
+      "supported": 3
+    },
+    {
+      "id": "q054",
+      "category": "version_specific",
+      "bad_citations": [],
+      "cited": 2,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "In PostgreSQL 17, you can create a virtual generated column.",
+            "support": "unsupported",
+            "reference": "contradicts"
+          },
+          {
+            "claim": "The clause `GENERATED ALWAYS AS ( generation_expr )` creates a column as a generated column where the result is returned when read and the column cannot be written to.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The keyword `STORED` is required to signify that the column will be computed on write.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "By omitting `STORED`, the column is virtual (computed on read).",
+            "support": "unsupported",
+            "reference": "contradicts"
+          }
+        ],
+        "coverage": "none",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "incorrect",
+      "claims": 4,
+      "supported": 2
+    },
+    {
+      "id": "q055",
+      "category": "version_specific",
+      "bad_citations": [],
+      "cited": 1,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "In PostgreSQL 17, the `uuid_extract_timestamp` function can read a timestamp from UUID version 1.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "For other UUID versions, `uuid_extract_timestamp` returns null.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 2,
+      "supported": 2
+    },
+    {
+      "id": "q056",
+      "category": "version_specific",
+      "bad_citations": [],
+      "cited": 2,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "In PostgreSQL 18, you can generate a time-ordered UUID (version 7) using the `uuidv7` function.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The syntax for the function is `uuidv7([ shift interval ])`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The function generates a version 7 (time-ordered) UUID.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The timestamp is computed using UNIX timestamp with millisecond precision plus sub-millisecond timestamp and random data.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The optional `shift` parameter shifts the computed timestamp by the given interval.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Infinite interval values are not accepted.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The shifted timestamp must fall within the range supported by UUID version 7's 48-bit millisecond timestamp field (from 1970-01-01 00:00:00 UTC to approximately year 10889).",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The example `uuidv7()` returns a UUID such as `019535d9-3df7-79fb-b466-fa907fa17f9e`.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The `uuid-ossp` module provides additional functions that implement other standard algorithms for generating UUIDs.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The `uuid-ossp` module may include time-ordered variants.",
+            "support": "unsupported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 10,
+      "supported": 9
+    },
+    {
+      "id": "q057",
+      "category": "version_specific",
+      "bad_citations": [],
+      "cited": 4,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "In PostgreSQL 18, an UPDATE command can return both old and new values using the RETURNING clause with the OLD and NEW pseudo-columns.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "By default, old values are returned using OLD.column_name or OLD.*, and new values are returned using NEW.column_name or NEW.*.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "If an alias is provided in the RETURNING clause (e.g., RETURNING WITH (OLD AS o, NEW AS n)), the OLD and NEW names are hidden, and the rows must be referred to using the alias (e.g., o.* and n.*).",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The RETURNING clause causes the UPDATE to compute and return values based on each row actually updated, using the syntax identical to the output list of SELECT.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "By default, the new (post-update) values are used, but it is also possible to request the old (pre-update) values.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 5,
+      "supported": 5
+    },
+    {
+      "id": "q058",
+      "category": "version_specific",
+      "bad_citations": [],
+      "cited": 1,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "In PostgreSQL 16, a MERGE statement cannot have a RETURNING clause.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "There is no RETURNING clause with MERGE.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Actions of INSERT, UPDATE and DELETE cannot contain RETURNING or WITH clauses.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 3,
+      "supported": 3
+    },
+    {
+      "id": "q059",
+      "category": "version_specific",
+      "bad_citations": [],
+      "cited": 1,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "In PostgreSQL 17, you can use the `ON_ERROR` clause with the `COPY` command to specify behavior when an error is encountered.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Using `ON_ERROR` allows for a best-effort attempt to load the entire file rather than failing immediately.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "By default, `COPY` will fail if it encounters an error during processing.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The provided documentation excerpts do not specify the exact syntax or options available for the `ON_ERROR` clause (e.g., `LOG`, `STOP`, `SKIP`).",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "partial",
+        "says_excerpts_dont_answer": true
+      },
+      "verdict": "refused",
+      "claims": 4,
+      "supported": 4
+    },
+    {
+      "id": "q060",
+      "category": "version_specific",
+      "bad_citations": [],
+      "cited": 2,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "To make COPY give up after too many bad rows in PostgreSQL 18, use the ON_ERROR option set to ignore combined with the REJECT_LIMIT parameter.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "ON_ERROR ignore allows the command to skip rows that cause conversion errors instead of failing immediately.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "REJECT_LIMIT defines the maximum number of errors tolerated.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "If the input causes more errors than the specified REJECT_LIMIT value, the COPY command will fail.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The example usage pattern `COPY table_name FROM 'file.csv' WITH (ON_ERROR ignore, REJECT_LIMIT 100);` is valid syntax.",
+            "support": "unsupported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "If REJECT_LIMIT is not specified while using ON_ERROR=ignore, the command allows an unlimited number of errors and will skip all erroneous data.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 6,
+      "supported": 5
+    },
+    {
+      "id": "q061",
+      "category": "version_specific",
+      "bad_citations": [],
+      "cited": 3,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "To see how much memory the planner used for a query in PostgreSQL 17, you can use the `EXPLAIN` command with the `MEMORY` option.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The `MEMORY` parameter includes information on memory consumption by the query planning phase, specifically the precise amount of storage used by planner in-memory structures and total memory considering allocation overhead.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The `MEMORY` parameter defaults to `FALSE`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "You must explicitly enable the `MEMORY` parameter to see this information.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "You can enable the `MEMORY` parameter by setting the option to `TRUE`, `ON`, or `1`.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The syntax `EXPLAIN (MEMORY) SELECT * FROM table_name;` is valid.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 6,
+      "supported": 6
+    },
+    {
+      "id": "q062",
+      "category": "version_specific",
+      "bad_citations": [],
+      "cited": 5,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "In PostgreSQL 18, a B-tree index on (a, b) can help a query that only filters on b through the skip scan optimization.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "A multicolumn B-tree index can be used with query conditions involving any subset of the index's columns.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The index is most efficient when constraints exist on the leading (leftmost) columns.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "For an index on (x, y) with a query condition WHERE y = 7700, a B-tree index scan might apply the skip scan optimization.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The skip scan optimization generally occurs when the query planner expects repeated searches for every possible value of the leading column to be the fastest approach.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The planner applies this when there are few distinct values in the leading column.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "If there are many distinct values in the leading column, the entire index must be scanned, and the planner may prefer a sequential table scan instead.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The SQL example `CREATE INDEX idx_ab ON table_name (a, b);` is valid syntax for creating a B-tree index.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The SQL example `SELECT * FROM table_name WHERE b = 7700;` is a valid query that can utilize skip scan on column b.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 9,
+      "supported": 9
+    },
+    {
+      "id": "q063",
+      "category": "version_specific",
+      "bad_citations": [],
+      "cited": 1,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The function that returns a random number from a normal distribution in PostgreSQL 16 is `random_normal`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "`random_normal` accepts optional parameters for mean and standard deviation.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The default value for the mean parameter is 0.0.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The default value for the standard deviation parameter is 1.0.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "`random_normal` returns a `double precision` value.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The example usage `random_normal(0.0, 1.0)` is valid syntax.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 6,
+      "supported": 6
+    },
+    {
+      "id": "q064",
+      "category": "version_specific",
+      "bad_citations": [
+        6
+      ],
+      "cited": 6,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "In PostgreSQL 18, you can sort the elements of an array using the `array_sort` function.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "`array_sort` takes an array as input and returns a sorted array.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "`array_sort` sorts the first dimension of the array based on the default sort ordering of the array's element type.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "If the element type is collatable, you can specify the collation by adding a `COLLATE` clause to the array argument.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The sort order is determined by the `descending` parameter.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "If `descending` is true, the array is sorted in descending order.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "If `descending` is omitted, the default is ascending order.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The `nulls_first` parameter controls whether nulls appear before or after non-null values.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "If `nulls_first` is omitted, it defaults to the same value as `descending`.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The example `array_sort(ARRAY[[2,4],[2,1],[6,5]])` returns `{{2,1},{2,4},{6,5}}`.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 10,
+      "supported": 10
+    },
+    {
+      "id": "q065",
+      "category": "version_specific",
+      "bad_citations": [],
+      "cited": 1,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "In PostgreSQL 17, you can convert an integer to its binary string representation using the `to_bin` function.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The `to_bin` function converts the number to its equivalent two's complement binary representation.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The syntax for `to_bin` is `to_bin(integer) → text` or `to_bin(bigint) → text`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "`to_bin(2147483647)` returns `1111111111111111111111111111111`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "`to_bin(-1234)` returns `11111111111111111111101100101110`.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "partial",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "partial",
+      "claims": 5,
+      "supported": 5
+    },
+    {
+      "id": "q066",
+      "category": "version_specific",
+      "bad_citations": [],
+      "cited": 9,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "You cannot stop overlapping bookings using a standard PRIMARY KEY constraint alone.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "You must use an exclusion constraint with a range type and the && operator.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "A PRIMARY KEY enforces uniqueness based on equality.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "An EXCLUDE clause allows specifying that no two rows can have overlapping ranges using the && operator.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The column used in the exclusion constraint must be a range or multirange type.",
+            "support": "unsupported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The provided documentation does not provide a specific SQL example combining a PRIMARY KEY with time-overlap prevention.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "partial",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "partial",
+      "claims": 6,
+      "supported": 5
+    },
+    {
+      "id": "q067",
+      "category": "version_specific",
+      "bad_citations": [],
+      "cited": 4,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "In PostgreSQL 16, you can check whether a string is valid input for a data type without raising an error using `pg_input_is_valid`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "`pg_input_is_valid` tests whether the given string is valid input for the specified data type and returns `true` or `false`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "`pg_input_is_valid` only works as intended if the data type's input function has been updated to report invalid input as a 'soft' error.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "If the data type's input function does not report soft errors, `pg_input_is_valid` will abort the transaction.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "`pg_input_is_valid('42', 'integer')` returns `t`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "`pg_input_is_valid('42000000000', 'integer')` returns `f`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "`pg_input_error_info` tests whether the given string is valid input for the specified data type.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "If the input is invalid, `pg_input_error_info` returns the details of the error that would have been thrown.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "If the input is valid, `pg_input_error_info` returns `NULL`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "`pg_input_error_info` requires the data type's input function to report invalid input as a 'soft' error.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "`pg_input_error_info` returns message, detail, hint, and SQL error code.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The example `SELECT * FROM pg_input_error_info('42000000000', 'integer')` returns a message indicating the value is out of range and an SQL error code of '22003'.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 12,
+      "supported": 12
+    },
+    {
+      "id": "q068",
+      "category": "version_specific",
+      "bad_citations": [],
+      "cited": 3,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "In PostgreSQL 17, you can determine which action a MERGE command took for each row by using the merge_action() function in the RETURNING clause of the MERGE statement.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The merge_action() function returns the merge action command executed for the current row, which will be 'INSERT', 'UPDATE', or 'DELETE'.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The merge_action() function can only be used in the RETURNING list of a MERGE command.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The example SQL provided is valid syntax for PostgreSQL 17 MERGE.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The example returns a column indicating the action (INSERT, UPDATE, or DELETE) performed on each row.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 5,
+      "supported": 5
+    },
+    {
+      "id": "q069",
+      "category": "version_diff",
+      "bad_citations": [],
+      "cited": 4,
+      "refusal_phrase": true,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The provided documentation does not state which specific PostgreSQL version added the RETURNING clause to MERGE.",
+            "support": "unsupported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Excerpt [1] describes the RETURNING clause for MERGE in PostgreSQL 18.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Excerpt [1] does not mention when the RETURNING clause was introduced.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Excerpt [5] for PostgreSQL 16 explicitly states: 'There is no RETURNING clause with MERGE.'",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Excerpts [2] and [3] for PostgreSQL 17 and 18 describe the merge_action() function used within the RETURNING list.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Excerpts [2] and [3] do not specify the version in which the RETURNING clause itself was added.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Based strictly on the provided text, it is not possible to determine which version added this feature.",
+            "support": "unsupported",
+            "reference": "contradicts"
+          }
+        ],
+        "coverage": "none",
+        "says_excerpts_dont_answer": true
+      },
+      "verdict": "refused",
+      "claims": 7,
+      "supported": 5
+    },
+    {
+      "id": "q070",
+      "category": "version_diff",
+      "bad_citations": [],
+      "cited": 4,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The provided documentation does not explicitly state which PostgreSQL version introduced JSON_TABLE.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "JSON_TABLE is available in PostgreSQL 17 and 18.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "JSON_TABLE is available in PostgreSQL 16.",
+            "support": "unsupported",
+            "reference": "contradicts"
+          },
+          {
+            "claim": "The specific section for JSON_TABLE is not detailed in the provided text for version 16.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The documentation does not mention versions prior to 16.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The documentation does not mention the specific version where the feature was first introduced.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "none",
+        "says_excerpts_dont_answer": true
+      },
+      "verdict": "incorrect",
+      "claims": 6,
+      "supported": 5
+    },
+    {
+      "id": "q071",
+      "category": "version_diff",
+      "bad_citations": [],
+      "cited": 3,
+      "refusal_phrase": true,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The provided documentation does not state when the `uuidv4()` and `uuidv7()` functions were added.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "PostgreSQL 18 documentation lists `uuidv4()` and `uuidv7()` as available functions.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "PostgreSQL 17 documentation mentions `uuid-ossp` but does not list `uuidv4()` or `uuidv7()`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "PostgreSQL 16 documentation mentions `uuid-ossp` but does not list `uuidv4()` or `uuidv7()`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The specific version in which `uuidv4()` and `uuidv7()` were introduced is not mentioned in the provided excerpts.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": true
+      },
+      "verdict": "refused",
+      "claims": 5,
+      "supported": 5
+    },
+    {
+      "id": "q072",
+      "category": "version_diff",
+      "bad_citations": [],
+      "cited": 1,
+      "refusal_phrase": true,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The provided documentation does not state which version added the `casefold()` function.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Excerpt [1] describes the `casefold` function.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Excerpt [1] notes that `casefold` is available in PostgreSQL 18.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Excerpt [1] does not specify the version in which `casefold` was introduced.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "partial",
+        "says_excerpts_dont_answer": true
+      },
+      "verdict": "refused",
+      "claims": 4,
+      "supported": 4
+    },
+    {
+      "id": "q073",
+      "category": "version_diff",
+      "bad_citations": [],
+      "cited": 4,
+      "refusal_phrase": true,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The provided documentation excerpts do not state the specific version in which the SERIALIZE option was introduced for EXPLAIN.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The SERIALIZE option exists in PostgreSQL 17.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The SERIALIZE option exists in PostgreSQL 18.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The SERIALIZE option exists in PostgreSQL 16.",
+            "support": "unsupported",
+            "reference": "contradicts"
+          }
+        ],
+        "coverage": "none",
+        "says_excerpts_dont_answer": true
+      },
+      "verdict": "incorrect",
+      "claims": 4,
+      "supported": 3
+    },
+    {
+      "id": "q074",
+      "category": "version_diff",
+      "bad_citations": [],
+      "cited": 8,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The `any_value` aggregate is available in PostgreSQL versions 16, 17, and 18.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "In PostgreSQL 16, `any_value` is listed in Table 9.59.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "In PostgreSQL 17, `any_value` is listed in Table 9.60.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "In PostgreSQL 18, `any_value` is listed in Table 9.62.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "In all listed versions (16, 17, 18), `any_value` returns an arbitrary value from the non-null input values.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "In all listed versions (16, 17, 18), `any_value` supports partial mode.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 6,
+      "supported": 6
+    },
+    {
+      "id": "q075",
+      "category": "version_diff",
+      "bad_citations": [],
+      "cited": 2,
+      "refusal_phrase": true,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The provided documentation does not contain information about which version added `ALTER TABLE ... ALTER COLUMN ... SET EXPRESSION` for generated columns.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The excerpts mention `SET EXPRESSION` only in the context of `ALTER TABLE` for stored generated columns in PostgreSQL 18.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The excerpts do not specify when this feature was introduced or which version added it.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The excerpts describe the current behavior and limitations (e.g., it is currently only supported for stored generated columns, not virtual ones).",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": true
+      },
+      "verdict": "refused",
+      "claims": 4,
+      "supported": 4
+    },
+    {
+      "id": "q076",
+      "category": "version_diff",
+      "bad_citations": [],
+      "cited": 0,
+      "refusal_phrase": true,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The provided documentation does not contain information about which version added the `crc32` and `crc32c` functions.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": true
+      },
+      "verdict": "refused",
+      "claims": 1,
+      "supported": 1
+    },
+    {
+      "id": "q077",
+      "category": "version_diff",
+      "bad_citations": [],
+      "cited": 7,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The ability to declare a constraint as NOT ENFORCED is available in PostgreSQL 16, 17, and 18.",
+            "support": "unsupported",
+            "reference": "contradicts"
+          },
+          {
+            "claim": "The NOT ENFORCED option is described in the context of CREATE FOREIGN TABLE notes for PostgreSQL 16, 17, and 18.",
+            "support": "unsupported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The NOT ENFORCED option is explicitly listed as a parameter for CREATE TABLE in PostgreSQL 18.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The explicit NOT ENFORCED clause is documented for PostgreSQL 18.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The concept of non-enforcement is noted for foreign tables in PostgreSQL 16, 17, and 18.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "partial",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "incorrect",
+      "claims": 5,
+      "supported": 3
+    },
+    {
+      "id": "q078",
+      "category": "version_diff",
+      "bad_citations": [],
+      "cited": 3,
+      "refusal_phrase": true,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The provided documentation excerpts do not state which version added the AT LOCAL operator.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The excerpts describe the behavior and variants of AT LOCAL in PostgreSQL 17 and 18.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": true
+      },
+      "verdict": "refused",
+      "claims": 2,
+      "supported": 2
+    },
+    {
+      "id": "q079",
+      "category": "version_diff",
+      "bad_citations": [],
+      "cited": 3,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The strip_in_arrays parameter was added in PostgreSQL 18.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "In PostgreSQL 18, the json_strip_nulls function signature includes the optional strip_in_arrays boolean parameter.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "In PostgreSQL 17, the json_strip_nulls function signature does not include the strip_in_arrays parameter.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "In PostgreSQL 16, the json_strip_nulls function signature does not include the strip_in_arrays parameter.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 4,
+      "supported": 4
+    },
+    {
+      "id": "q080",
+      "category": "version_diff",
+      "bad_citations": [],
+      "cited": 3,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "array_sample and array_shuffle are listed in the tables for PostgreSQL 16 [2], PostgreSQL 17 [1], and PostgreSQL 18 [3].",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The excerpts do not contain information regarding the specific version in which these functions were originally introduced.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "partial",
+        "says_excerpts_dont_answer": true
+      },
+      "verdict": "refused",
+      "claims": 2,
+      "supported": 2
+    },
+    {
+      "id": "q081",
+      "category": "version_diff",
+      "bad_citations": [],
+      "cited": 2,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "uuid_extract_timestamp can read timestamps from version 7 UUIDs starting in PostgreSQL 18.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "In PostgreSQL 18, uuid_extract_timestamp extracts timestamps from UUIDs of version 1 or 7.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "In PostgreSQL 17, uuid_extract_timestamp extracts timestamps from UUID version 1 only.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "In PostgreSQL 17, uuid_extract_timestamp returns null for other versions.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 4,
+      "supported": 4
+    },
+    {
+      "id": "q082",
+      "category": "version_diff",
+      "bad_citations": [],
+      "cited": 1,
+      "refusal_phrase": true,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The provided documentation does not state which version added the `gamma` and `lgamma` functions.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The documentation lists `lgamma` in Table 9.5 under the section for PostgreSQL 18.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The presence of the function in the PostgreSQL 18 manual indicates where it is documented in that version, not necessarily when it was introduced.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The text does not contain an 'Added in' version number for these specific functions.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": true
+      },
+      "verdict": "refused",
+      "claims": 4,
+      "supported": 4
+    },
+    {
+      "id": "q083",
+      "category": "cross_page",
+      "bad_citations": [],
+      "cited": 20,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "A partial index is an index built over a subset of a table, defined by a conditional expression (predicate), containing entries only for rows satisfying the predicate.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "A major use case for partial indexes is to avoid indexing common values to reduce index size and speed up updates.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "An index on expression is an index where the column is a function or scalar expression computed from one or more columns.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Indexes on expressions are useful for fast access based on computation results, such as case-insensitive comparisons or concatenating columns.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Partial indexes use a WHERE clause in the CREATE INDEX command to define the predicate.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "For partial indexes, the indexed column and the column used in the predicate do not need to match.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "For indexes on expressions, parentheses are required around the expression in the CREATE INDEX command, unless it is just a single function call.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Partial indexes speed up table update operations because the index does not need to be updated for all rows.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Indexes on expressions are expensive to maintain because the expression must be computed for every row insertion and non-HOT update.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Indexes on expressions are not recomputed during a search.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Partial indexes can enforce uniqueness only among rows satisfying the predicate.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Indexes on expressions can be declared UNIQUE to enforce constraints not definable as simple unique constraints.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "For partial indexes, the predicate must mathematically imply the query's WHERE condition for the index to be used.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "For partial indexes, the system does not recognize mathematically equivalent expressions written in different forms.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "For partial indexes, parameterized queries do not work.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "For indexes on expressions, the system sees the query as a simple comparison against the stored result, making search speed equivalent to a simple index query.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Partial indexes and expression indexes can be combined.",
+            "support": "unsupported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "partial",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "partial",
+      "claims": 17,
+      "supported": 16
+    },
+    {
+      "id": "q084",
+      "category": "cross_page",
+      "bad_citations": [],
+      "cited": 14,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "To create a covering index, you use the `INCLUDE` clause to add columns that are not part of the search key.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Included columns act as 'payload' and are stored in the index but not used to guide the scan.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "You can create a standard covering index using `CREATE INDEX tab_x_y ON tab(x) INCLUDE (y);`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "You can create a unique covering index using `CREATE UNIQUE INDEX tab_x_y ON tab(x) INCLUDE (y);`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The `INCLUDE` clause can also be used in `UNIQUE` and `PRIMARY KEY` constraints.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "An index-only scan is physically possible when all data values required by the query are available from the index.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "An index-only scan is physically possible when the visibility map bit for the corresponding heap page is set, indicating all rows on that page are visible.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "If the visibility map bit is not set, the heap must be accessed to verify visibility.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Columns in the `INCLUDE` clause do not need to be of a data type the index can handle.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "If the index is unique, the uniqueness constraint applies only to the search key columns, not the included columns.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "It is only beneficial if a significant fraction of the table's heap pages have their all-visible map bits set.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "If the heap must be visited anyway, there is no extra cost to get the column from the heap directly.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Expressions are not currently supported as included columns.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Only B-tree, GiST, and SP-GiST indexes support included columns.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Adding wide columns can cause index tuples to exceed the maximum size allowed for the index type, causing insertion failures.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Including payload columns bloats the index size and can slow down searches.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The planner may not recognize index-only scans for expression indexes unless the underlying column is explicitly added as an included column.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The planner might not match uses of functions in `WHERE` clauses to index columns in complex queries involving joins.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 18,
+      "supported": 18
+    },
+    {
+      "id": "q085",
+      "category": "cross_page",
+      "bad_citations": [],
+      "cited": 8,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "A SAVEPOINT establishes a special mark within a transaction, allowing all commands executed after it to be rolled back, restoring the transaction state to what it was at the time of the savepoint.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "ROLLBACK TO SAVEPOINT rolls back all commands executed after the specified savepoint was established and starts a new subtransaction at the same transaction level.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The savepoint remains valid after a ROLLBACK TO SAVEPOINT and can be rolled back to again later if needed.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "ROLLBACK TO SAVEPOINT implicitly destroys all savepoints established after the named savepoint.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "To undo the effects of commands after a savepoint, you use ROLLBACK TO SAVEPOINT savepoint_name.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Savepoints can only be established inside a transaction block, and multiple savepoints can exist within a single transaction.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "If a savepoint with the same name is established again, the previous one remains but becomes inaccessible until the newer one is released; rolling back to the name affects the most recent savepoint with that name.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Cursors opened inside a savepoint are closed when the savepoint is rolled back, but cursor positions (from FETCH or MOVE) are not affected by the rollback.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "partial",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "partial",
+      "claims": 8,
+      "supported": 8
+    },
+    {
+      "id": "q086",
+      "category": "cross_page",
+      "bad_citations": [],
+      "cited": 10,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "For a huge append-only log table queried by time range, you should use a BRIN index.",
+            "support": "unsupported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "BRIN indexes are most effective for columns whose values are well-correlated with the physical order of the table rows.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "In an append-only log table, new rows are added sequentially, meaning time values are highly correlated with physical row order.",
+            "support": "unsupported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "BRIN indexes support range queries using operators like <, <=, =, >=, and >.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "B-tree indexes also support range operators like <, <=, =, >=, and >.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The documentation highlights that BRIN is specifically optimized for the scenario where data order correlates with value order.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "BRIN is less efficient for this specific 'huge' dataset structure compared to B-trees in terms of size/maintenance (implied by 'optimized' and context of 'huge').",
+            "support": "unsupported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "partial",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "partial",
+      "claims": 7,
+      "supported": 4
+    },
+    {
+      "id": "q087",
+      "category": "cross_page",
+      "bad_citations": [],
+      "cited": 6,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The query planner relies on statistics stored in the `pg_class` system catalog to estimate row counts.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "You can view the total number of entries (`reltuples`) and disk blocks (`relpages`) for tables and indexes using a query on `pg_class`.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "If `reltuples` values are significantly lower than the actual row count, the statistics are outdated and need to be updated (typically via `ANALYZE`).",
+            "support": "unsupported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "If a query involves complex expressions, the planner may misestimate row counts if it lacks specific statistics for those expressions.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Without specific statistics, the planner assumes a default selectivity of 0.5% for equality/range conditions.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Without specific statistics, the planner assumes distinct values equal the column's distinct count.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Without specific statistics, the planner assumes conditions are independent, which can lead to severe overestimates or underestimates.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "You can create custom statistics for expressions using the `CREATE STATISTICS` command.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Creating custom statistics allows the planner to recognize correlations between expressions and arrive at more accurate estimates.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "You can force the planner to disregard its current 'cheapest' strategy using planner method configuration flags (e.g., `SET enable_sort = off;`) to see if a different plan yields better results.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Forcing alternative plans is described as a 'crude tool' useful for investigation rather than a permanent fix.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "partial",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "partial",
+      "claims": 11,
+      "supported": 10
+    },
+    {
+      "id": "q088",
+      "category": "cross_page",
+      "bad_citations": [],
+      "cited": 11,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "INSERT ... ON CONFLICT (specifically ON CONFLICT DO UPDATE) guarantees an atomic INSERT or UPDATE outcome, ensuring one of those two results occurs even under high concurrency, provided there is no independent error.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "There are a variety of differences and restrictions between INSERT ... ON CONFLICT and MERGE, and they are not interchangeable.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "When MERGE is run concurrently with other commands modifying the target table, the usual transaction isolation rules apply.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The documentation suggests using INSERT ... ON CONFLICT as an alternative to MERGE if you specifically need the ability to run an UPDATE if a concurrent INSERT occurs.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "MERGE is more general (multiple WHEN clauses, deletes, arbitrary join conditions).",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "MERGE can still fail with unique violations when concurrent inserts race.",
+            "support": "unsupported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "partial",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "partial",
+      "claims": 6,
+      "supported": 5
+    },
+    {
+      "id": "q089",
+      "category": "cross_page",
+      "bad_citations": [],
+      "cited": 22,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "To create a unique constraint that treats NULL values as equal, you must use the `NULLS NOT DISTINCT` option.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "By default, NULL values are not considered equal (i.e., they are distinct).",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The syntax for a unique constraint with this option is `UNIQUE NULLS NOT DISTINCT`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The `NULLS NOT DISTINCT` option also applies to unique indexes.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Excerpt [1] implies the default is `NULLS DISTINCT` (nulls are equal).",
+            "support": "unsupported",
+            "reference": "contradicts"
+          },
+          {
+            "claim": "There is a contradiction in the provided excerpts regarding the default behavior.",
+            "support": "unsupported",
+            "reference": "contradicts"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "incorrect",
+      "claims": 6,
+      "supported": 4
+    },
+    {
+      "id": "q090",
+      "category": "cross_page",
+      "bad_citations": [],
+      "cited": 21,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "Since PostgreSQL 8.1, users and groups are unified into a single entity called a role.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The GROUP keyword is no longer necessary to identify a grantee, though it remains allowed as a 'noise word'.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "A user can perform actions like SELECT or INSERT on a column if they hold the privilege for either that specific column or the whole table.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Revoking a privilege at the column level does not affect a table-level grant; the table-level grant remains unaffected.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Database superusers can access all objects regardless of privilege settings.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "When a superuser issues a GRANT or REVOKE command, it is performed as though issued by the object owner, and the privileges appear to have been granted by that owner.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "A role that is not the owner can still GRANT or REVOKE privileges if they are a member of the owning role or hold privileges WITH GRANT OPTION.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "In cases where a non-owner grants/revokes, the privileges are recorded as having been granted by the containing role (the owner or the role with grant options).",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "If a non-owner attempts to GRANT privileges without holding any privileges on the object, the command fails.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "If a non-owner holds some privileges, the GRANT command proceeds but only grants privileges for which they have GRANT OPTION.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "GRANT ALL PRIVILEGES issues a warning if no grant options are held.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "If a role holds privileges via multiple role membership paths, it is unspecified which containing role is recorded as the grantor.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Best practice is to use SET ROLE to specify the exact role when multiple paths exist.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Granting permissions on a table does not automatically extend them to associated sequences (e.g., those tied to SERIAL columns); sequence permissions must be set separately.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "REVOKE removes access privileges.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "When a non-owner revokes privileges, the command is performed as though issued by the containing role (owner or role with grant options).",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "This allows members of the owning role to revoke privileges granted by other members of that same role.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "If a role has privileges via multiple paths, it is unspecified which role performs the REVOKE.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Failure to use SET ROLE may result in revoking unintended privileges or failing to revoke anything.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "REVOKE can revoke specific privileges (e.g., INSERT).",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "REVOKE can revoke all privileges granted by the issuer (REVOKE ALL PRIVILEGES).",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "REVOKE can revoke role membership.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "partial",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "partial",
+      "claims": 22,
+      "supported": 22
+    },
+    {
+      "id": "q091",
+      "category": "cross_page",
+      "bad_citations": [],
+      "cited": 8,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "To create a prepared statement, use the PREPARE command with syntax PREPARE name [ ( data_type [, ...] ) ] AS statement.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Parameters in a prepared statement are referred to by position using $1, $2, etc.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Data types for parameters can be optionally specified in the PREPARE command.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "If a data type is not specified, it is inferred from the context.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "To run a prepared statement, use the EXECUTE command with syntax EXECUTE name [ ( parameter [, ...] ) ].",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The values provided in EXECUTE must be compatible with the data types defined when the statement was prepared.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Prepared statements exist only for the duration of the current database session.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The EXECUTE command returns the command tag of the prepared statement, not EXECUTE.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "If plan_cache_mode is set to auto, the server may use a generic or custom plan based on execution history and cost estimates.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 9,
+      "supported": 9
+    },
+    {
+      "id": "q092",
+      "category": "cross_page",
+      "bad_citations": [],
+      "cited": 7,
+      "refusal_phrase": false,
+      "grade": {
+        "claims": [
+          {
+            "claim": "Disable autocommit and perform all insertions in a single transaction (using BEGIN and COMMIT) to avoid overhead.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "For freshly created tables, create the table, bulk load using COPY, then create indexes.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "For existing tables, drop indexes before loading and recreate them afterward.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Drop foreign key constraints before loading and re-create them afterward.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Dropping foreign keys prevents trigger event queue overflow and avoids row-by-row checking.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Temporarily increase maintenance_work_mem to speed up CREATE INDEX and ALTER TABLE ADD FOREIGN KEY commands.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Increasing maintenance_work_mem may influence the number of worker processes requested for parallel index builds.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "Temporarily increase max_wal_size to reduce checkpoint frequency and speed up the load.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Disable WAL archival and streaming replication by setting wal_level to minimal, archive_mode to off, and max_wal_senders to zero.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "Disabling WAL archival/replication requires a server restart.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "partial",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "partial",
+      "claims": 10,
+      "supported": 10
+    },
+    {
+      "id": "q093",
+      "category": "unanswerable",
+      "bad_citations": [],
+      "cited": 5,
+      "refusal_phrase": true,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The provided documentation does not specify how much memory should be given to `shared_buffers`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The excerpts mention `shared_buffers` in the context of reporting statistics (e.g., \"shared hit\", \"shared read\") within `EXPLAIN ANALYZE` output.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The excerpts mention `shared_buffers` as a reference for calculating buffer reuse in `VACUUM`'s `BUFFER_USAGE_LIMIT`.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The excerpts do not provide guidelines for configuring the size of `shared_buffers` itself.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": false
+      },
+      "verdict": "correct",
+      "claims": 4,
+      "supported": 4
+    },
+    {
+      "id": "q094",
+      "category": "unanswerable",
+      "bad_citations": [],
+      "cited": 8,
+      "refusal_phrase": true,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The provided documentation excerpts do not contain information on how to set up a streaming replication standby with `primary_conninfo`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The excerpts describe replication management functions such as `pg_sync_replication_slots`.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "`pg_sync_replication_slots` is used for synchronizing logical failover slots.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The excerpts describe replication management functions such as `pg_create_physical_replication_slot`.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "`pg_create_physical_replication_slot` is used for creating physical slots.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The excerpts describe replication management functions such as `pg_drop_replication_slot`.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "`pg_drop_replication_slot` is used for dropping slots.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "None of the descriptions mention the `primary_conninfo` parameter.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "None of the descriptions mention the procedure for establishing the initial standby connection.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": true
+      },
+      "verdict": "correct",
+      "claims": 9,
+      "supported": 9
+    },
+    {
+      "id": "q095",
+      "category": "unanswerable",
+      "bad_citations": [],
+      "cited": 5,
+      "refusal_phrase": true,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The provided documentation excerpts do not contain information on how to take a physical backup with pg_basebackup.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The excerpts describe backup control functions such as pg_create_restore_point, pg_current_wal_flush_lsn, pg_current_wal_insert_lsn, pg_current_wal_lsn, and pg_backup_stop.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The excerpts cite sources [1][2][3][4][5] for the described functions.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": true
+      },
+      "verdict": "correct",
+      "claims": 3,
+      "supported": 3
+    },
+    {
+      "id": "q096",
+      "category": "unanswerable",
+      "bad_citations": [],
+      "cited": 5,
+      "refusal_phrase": true,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The provided documentation does not cover how to install PostgreSQL 17 on Ubuntu.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The excerpts only describe SQL commands and server-side behaviors such as UPDATE, CREATE EXTENSION, LOAD, EXPLAIN, and database population techniques.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": true
+      },
+      "verdict": "correct",
+      "claims": 2,
+      "supported": 2
+    },
+    {
+      "id": "q097",
+      "category": "unanswerable",
+      "bad_citations": [],
+      "cited": 0,
+      "refusal_phrase": true,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The provided documentation excerpts do not contain information on how to change `listen_addresses` to accept connections from other machines.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The excerpts cover `LISTEN`/`NOTIFY` commands.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The excerpts cover MAC address functions.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The excerpts cover `ALTER SERVER` examples.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The excerpts do not mention the `listen_addresses` configuration parameter.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": true
+      },
+      "verdict": "correct",
+      "claims": 5,
+      "supported": 5
+    },
+    {
+      "id": "q098",
+      "category": "unanswerable",
+      "bad_citations": [],
+      "cited": 5,
+      "refusal_phrase": true,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The provided documentation does not cover how to set up connection pooling with PgBouncer.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The excerpts describe the `CREATE SUBSCRIPTION` command parameters, including the `CONNECTION` string for connecting to a publisher database.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The excerpts describe server signaling functions like `pg_reload_conf` and `pg_rotate_logfile`.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The excerpts describe notes on replication slot creation and security configuration for subscriptions.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": true
+      },
+      "verdict": "correct",
+      "claims": 4,
+      "supported": 4
+    },
+    {
+      "id": "q099",
+      "category": "unanswerable",
+      "bad_citations": [],
+      "cited": 7,
+      "refusal_phrase": true,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The provided documentation does not contain information about the default value of `max_connections`.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The excerpts discuss the `CONNECTION LIMIT` parameter for roles, where `-1` (the default) means no limit for that specific role.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The excerpts discuss password settings for roles.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The excerpts discuss partitioning bounds for tables.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The excerpts discuss sequence parameters like `minvalue`, `maxvalue`, `start`, `cache`, and `cycle`.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "None of these sections define the global `max_connections` setting or its default value.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": true
+      },
+      "verdict": "correct",
+      "claims": 6,
+      "supported": 6
+    },
+    {
+      "id": "q100",
+      "category": "unanswerable",
+      "bad_citations": [],
+      "cited": 5,
+      "refusal_phrase": true,
+      "grade": {
+        "claims": [
+          {
+            "claim": "The provided documentation excerpts do not contain information on how to dump a single table to a file with pg_dump.",
+            "support": "supported",
+            "reference": "agrees"
+          },
+          {
+            "claim": "The excerpts discuss general notes on populating a database and restoring dumps (e.g., setting maintenance_work_mem, disabling WAL archiving, using parallel modes).",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The excerpts discuss the fact that pg_dump scripts automatically apply some guidelines but require manual steps for optimal restore performance.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "The excerpts discuss server signaling functions like pg_reload_conf and pg_rotate_logfile.",
+            "support": "supported",
+            "reference": "not_mentioned"
+          },
+          {
+            "claim": "None of the excerpts describe the specific command-line options for selecting a single table during the dump process.",
+            "support": "supported",
+            "reference": "agrees"
+          }
+        ],
+        "coverage": "full",
+        "says_excerpts_dont_answer": true
+      },
+      "verdict": "correct",
+      "claims": 5,
+      "supported": 5
+    }
+  ]
+}
