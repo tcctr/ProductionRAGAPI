@@ -9,6 +9,9 @@ Usage:
 For each answerable question, embeds it as a search query, takes the top-k
 chunks from pgvector, and checks whether any comes from an expected page
 ("18:sql-merge.html"). Labels are page-level so they survive re-chunking.
+A stricter chunk-level hit also needs the chunk to contain that page's
+"evidence" quote: long pages (functions-*) can be in the top k without the
+chunk that answers the question. A page may list several quotes (any one counts).
 Search is app/search.py, the same code /query runs. With --dedup, a merged
 result counts for every version in its "versions".
 
@@ -16,6 +19,7 @@ Metrics:
   hit@k   share of questions with an expected page in the top k
   MRR     mean of 1/rank of the first expected page (0 if not in top k)
   cover   cross_page only: share of the distinct expected pages found in top k
+Each is reported page-level and chunk-level ("chunk" lines).
 
 Unanswerable questions are not scored; their top similarity is reported next
 to the answerable ones' as input for a future "I don't know" threshold.
@@ -33,18 +37,20 @@ import psycopg
 
 from app.search import search
 from embed_ingest import DATABASE_URL, EMBED_MODEL, QUERY_PREFIX, embed, to_pgvector
+from validate_questions import evidence_quotes
 
 KS = (1, 5, 10)
 
 
-def score(results: list[dict]) -> dict:
+def score(results: list[dict], rank: str = "rank") -> dict:
+    """Metrics from each result's page-level "rank" or chunk-level "chunk_rank"."""
     n = len(results)
     if not n:
         return {"n": 0}
     out = {"n": n}
     for k in KS:
-        out[f"hit@{k}"] = sum(r["rank"] is not None and r["rank"] <= k for r in results) / n
-    out["mrr"] = sum(1 / r["rank"] for r in results if r["rank"]) / n
+        out[f"hit@{k}"] = sum(r[rank] is not None and r[rank] <= k for r in results) / n
+    out["mrr"] = sum(1 / r[rank] for r in results if r[rank]) / n
     return out
 
 
@@ -83,16 +89,24 @@ def main() -> None:
             # Every version:page each result stands for (several when dedup merged copies).
             covered = [{f"{v}:{c['page']}" for v in c["versions"]} for c in top]
             rank = next((i + 1 for i, ks in enumerate(covered) if ks & expected), None)
+            # Chunk-level: the result must also contain one of its page's evidence quotes. A merged
+            # result's text is the same in every version it covers, so one check covers them all.
+            answers = [bool(ks & expected)
+                       and any(quote in c["content"] for quote in evidence_quotes(q, c["page"]))
+                       for c, ks in zip(top, covered)]
+            chunk_rank = next((i + 1 for i, ok in enumerate(answers) if ok), None)
             wanted_pages = {key.split(":", 1)[1] for key in expected}
             found_pages = {key.split(":", 1)[1] for ks in covered for key in ks & expected}
+            found_chunk_pages = {c["page"] for c, ok in zip(top, answers) if ok}
             results.append({
                 "id": q["id"], "category": q["category"], "doc_type": q["doc_type"],
-                "rank": rank, "top_similarity": top[0]["similarity"],
+                "rank": rank, "chunk_rank": chunk_rank, "top_similarity": top[0]["similarity"],
                 "coverage": len(found_pages) / len(wanted_pages),
+                "chunk_coverage": len(found_chunk_pages) / len(wanted_pages),
                 "retrieved": keys,
             })
 
-    overall = score(results)
+    overall, overall_chunk = score(results), score(results, "chunk_rank")
     by_cat, by_type = defaultdict(list), defaultdict(list)
     for r in results:
         by_cat[r["category"]].append(r)
@@ -101,15 +115,20 @@ def main() -> None:
     mode = ("version filter" if args.filter_version else "no filter") + (", dedup" if args.dedup else "")
     print(f"retrieval eval: {len(results)} answerable questions, top {args.k}, {mode}\n")
     print(f"{'overall':18} {fmt(overall)}")
+    print(f"{'  chunk':18} {fmt(overall_chunk)}")
     print("\nby category")
     for cat, rs in sorted(by_cat.items()):
         print(f"  {cat:16} {fmt(score(rs))}")
+        print(f"  {'  chunk':16} {fmt(score(rs, 'chunk_rank'))}")
     print("\nby doc_type")
     for dt, rs in sorted(by_type.items()):
         print(f"  {dt:16} {fmt(score(rs))}")
+        print(f"  {'  chunk':16} {fmt(score(rs, 'chunk_rank'))}")
     cross = [r["coverage"] for r in by_cat.get("cross_page", [])]
+    cross_chunk = [r["chunk_coverage"] for r in by_cat.get("cross_page", [])]
     if cross:
-        print(f"\ncross_page coverage (share of needed pages in top {args.k}): {mean(cross):.2f}")
+        print(f"\ncross_page coverage (share of needed pages in top {args.k}): {mean(cross):.2f}"
+              f"  chunk: {mean(cross_chunk):.2f}")
     answerable_sims = [r["top_similarity"] for r in results]
     unanswerable_sims = [u["top_similarity"] for u in unanswerable]
     if unanswerable_sims:
@@ -123,6 +142,12 @@ def main() -> None:
             if q["id"] in misses:
                 r = next(r for r in results if r["id"] == q["id"])
                 print(f"  {q['id']} [{q['category']}] {q['question']}\n      got: {', '.join(r['retrieved'][:3])}")
+        # Right page, but no retrieved chunk of it holds an evidence quote.
+        wrong_chunk = [r for r in results if r["rank"] is not None and r["chunk_rank"] is None]
+        print(f"\npage hit, chunk miss ({len(wrong_chunk)}):")
+        for r in wrong_chunk:
+            q = next(q for q in questions if q["id"] == r["id"])
+            print(f"  {q['id']} [{q['category']}] {q['question']}\n      evidence: {q['evidence']}")
 
     commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip()
     # Milliseconds so back-to-back runs get distinct names; "x" below refuses to overwrite regardless.
@@ -137,6 +162,12 @@ def main() -> None:
             "by_category": {c: score(rs) for c, rs in by_cat.items()},
             "by_doc_type": {d: score(rs) for d, rs in by_type.items()},
             "cross_page_coverage": mean(cross) if cross else None,
+            "chunk_level": {
+                "overall": overall_chunk,
+                "by_category": {c: score(rs, "chunk_rank") for c, rs in by_cat.items()},
+                "by_doc_type": {d: score(rs, "chunk_rank") for d, rs in by_type.items()},
+                "cross_page_coverage": mean(cross_chunk) if cross_chunk else None,
+            },
             "questions": results, "unanswerable": unanswerable,
         }, indent=2) + "\n")
     print(f"\nsaved {path}")

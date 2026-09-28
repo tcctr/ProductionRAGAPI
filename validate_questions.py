@@ -7,7 +7,9 @@ Usage:
 Each question in data/eval/questions.jsonl carries:
   expected_pages  ["18:sql-merge.html", ...]  pages that answer it (empty = unanswerable)
   evidence        {"sql-merge.html": "quote"}  quote that must appear on every
-                                               expected version of that page
+                                               expected version of that page; a list
+                                               when several chunks answer ["q1", "q2"],
+                                               each quote must appear
   absent          {"16:sql-merge.html": "quote"}  quote that must NOT appear there
                                                (proves a version lacks a feature)
 
@@ -23,6 +25,12 @@ REQUIRED = {"id", "question", "category", "doc_type", "version", "expected_pages
             "evidence", "absent", "reference_answer"}
 CATEGORIES = {"direct", "paraphrase", "identifier", "version_specific", "version_diff",
               "cross_page", "unanswerable"}
+
+
+def evidence_quotes(q: dict, page: str) -> list[str]:
+    """The evidence quotes for one page of a question, a string or a list in the JSONL."""
+    quotes = q["evidence"][page]
+    return [quotes] if isinstance(quotes, str) else quotes
 
 
 def main() -> None:
@@ -56,11 +64,12 @@ def main() -> None:
                 errors.append(f"{qid}: expected page {key} not in corpus")
                 continue
             page = key.split(":", 1)[1]
-            quote = q["evidence"].get(page)
-            if quote is None:
+            if page not in q["evidence"]:
                 errors.append(f"{qid}: no evidence for {page}")
-            elif quote not in docs[key]:
-                errors.append(f"{qid}: evidence {quote!r} not found in {key}")
+                continue
+            for quote in evidence_quotes(q, page):
+                if quote not in docs[key]:
+                    errors.append(f"{qid}: evidence {quote!r} not found in {key}")
         for page in q["evidence"]:
             if not any(k.endswith(":" + page) for k in q["expected_pages"]):
                 errors.append(f"{qid}: evidence for {page} but page not expected")
