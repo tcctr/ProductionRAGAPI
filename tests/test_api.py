@@ -31,6 +31,7 @@ def page(sections: int) -> dict:
 def delete_test_page() -> None:
     with psycopg.connect(embed_ingest.DATABASE_URL) as conn:
         conn.execute("DELETE FROM documents WHERE page = %s", (TEST_PAGE,))
+        embed_ingest.refresh_bm25_stats(conn)
 
 
 @pytest.fixture(scope="module")
@@ -70,8 +71,8 @@ def test_query_version_filter(client):
     chunks = query(client, question="how do I create an index without locking the table", version=17, k=10)
     assert len(chunks) == 10
     assert all(c["version"] == 17 and c["versions"] == [17] for c in chunks)
-    sims = [c["similarity"] for c in chunks]
-    assert sims == sorted(sims, reverse=True)
+    scores = [c["rrf"] for c in chunks]
+    assert scores == sorted(scores, reverse=True)
 
 
 def test_query_doc_type_filter(client):
@@ -96,6 +97,11 @@ def test_ingest_lifecycle(client):
     assert first["chunks_embedded"] == first["chunks_total"]
 
     top = query(client, question="Zorblax Functions reticulate splines in a teapot", version=18, k=1)[0]
+    assert top["page"] == TEST_PAGE
+
+    # /ingest refreshed the keyword index: a made-up identifier, which vector search alone can't
+    # match (~0.48 similarity), is found by its rare words (zorblax, frobnic).
+    top = query(client, question="What does zorblax_frobnicate do?", k=1)[0]
     assert top["page"] == TEST_PAGE
 
     # Unchanged page: nothing to embed.

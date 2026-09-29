@@ -83,7 +83,7 @@ def term_presence(conn: psycopg.Connection, terms: list[str]) -> dict[str, list[
     return presence
 
 
-def search_per_version(conn: psycopg.Connection, qvec: str, k: int,
+def search_per_version(conn: psycopg.Connection, question: str, qvec: str, k: int,
                        doc_type: str | None = None) -> list[dict]:
     """ceil(k / #versions) chunks from each version, oldest version first; chunks whose text is
     identical across versions are merged into the first, with every version in "versions"."""
@@ -91,7 +91,7 @@ def search_per_version(conn: psycopg.Connection, qvec: str, k: int,
     results: list[dict] = []
     seen: dict[str, dict] = {}
     for v in VERSIONS:
-        for c in search(conn, qvec, per_version, v, doc_type, dedup=False):
+        for c in search(conn, qvec, per_version, v, doc_type, dedup=False, query_text=question):
             key = body(c["content"])
             if key in seen:
                 seen[key]["versions"].append(v)
@@ -112,6 +112,6 @@ def retrieve(conn: psycopg.Connection, question: str, qvec: str, k: int, version
     if compare_versions is None:
         compare_versions = version is None and is_version_question(question)
     if not compare_versions or version is not None:
-        return search(conn, qvec, k, version, doc_type), None
-    chunks = search_per_version(conn, qvec, k, doc_type)
+        return search(conn, qvec, k, version, doc_type, query_text=question), None
+    chunks = search_per_version(conn, question, qvec, k, doc_type)
     return chunks, term_presence(conn, question_terms(question))

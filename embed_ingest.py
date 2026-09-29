@@ -146,6 +146,16 @@ def upsert_chunks(conn: psycopg.Connection, chunks: list[dict], doc_ids: dict[tu
     return removed
 
 
+
+def refresh_bm25_stats(conn: psycopg.Connection) -> None:
+    """Rebuild the keyword-search index and word counts (db/schema.sql) from the chunks table.
+
+    ~0.3 s for the whole corpus; readers wait for it. Until it runs, chunks added since the last
+    refresh are found by vector search only and deleted ones are skipped.
+    """
+    conn.execute("REFRESH MATERIALIZED VIEW chunk_terms")
+    conn.execute("REFRESH MATERIALIZED VIEW corpus_stats")  # built from chunk_terms
+
 def embed_pending(conn: psycopg.Connection, batch_size: int, ids: list[str] | None = None) -> int:
     """Embed every chunk (or every chunk in ids) lacking a vector from EMBED_MODEL, committing after each batch."""
     with conn.cursor() as cur:
@@ -211,6 +221,7 @@ def main() -> None:
         # Pages and chunks change together in one transaction.
         doc_ids = upsert_documents(conn, docs)
         upsert_chunks(conn, chunks, doc_ids)
+        refresh_bm25_stats(conn)
         conn.commit()
 
         embed_pending(conn, args.batch_size)

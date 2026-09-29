@@ -35,8 +35,8 @@ CREATE TABLE IF NOT EXISTS chunks (
     content_hash    TEXT        NOT NULL,           -- lets re-ingest skip unchanged chunks
     embedding       vector(768),                    -- NULL until embedded
     embedding_model TEXT,
-    -- Lexical side of hybrid search. 'english' stems prose; identifiers like
-    -- jsonb_path_query survive as single lexemes.
+    -- Lexical side of hybrid search. 'english' stems words ("returning" -> return) and
+    -- splits identifiers at underscores (jsonb_path_query -> jsonb, path, queri).
     tsv             tsvector GENERATED ALWAYS AS (to_tsvector('english', content)) STORED,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (document_id, chunk_index)
@@ -48,3 +48,21 @@ CREATE INDEX IF NOT EXISTS chunks_embedding_hnsw
 
 CREATE INDEX IF NOT EXISTS chunks_tsv_gin      ON chunks USING gin (tsv);
 CREATE INDEX IF NOT EXISTS chunks_version_type ON chunks (version, doc_type);
+
+-- Inverted index for BM25 keyword search (app/search.py): one row per (word, chunk) with how
+-- often the chunk uses the word (tf) and the chunk's length in words (after stop-word
+-- removal), so a query reads only its own words' rows instead of unpacking every matching
+-- chunk's tsv. Refreshed after ingesting (embed_ingest.refresh_bm25_stats); until then new
+-- chunks are found by vector search only.
+CREATE MATERIALIZED VIEW IF NOT EXISTS chunk_terms AS
+    SELECT u.lexeme AS word, ch.id AS chunk_id,
+           coalesce(array_length(u.positions, 1), 1) AS tf,
+           sum(coalesce(array_length(u.positions, 1), 1)) OVER (PARTITION BY ch.id) AS length
+    FROM chunks ch, unnest(ch.tsv) AS u;
+CREATE INDEX IF NOT EXISTS chunk_terms_word ON chunk_terms (word);
+
+-- Number of chunks and their average length, for BM25's IDF and length normalization.
+-- Built from chunk_terms, so refresh that first.
+CREATE MATERIALIZED VIEW IF NOT EXISTS corpus_stats AS
+    SELECT count(*) AS n_chunks, avg(length)::float8 AS avg_length
+    FROM (SELECT DISTINCT chunk_id, length FROM chunk_terms) AS per_chunk;

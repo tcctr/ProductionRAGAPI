@@ -37,7 +37,11 @@ class Chunk(BaseModel):
     section_title: str
     heading_path: list[str]
     url: str
-    similarity: float
+    similarity: float = Field(description="Cosine similarity to the question (vector search)")
+    bm25: float | None = Field(None, description="Keyword (BM25) score; null when the chunk isn't "
+                               "among the keyword matches")
+    rrf: float = Field(description="Reciprocal rank fusion of the vector and keyword ranks; "
+                       "results are ordered by it (per version when comparing versions)")
     content: str
 
 

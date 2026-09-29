@@ -2,9 +2,10 @@
 """Measure retrieval quality against the eval question set.
 
 Usage:
-    python eval_retrieval.py                  # plain vector search (baseline)
+    python eval_retrieval.py                  # hybrid search: vector + keyword (BM25)
     python eval_retrieval.py --filter-version # restrict to the question's version
     python eval_retrieval.py --dedup          # merge identical sections across versions, like /query
+    python eval_retrieval.py --vector-only    # vector search alone (the pre-hybrid baseline)
 
 For each answerable question, embeds it as a search query, takes the top-k
 chunks from pgvector, and checks whether any comes from an expected page
@@ -69,6 +70,8 @@ def main() -> None:
                     help="restrict search to the question's version when it names one")
     ap.add_argument("--dedup", action="store_true",
                     help="without a version filter, merge chunks identical across versions (as /query does)")
+    ap.add_argument("--vector-only", action="store_true",
+                    help="vector search alone, without the keyword (BM25) side of hybrid search")
     ap.add_argument("--out-dir", type=Path, default=Path("data/eval/results"))
     ap.add_argument("--show-misses", action="store_true", help="print questions with no hit in top k")
     args = ap.parse_args()
@@ -80,7 +83,8 @@ def main() -> None:
     with psycopg.connect(DATABASE_URL) as conn:
         for q, vec in zip(questions, vectors):
             version = q["version"] if args.filter_version else None
-            top = search(conn, to_pgvector(vec), args.k, version, dedup=args.dedup)
+            top = search(conn, to_pgvector(vec), args.k, version, dedup=args.dedup,
+                         query_text=None if args.vector_only else q["question"])
             if q["category"] == "unanswerable":
                 unanswerable.append({"id": q["id"], "top_similarity": top[0]["similarity"]})
                 continue
@@ -112,7 +116,8 @@ def main() -> None:
         by_cat[r["category"]].append(r)
         by_type[r["doc_type"]].append(r)
 
-    mode = ("version filter" if args.filter_version else "no filter") + (", dedup" if args.dedup else "")
+    mode = (("version filter" if args.filter_version else "no filter") + (", dedup" if args.dedup else "")
+            + (", vector only" if args.vector_only else ", hybrid"))
     print(f"retrieval eval: {len(results)} answerable questions, top {args.k}, {mode}\n")
     print(f"{'overall':18} {fmt(overall)}")
     print(f"{'  chunk':18} {fmt(overall_chunk)}")
@@ -157,7 +162,7 @@ def main() -> None:
     with path.open("x", encoding="utf-8") as f:
         f.write(json.dumps({
             "timestamp": stamp, "git_commit": commit, "embed_model": EMBED_MODEL,
-            "k": args.k, "filter_version": args.filter_version, "dedup": args.dedup,
+            "k": args.k, "filter_version": args.filter_version, "dedup": args.dedup, "hybrid": not args.vector_only,
             "overall": overall,
             "by_category": {c: score(rs) for c, rs in by_cat.items()},
             "by_doc_type": {d: score(rs) for d, rs in by_type.items()},

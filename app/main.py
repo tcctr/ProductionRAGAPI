@@ -19,8 +19,8 @@ from app import generate as llm
 from app.models import IngestRequest, IngestResponse, QueryRequest, QueryResponse
 from app.versions import retrieve
 from chunk_docs import MAX_TOKENS, TARGET_TOKENS, TokenCounter, chunk_record
-from embed_ingest import (DATABASE_URL, EMBED_URL, QUERY_PREFIX, embed, embed_pending, to_pgvector,
-                          upsert_chunks, upsert_documents)
+from embed_ingest import (DATABASE_URL, EMBED_URL, QUERY_PREFIX, embed, embed_pending, refresh_bm25_stats,
+                          to_pgvector, upsert_chunks, upsert_documents)
 
 
 def health_url(api_url: str) -> str:
@@ -91,6 +91,7 @@ def ingest(req: IngestRequest, request: Request, conn: psycopg.Connection = Depe
 
     doc_ids = upsert_documents(conn, [rec], prune=False)
     deleted = upsert_chunks(conn, chunks, doc_ids)
+    refresh_bm25_stats(conn)
     conn.commit()
     try:
         embedded = embed_pending(conn, batch_size=32, ids=[c["id"] for c in chunks])
