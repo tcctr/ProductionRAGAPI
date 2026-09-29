@@ -13,9 +13,9 @@ postgresql.org ──fetch──▶ raw HTML ──parse──▶ docs.jsonl (70
                                           chunks.jsonl (~4.3k chunks)
                                                    │ embed (nomic-embed-text-v1.5)
                                                    ▼
-                                      Postgres + pgvector (HNSW + full-text)
+                                      Postgres + pgvector (HNSW + BM25 word index)
                                                    │
-question ──embed──▶ nearest chunks ────────────────┘──▶ prompt with chunk text ──▶ LLM ──▶ cited answer
+question ──embed + keywords──▶ hybrid search ──────┘──▶ prompt with chunk text ──▶ LLM ──▶ cited answer
 ```
 
 ## Status
@@ -30,7 +30,8 @@ question ──embed──▶ nearest chunks ───────────�
 | FastAPI `/ingest` and `/query` | Done |
 | Answer generation with a local LLM | Done |
 | Answer evaluation (LLM judge) | Done |
-| Hybrid search, reranking | Planned |
+| Hybrid search (vector + BM25) | Done |
+| Reranking | Planned |
 | Auth, rate limiting, caching | Planned |
 | Observability, A/B testing | Planned |
 
@@ -56,7 +57,9 @@ question ──embed──▶ nearest chunks ───────────�
 
 **Version-comparison questions.** "Which version added X?" is hard for plain retrieval: the docs never say "added in 17", one search over all versions often returns nothing from the version that lacks X, and a few chunks can't show that a version lacks it anyway. When the question asks which version (detected by a regex that matches all 14 such eval questions and none of the other 86, or forced with `compare_versions`), `/query` searches each version separately (2 chunks each for k = 5) and runs an exact text search for the question's identifiers (`casefold()`, `JSON_TABLE`, `AT LOCAL`) over every chunk of every version. The result goes above the excerpts as a term search (`casefold`: in 18; not in 16, 17) with rules to state it as fact, to call the first covered version that documents something the one that added it, and not to take a term's presence as the feature's (MERGE and RETURNING both exist in 16; MERGE ... RETURNING doesn't).
 
-**One database.** pgvector keeps vectors, metadata and full-text search in Postgres. Chunks carry `version` and `doc_type` directly, so filtered searches need no join. An HNSW index serves vector search and a GIN index on a generated `tsvector` column serves keyword search, which hybrid search will combine. A `content_hash` per chunk lets re-ingestion skip unchanged text.
+**Hybrid search.** Vector search matches meaning but blurs exact names: `jsonb_set` and `jsonb_insert` embed almost alike, and a made-up identifier like `zorblax_frobnicate` scored only 0.48 against its own page. So `/query` also ranks chunks by keyword with BM25 and merges the two top-50 lists by reciprocal rank fusion: each list adds 1/(60 + rank) to a chunk's score, so a chunk both lists rank well wins, and scores on different scales are never compared. Postgres's own ranking (`ts_rank_cd`) came first and made retrieval worse (chunk-level MRR 0.585 vs 0.665). It has no notion of how rare a word is, so in "What is a BRIN index good for?" `index` (in 784 chunks) counted as much as `brin` (in 32), and its keyword list alone had the answering chunk in the top 10 for only 48% of questions. BM25 weights each word by its rarity (IDF), gives diminishing returns for repeats and normalizes by chunk length. Postgres has no built-in BM25, so a materialized view `chunk_terms` serves as an inverted index: one row per word and chunk with the word's count and the chunk's length (267k rows, 22 MB), refreshed in about 0.3 s after every ingest, so a query reads only its own words' rows. Words in more than half the chunks (`postgresql`, in every breadcrumb) are skipped. The keyword query takes a few ms; the first version took 220 ms, almost all of it JIT compilation triggered by a badly overestimated plan cost, so search transactions turn JIT off. With `/query`'s settings, chunk-level hit@1 rises from 0.55 to 0.60 and MRR from 0.665 to 0.700 (21 questions rank better, 12 worse), most for paraphrase and version_specific questions. The losses are mostly identifiers the English tokenizer splits into common words (`JSON_TABLE` → `json`, `tabl`; the `AT` of `AT LOCAL` is a stop word) and cross-page questions.
+
+**One database.** pgvector keeps vectors, metadata and keyword search in Postgres. Chunks carry `version` and `doc_type` directly, so filtered searches need no join. An HNSW index serves vector search, and a generated `tsvector` column (stemmed words without stop words) feeds the BM25 word index. A `content_hash` per chunk lets re-ingestion skip unchanged text.
 
 ## Evaluation
 
@@ -73,14 +76,18 @@ question ──embed──▶ nearest chunks ───────────�
 
 Labels are page-level (`18:sql-merge.html`) so they survive re-chunking. Every label carries a quote from the passage that answers the question (or a list of quotes when several passages do), which `validate_questions.py` checks against the corpus; version questions also carry quotes that must be *absent* from the versions lacking the feature.
 
-Results (vector search, top 10, 92 answerable questions). `eval_retrieval.py` runs the same search code as `/query`; with dedup, a merged result counts for every version it lists:
+Results (top 10, 92 answerable questions). `eval_retrieval.py` runs the same search code as `/query` (hybrid, or `--vector-only`); with dedup, a merged result counts for every version it lists:
 
 | Configuration | hit@1 | hit@5 | hit@10 | MRR |
 |---|---|---|---|---|
 | Vector search | 0.71 | 0.87 | 0.93 | 0.769 |
 | + version filter | 0.72 | 0.87 | 0.93 | 0.784 |
 | + cross-version dedup | 0.71 | 0.93 | 0.96 | 0.797 |
-| + version filter + dedup (what `/query` does) | 0.72 | 0.93 | 0.96 | 0.808 |
+| + version filter + dedup | 0.72 | 0.93 | 0.96 | 0.808 |
+| Hybrid search | 0.74 | 0.88 | 0.92 | 0.788 |
+| + version filter | 0.76 | 0.88 | 0.92 | 0.809 |
+| + cross-version dedup | 0.74 | 0.92 | 0.95 | 0.816 |
+| + version filter + dedup (what `/query` does) | **0.76** | 0.92 | 0.95 | **0.831** |
 
 A page-level hit overstates retrieval on long pages: `functions-json.html` has 85 chunks, and any of them counts. The chunk-level hit also requires the retrieved chunk to contain one of the page's evidence quotes, i.e. the passage that actually answers the question:
 
@@ -89,17 +96,21 @@ A page-level hit overstates retrieval on long pages: `functions-json.html` has 8
 | Vector search | 0.54 | 0.74 | 0.84 | 0.618 |
 | + version filter | 0.55 | 0.74 | 0.85 | 0.632 |
 | + cross-version dedup | 0.54 | 0.84 | 0.87 | 0.656 |
-| + version filter + dedup (what `/query` does) | 0.55 | 0.84 | 0.88 | 0.665 |
+| + version filter + dedup | 0.55 | 0.84 | 0.88 | 0.665 |
+| Hybrid search | 0.58 | 0.76 | 0.86 | 0.651 |
+| + version filter | 0.60 | 0.77 | 0.86 | 0.668 |
+| + cross-version dedup | 0.58 | 0.84 | 0.88 | 0.687 |
+| + version filter + dedup (what `/query` does) | **0.60** | 0.84 | 0.88 | **0.700** |
 
-The quotes were first single words (`rows`, `WHERE`, `GRANT`) found in up to 37 chunks of their page, which made a chunk hit almost free; they are now the answering sentence, found in exactly one chunk per version. With `/query`'s settings, 7 questions retrieve the right page but none of its answering chunks in the top 10 (`->>`, `pg_total_relation_size`, `pg_cancel_backend`, among others).
+The quotes were first single words (`rows`, `WHERE`, `GRANT`) found in up to 37 chunks of their page, which made a chunk hit almost free; they are now the answering sentence, found in exactly one chunk per version. With `/query`'s settings, 6 questions retrieve the right page but none of its answering chunks in the top 10 (`->>`, `pg_cancel_backend`, `percentile_cont` for a median, among others; 7 with vector search alone).
 
-All rows use `ef_search = 200`. With pgvector's default of 40 (the first measurements) the same four rows had MRR 0.721, 0.736, 0.749 and 0.759: part of what looked like embedding-model misses was the index skipping the right chunk (see HNSW recall).
+All rows use `ef_search = 200`, and the vector rows were measured before hybrid search. With pgvector's default of 40 (the first measurements) the same four rows had MRR 0.721, 0.736, 0.749 and 0.759: part of what looked like embedding-model misses was the index skipping the right chunk (see HNSW recall).
 
-Paraphrased questions are the weak spot (hit@5 0.82 with dedup, but hit@1 only 0.43; at chunk level hit@5 0.68 and hit@1 0.25): the right page is usually retrieved but not ranked first, and often not the passage that answers, which reranking targets next. Top-1 similarity barely separates answerable questions (median 0.757) from unanswerable ones (median 0.711), so a similarity threshold alone won't detect out-of-scope questions.
+Paraphrased questions are the weak spot. Hybrid search helped them most at rank 1 (chunk-level hit@1 0.25 → 0.36, MRR 0.41 → 0.49), but the answering passage is still in the top 5 for only 64% of them (68% with vector search alone), which reranking targets next. Top-1 similarity barely separates answerable questions (median 0.755) from unanswerable ones (median 0.706), so a similarity threshold alone won't detect out-of-scope questions.
 
 ### Answer quality
 
-`generate_answers.py` answers every question the way `/query` does (version filter + dedup, top 5) and saves each answer with the exact chunks the model saw. `judge_answers.py` then grades them:
+`generate_answers.py` answers every question the way `/query` does (version filter + dedup, top 5; the results below were measured with vector search, before hybrid search) and saves each answer with the exact chunks the model saw. `judge_answers.py` then grades them:
 
 - **Free checks:** every `[n]` citation must point to a retrieved chunk, and a regex spots refusals ("the excerpts do not cover …") as a cross-check on the judge.
 - **LLM judge:** a local model gets the question, the reference answer, the numbered excerpts and the answer, and returns small labels constrained by a JSON schema (llama-server compiles it into a grammar, so the output always parses): each factual claim, SQL examples included, as supported or unsupported by the excerpts and as agreeing with, contradicting or not mentioned by the reference; coverage of the reference's key points (full/partial/none); and whether the answer says the excerpts don't answer the question. There is no free text beyond the claims: an earlier version had a free-text list of contradictions, and the judge filled it with notes like "the reference does not mention this", each of which counted as a contradiction. The verdict follows from fixed rules, in order: a claim that contradicts the reference is `incorrect` ("the excerpts don't say, but it's in 16" is a wrong answer, not a refusal); a refusal is `refused`; no coverage is `incorrect`; full coverage `correct`, partial `partial`. An unanswerable question is `correct` only if the answer declines (by the judge's label or the refusal regex, since the judge missed some clean refusals) with no unsupported claims. Contradicting claims that are themselves refusal sentences ("the excerpts do not state which version…") don't count: the judge sometimes labels them that way.
@@ -182,7 +193,7 @@ python embed_ingest.py
 
 # 4. Check eval labels, then measure retrieval (results saved in data/eval/results/)
 python validate_questions.py
-python eval_retrieval.py [--filter-version] [--dedup] [--show-misses]
+python eval_retrieval.py [--filter-version] [--dedup] [--vector-only] [--show-misses]
 
 # 5. Answer every question with an LLM, then grade the answers (saved in data/eval/answers/, data/eval/judgments/)
 python generate_answers.py --name qwen3.6-35b-a3b --llm-url $LLM_URL
@@ -203,7 +214,7 @@ Interactive docs at http://localhost:8000/docs.
 
 | Endpoint | Does |
 |---|---|
-| `POST /query` | `{"question", "version"?, "doc_type"?, "k"?, "generate"?, "compare_versions"?}` → an answer citing the chunks as `[n]`, plus the top-k chunks with URL, heading path, similarity and the versions they apply to. `"generate": false` skips the LLM and returns chunks only. For "which version …?" questions (or `"compare_versions": true`), chunks come from each version and `version_presence` lists the versions whose docs contain each identifier in the question |
+| `POST /query` | `{"question", "version"?, "doc_type"?, "k"?, "generate"?, "compare_versions"?}` → an answer citing the chunks as `[n]`, plus the top-k chunks with URL, heading path, scores (`similarity`, `bm25`, and the fused `rrf` they're ordered by) and the versions they apply to. `"generate": false` skips the LLM and returns chunks only. For "which version …?" questions (or `"compare_versions": true`), chunks come from each version and `version_presence` lists the versions whose docs contain each identifier in the question |
 | `POST /ingest` | One page (`version`, `doc_type`, `section_title`, `page`, `url`, `text` as markdown) → chunked, upserted, new or changed chunks embedded. Re-sending an unchanged page is a no-op |
 | `GET /health` | 200 if the database, the embedding server and the LLM server respond, else 503 |
 
@@ -231,7 +242,7 @@ pytest
 ## Repository layout
 
 ```
-app/                  FastAPI app (main.py), request/response models, shared search, version comparison, answer generation
+app/                  FastAPI app (main.py), request/response models, shared hybrid search, version comparison, answer generation
 tests/                API tests
 fetch_parse_docs.py   crawl postgresql.org and convert pages to markdown
 chunk_docs.py         split pages into embedding-sized chunks
@@ -242,7 +253,7 @@ generate_answers.py   answer every eval question with an LLM
 judge_answers.py      grade saved answers with an LLM judge and citation checks
 hand_grade.py         blind hand-grading page and agreement with the judge
 data/eval/            eval questions, saved retrieval results, answers, judgments and hand grades
-db/schema.sql         tables and indexes
+db/schema.sql         tables, indexes and the BM25 word index
 docker-compose.yml    Postgres + pgvector
 data/parsed/          parsed corpus (docs.jsonl)
 ```
