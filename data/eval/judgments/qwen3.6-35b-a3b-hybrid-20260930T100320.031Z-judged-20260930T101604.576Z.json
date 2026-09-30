@@ -1,6 +1,7 @@
 {
   "timestamp": "20260930T101604.576Z",
   "git_commit": "5d45f9e",
+  "verdicts_rescored_at_commit": "a7db442",
   "answers_file": "data/eval/answers/qwen3.6-35b-a3b-hybrid-20260930T100320.031Z.json",
   "name": "qwen3.6-35b-a3b-hybrid",
   "served_model": "/models/Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf",
@@ -8,10 +9,10 @@
   "overall_answerable": {
     "n": 92,
     "graded": 92,
-    "correct": 0.6413043478260869,
+    "correct": 0.6521739130434783,
     "partial": 0.2391304347826087,
     "incorrect": 0.010869565217391304,
-    "refused": 0.10869565217391304,
+    "refused": 0.09782608695652174,
     "faithfulness": 0.9736229350359785,
     "fully_faithful": 0.8913043478260869,
     "bad_citations": 1
@@ -64,10 +65,10 @@
     "version_diff": {
       "n": 14,
       "graded": 14,
-      "correct": 0.6428571428571429,
+      "correct": 0.7142857142857143,
       "partial": 0.21428571428571427,
       "incorrect": 0.0,
-      "refused": 0.14285714285714285,
+      "refused": 0.07142857142857142,
       "faithfulness": 0.9821428571428571,
       "fully_faithful": 0.9285714285714286,
       "bad_citations": 0
@@ -1064,7 +1065,7 @@
       "category": "paraphrase",
       "bad_citations": [],
       "cited": 2,
-      "refusal_phrase": false,
+      "refusal_phrase": true,
       "grade": {
         "claims": [
           {
@@ -3849,7 +3850,7 @@
         "coverage": "full",
         "says_excerpts_dont_answer": true
       },
-      "verdict": "refused",
+      "verdict": "correct",
       "claims": 3,
       "supported": 3
     },

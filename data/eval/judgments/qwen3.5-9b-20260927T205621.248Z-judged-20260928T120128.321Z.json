@@ -1,7 +1,7 @@
 {
   "timestamp": "20260928T120128.321Z",
   "git_commit": "a4808dd",
-  "verdicts_rescored_at_commit": "1d0766f",
+  "verdicts_rescored_at_commit": "a7db442",
   "answers_file": "data/eval/answers/qwen3.5-9b-20260927T205621.248Z.json",
   "name": "qwen3.5-9b",
   "served_model": "qwen3.5-9b",
@@ -10,9 +10,9 @@
     "n": 92,
     "graded": 92,
     "correct": 0.5,
-    "partial": 0.2391304347826087,
+    "partial": 0.2608695652173913,
     "incorrect": 0.07608695652173914,
-    "refused": 0.18478260869565216,
+    "refused": 0.16304347826086957,
     "faithfulness": 0.9497009739337104,
     "fully_faithful": 0.7717391304347826,
     "bad_citations": 1
@@ -55,9 +55,9 @@
       "n": 16,
       "graded": 16,
       "correct": 0.75,
-      "partial": 0.125,
+      "partial": 0.1875,
       "incorrect": 0.0625,
-      "refused": 0.0625,
+      "refused": 0.0,
       "faithfulness": 0.9416666666666667,
       "fully_faithful": 0.75,
       "bad_citations": 1
@@ -66,9 +66,9 @@
       "n": 14,
       "graded": 14,
       "correct": 0.21428571428571427,
-      "partial": 0.0,
+      "partial": 0.07142857142857142,
       "incorrect": 0.21428571428571427,
-      "refused": 0.5714285714285714,
+      "refused": 0.5,
       "faithfulness": 0.9212585034013605,
       "fully_faithful": 0.7142857142857143,
       "bad_citations": 0
@@ -3212,7 +3212,7 @@
         "coverage": "partial",
         "says_excerpts_dont_answer": true
       },
-      "verdict": "refused",
+      "verdict": "partial",
       "claims": 4,
       "supported": 4
     },
@@ -4125,7 +4125,7 @@
         "coverage": "partial",
         "says_excerpts_dont_answer": true
       },
-      "verdict": "refused",
+      "verdict": "partial",
       "claims": 2,
       "supported": 2
     },
