@@ -110,7 +110,7 @@ Paraphrased questions are the weak spot. Hybrid search helped them most at rank 
 
 ### Answer quality
 
-`generate_answers.py` answers every question the way `/query` does (version filter + dedup, top 5; the results below were measured with vector search, before hybrid search) and saves each answer with the exact chunks the model saw. `judge_answers.py` then grades them:
+`generate_answers.py` answers every question the way `/query` does (version filter + dedup, top 5; the model comparison and version questions below were measured with vector search, the last run with hybrid search) and saves each answer with the exact chunks the model saw. `judge_answers.py` then grades them:
 
 - **Free checks:** every `[n]` citation must point to a retrieved chunk, and a regex spots refusals ("the excerpts do not cover …") as a cross-check on the judge.
 - **LLM judge:** a local model gets the question, the reference answer, the numbered excerpts and the answer, and returns small labels constrained by a JSON schema (llama-server compiles it into a grammar, so the output always parses): each factual claim, SQL examples included, as supported or unsupported by the excerpts and as agreeing with, contradicting or not mentioned by the reference; coverage of the reference's key points (full/partial/none); and whether the answer says the excerpts don't answer the question. There is no free text beyond the claims: an earlier version had a free-text list of contradictions, and the judge filled it with notes like "the reference does not mention this", each of which counted as a contradiction. The verdict follows from fixed rules, in order: a claim that contradicts the reference is `incorrect` ("the excerpts don't say, but it's in 16" is a wrong answer, not a refusal); a refusal is `refused`; no coverage is `incorrect`; full coverage `correct`, partial `partial`. An unanswerable question is `correct` only if the answer declines (by the judge's label or the refusal regex, since the judge missed some clean refusals) with no unsupported claims. Contradicting claims that are themselves refusal sentences ("the excerpts do not state which version…") don't count: the judge sometimes labels them that way.
@@ -146,6 +146,24 @@ Of the 35B's 16 refused answerable questions, 6 had no expected page in the top 
 | per-version + term search, run 2 | 0.57 | 0.36 | 0.07 | 0.00 |
 
 Both runs retrieved the same chunks and named the right version in 13 of 14 answers; they differ in sampling (temperature 0.2) and in where the judge draws the correct/partial line, mostly for answers that give the version but not the reference's one-line description of the feature. The miss is MERGE ... RETURNING: 17's MERGE page isn't in 17's top 4 chunks, so the model sees "no RETURNING" in 16 and RETURNING in 18 and answers 18.
+
+**With hybrid search.** The same 35B run over all 100 questions with hybrid retrieval (version_diff through per-version retrieval in both rows), 92 answerable:
+
+| 35B-A3B | correct | partial | incorrect | refused | faithfulness |
+|---|---|---|---|---|---|
+| vector search | 0.59 | 0.26 | 0.07 | 0.09 | 0.97 |
+| hybrid search | 0.64 | 0.24 | 0.01 | 0.11 | 0.97 |
+
+| correct, by category | vector | hybrid |
+|---|---|---|
+| direct | 0.77 | 0.62 |
+| version_specific | 0.81 | 0.81 |
+| identifier | 0.64 | 0.73 |
+| paraphrase | 0.43 | 0.57 |
+| cross_page | 0.40 | 0.50 |
+| version_diff | 0.57 | 0.64 |
+
+Wrong answers dropped from 6 to 1. MERGE ... RETURNING is now right: the keyword side brings 17's MERGE chunk into view, and the model answers 17. The two paraphrase questions whose page hybrid search lost (COALESCE for "a default instead of NULL", `SELECT ... FOR UPDATE` for locking rows) had been answered wrongly; now the model says the excerpts don't cover them. The direct drop is two correct → partial answers with the same page retrieved, the judge's correct/partial line rather than retrieval. One new refusal is a real miss: for `any_value` the model gets the right page but not the chunk that lists it (the English tokenizer splits the name into common words). Another is a judge error: the answer "array_sample and array_shuffle are in 16, 17 and 18; the docs don't show which version introduced them" matches the reference but was graded `refused`.
 
 **Checking the judge.** `hand_grade.py` picks 21 judged answers stratified by verdict and category and writes a local web page to grade them blind (question, reference, excerpts and answer, no verdict). Blind agreement with the judge was low: 7/21 (33%), Cohen's kappa 0.08. Most of the gap was the rubric, not the judge: the hand grades marked "declined although the answer exists" as `incorrect` where the rubric says `refused`, and drew the correct/partial line differently. A second page shows each disagreement with both grades and the judge's labels, and the hand grades were settled after reading them. The disagreements and the 9B run also exposed judge bugs (notes counted as contradictions, conflicts with the excerpts graded as wrong answers, clean refusals missed), fixed with the per-claim reference labels and verdict rules above. The current judge agrees with 18/21 settled grades (86%, kappa 0.80), an upper bound since the grades were settled after seeing the judge's reasoning. One remaining judge error: it accepted "a primary key can't prevent overlaps, use EXCLUDE" for a PostgreSQL 18 question whose answer is `PRIMARY KEY (..., WITHOUT OVERLAPS)`.
 
