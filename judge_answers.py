@@ -80,8 +80,10 @@ JUDGE_SCHEMA = {
 # [3], [2][3] and [1, 2] all count; each number must be 1..len(chunks).
 CITATION = re.compile(r"\[(\d+(?:\s*,\s*\d+)*)\]")
 # Refusals the system prompt asks for: "The provided documentation excerpts do not cover ...".
+# Also "there is no direct function or syntax described to ..." (q019).
 REFUSAL = re.compile(r"\b(?:do|does)(?: not|n't) (?:cover|contain|include|provide|mention|describe|"
-                     r"address|explain|specify|state|answer)\b|\bnot covered\b", re.IGNORECASE)
+                     r"address|explain|specify|state|answer)\b|\bnot covered\b"
+                     r"|\bthere is no\b[^.]*\b(?:described|documented)\b", re.IGNORECASE)
 
 
 CANT_TELL = re.compile(r"\bnot possible to determine\b|\bcannot (?:be )?determined?\b", re.IGNORECASE)
@@ -144,7 +146,11 @@ def verdict(category: str, grade: dict, refusal_phrase: bool = False) -> str:
     # A wrong claim outweighs a hedge: "the excerpts don't say, but it's in 16" is incorrect, not refused.
     if contradictions(grade):
         return "incorrect"
-    if declined(grade):
+    # The judge also marks answers that hedge and then answer ("there is no section that contrasts
+    # them directly. [explains both]", q083) as declining. Such an answer is graded by coverage
+    # unless its first sentence refuses; coverage alone can't tell, since the judge gives clean
+    # refusals "full" coverage too.
+    if declined(grade) and (refusal_phrase or grade["coverage"] == "none"):
         return "refused"
     if grade["coverage"] == "none":
         return "incorrect"
