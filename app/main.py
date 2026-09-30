@@ -16,6 +16,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request
 from psycopg_pool import ConnectionPool, PoolTimeout
 
 from app import generate as llm
+from app import rerank as reranker
 from app.models import IngestRequest, IngestResponse, QueryRequest, QueryResponse
 from app.versions import retrieve
 from chunk_docs import MAX_TOKENS, TARGET_TOKENS, TokenCounter, chunk_record
@@ -67,8 +68,11 @@ def query(req: QueryRequest, request: Request):
     # Not get_conn, which holds the connection until the response is sent: give it back to the
     # pool before the LLM call, so slow answers don't use up connections that searches need.
     with request.app.state.pool.connection() as conn:
-        chunks, presence = retrieve(conn, req.question, qvec, req.k, req.version, req.doc_type,
-                                    req.compare_versions)
+        try:
+            chunks, presence = retrieve(conn, req.question, qvec, req.k, req.version, req.doc_type,
+                                        req.compare_versions)
+        except (requests.RequestException, ValueError) as e:
+            raise HTTPException(503, f"reranker unavailable: {e}")
     answer = None
     if req.generate and chunks:
         try:
@@ -103,7 +107,7 @@ def ingest(req: IngestRequest, request: Request, conn: psycopg.Connection = Depe
 
 @app.get("/health")
 def health(request: Request):
-    """200 if the database, the embedding server and the LLM server all respond, else 503."""
+    """200 if the database and the embedding, reranker and LLM servers all respond, else 503."""
     status = {}
     try:
         # Not get_conn: when the database is down, fail in 2s instead of the pool's 30s default.
@@ -112,7 +116,7 @@ def health(request: Request):
         status["database"] = "ok"
     except (psycopg.Error, PoolTimeout) as e:
         status["database"] = f"error: {e}"
-    for name, url in [("embeddings", EMBED_URL), ("llm", llm.LLM_URL)]:
+    for name, url in [("embeddings", EMBED_URL), ("reranker", reranker.RERANK_URL), ("llm", llm.LLM_URL)]:
         try:
             requests.get(health_url(url), timeout=2).raise_for_status()
             status[name] = "ok"

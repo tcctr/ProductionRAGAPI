@@ -40,8 +40,10 @@ class Chunk(BaseModel):
     similarity: float = Field(description="Cosine similarity to the question (vector search)")
     bm25: float | None = Field(None, description="Keyword (BM25) score; null when the chunk isn't "
                                "among the keyword matches")
-    rrf: float = Field(description="Reciprocal rank fusion of the vector and keyword ranks; "
-                       "results are ordered by it (per version when comparing versions)")
+    rrf: float = Field(description="Reciprocal rank fusion of the vector and keyword ranks, which "
+                       "picks the candidates the reranker scores")
+    rerank: float = Field(description="Reranker relevance score (a logit, can be negative); results are "
+                          "ordered by it (per version when comparing versions)")
     content: str
 
 

@@ -2,10 +2,11 @@
 """Measure retrieval quality against the eval question set.
 
 Usage:
-    python eval_retrieval.py                  # hybrid search: vector + keyword (BM25)
+    python eval_retrieval.py                  # hybrid search (vector + keyword (BM25)), reranked
     python eval_retrieval.py --filter-version # restrict to the question's version
     python eval_retrieval.py --dedup          # merge identical sections across versions, like /query
     python eval_retrieval.py --vector-only    # vector search alone (the pre-hybrid baseline)
+    python eval_retrieval.py --rerank 0       # hybrid search without reranking (--rerank N: top N)
 
 For each answerable question, embeds it as a search query, takes the top-k
 chunks from pgvector, and checks whether any comes from an expected page
@@ -29,6 +30,7 @@ Each run is saved to data/eval/results/<timestamp>.json.
 import argparse
 import json
 import subprocess
+import time
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -36,7 +38,7 @@ from statistics import mean, median
 
 import psycopg
 
-from app.search import search
+from app.search import RERANK_POOL, search
 from embed_ingest import DATABASE_URL, EMBED_MODEL, QUERY_PREFIX, embed, to_pgvector
 from validate_questions import evidence_quotes
 
@@ -72,6 +74,8 @@ def main() -> None:
                     help="without a version filter, merge chunks identical across versions (as /query does)")
     ap.add_argument("--vector-only", action="store_true",
                     help="vector search alone, without the keyword (BM25) side of hybrid search")
+    ap.add_argument("--rerank", type=int, default=RERANK_POOL, metavar="N",
+                    help=f"hybrid results the reranker reorders (default {RERANK_POOL}, like /query; 0 = none)")
     ap.add_argument("--out-dir", type=Path, default=Path("data/eval/results"))
     ap.add_argument("--show-misses", action="store_true", help="print questions with no hit in top k")
     args = ap.parse_args()
@@ -80,11 +84,12 @@ def main() -> None:
     vectors = embed([QUERY_PREFIX + q["question"] for q in questions])
 
     results, unanswerable = [], []
+    started = time.perf_counter()
     with psycopg.connect(DATABASE_URL) as conn:
         for q, vec in zip(questions, vectors):
             version = q["version"] if args.filter_version else None
             top = search(conn, to_pgvector(vec), args.k, version, dedup=args.dedup,
-                         query_text=None if args.vector_only else q["question"])
+                         query_text=None if args.vector_only else q["question"], rerank_pool=args.rerank)
             if q["category"] == "unanswerable":
                 unanswerable.append({"id": q["id"], "top_similarity": top[0]["similarity"]})
                 continue
@@ -110,6 +115,8 @@ def main() -> None:
                 "retrieved": keys,
             })
 
+    # Search time only: the questions were embedded before the loop.
+    search_seconds = (time.perf_counter() - started) / len(questions)
     overall, overall_chunk = score(results), score(results, "chunk_rank")
     by_cat, by_type = defaultdict(list), defaultdict(list)
     for r in results:
@@ -117,8 +124,10 @@ def main() -> None:
         by_type[r["doc_type"]].append(r)
 
     mode = (("version filter" if args.filter_version else "no filter") + (", dedup" if args.dedup else "")
-            + (", vector only" if args.vector_only else ", hybrid"))
-    print(f"retrieval eval: {len(results)} answerable questions, top {args.k}, {mode}\n")
+            + (", vector only" if args.vector_only else ", hybrid")
+            + (f", rerank top {args.rerank}" if args.rerank and not args.vector_only else ""))
+    print(f"retrieval eval: {len(results)} answerable questions, top {args.k}, {mode}, "
+          f"{search_seconds * 1000:.0f} ms per search\n")
     print(f"{'overall':18} {fmt(overall)}")
     print(f"{'  chunk':18} {fmt(overall_chunk)}")
     print("\nby category")
@@ -163,6 +172,7 @@ def main() -> None:
         f.write(json.dumps({
             "timestamp": stamp, "git_commit": commit, "embed_model": EMBED_MODEL,
             "k": args.k, "filter_version": args.filter_version, "dedup": args.dedup, "hybrid": not args.vector_only,
+            "rerank_pool": 0 if args.vector_only else args.rerank, "search_seconds": search_seconds,
             "overall": overall,
             "by_category": {c: score(rs) for c, rs in by_cat.items()},
             "by_doc_type": {d: score(rs) for d, rs in by_type.items()},

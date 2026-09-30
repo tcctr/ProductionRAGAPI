@@ -1,6 +1,8 @@
-"""Hybrid (vector + BM25 keyword) search over chunks, shared by the API and eval_retrieval.py."""
+"""Hybrid (vector + BM25 keyword) search over chunks, reranked, shared by the API and eval_retrieval.py."""
 import psycopg
 from psycopg.rows import dict_row
+
+from app.rerank import rerank
 
 # Without a version filter, fetch this many times k so k distinct results remain after merging
 # the copies of a section that is identical in 16, 17 and 18.
@@ -17,6 +19,11 @@ HYBRID_POOL = 50
 # Reciprocal rank fusion constant from Cormack et al. (2009): a chunk scores 1/(RRF_K + rank) per
 # list it is in, so a larger constant flattens the gap between the top ranks.
 RRF_K = 60
+
+# Hybrid results the reranker reorders. Chunk-level MRR with /query's settings: 0.700 without
+# reranking, 0.766 with 20, 0.784 with 50; the reranker takes ~40 ms per chunk, so 20 gets most
+# of the gain for ~0.8 s.
+RERANK_POOL = 20
 
 # BM25 parameters (the usual defaults): K1 caps how much repeating a word helps, B how much
 # a chunk longer than average is penalized (0 = not at all, 1 = fully by length).
@@ -62,19 +69,26 @@ def body(content: str) -> str:
 
 
 def search(conn: psycopg.Connection, qvec: str, k: int, version: int | None = None,
-           doc_type: str | None = None, dedup: bool = True, query_text: str | None = None) -> list[dict]:
+           doc_type: str | None = None, dedup: bool = True, query_text: str | None = None,
+           rerank_pool: int = RERANK_POOL) -> list[dict]:
     """Top-k chunks for a question, best first.
 
     With query_text (the question; /query always passes it), hybrid search: the top HYBRID_POOL
     chunks by cosine similarity to qvec (a pgvector literal) and by keyword (BM25) score are
-    fused by reciprocal rank fusion into "rrf", which orders the results. Without it, vector
+    fused by reciprocal rank fusion into "rrf", then reranked (below). Without it, vector
     search alone, ordered by "similarity" (the cosine similarity, set either way).
 
     With dedup and no version filter, chunks whose text is identical across versions
     are merged into the best-scoring one, and its "versions" lists every version seen.
+
+    With query_text, the top rerank_pool results by rrf (after merging, so each text is scored
+    once) are reordered by the reranker (app/rerank.py), which sets "rerank" on each, and the top
+    k of those returned; rerank_pool=0 skips it (the results stay ordered by rrf).
     """
     dedup = dedup and version is None
-    fetch_k = k * DEDUP_OVERFETCH if dedup else k
+    rerank_pool = rerank_pool if query_text is not None else 0
+    wanted = max(k, rerank_pool)
+    fetch_k = wanted * DEDUP_OVERFETCH if dedup else wanted
     if query_text is not None:
         fetch_k = max(fetch_k, HYBRID_POOL)
     where, params = ["embedding IS NOT NULL"], {"q": qvec, "k": fetch_k, "text": query_text}
@@ -126,6 +140,8 @@ def search(conn: psycopg.Connection, qvec: str, k: int, version: int | None = No
         results.append(r)
     for r in results:
         r["versions"].sort()
+    if rerank_pool:
+        results = rerank(query_text, results[:rerank_pool])
     return results[:k]
 
 

@@ -6,7 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 import embed_ingest
-from app import generate
+from app import generate, rerank
 from app.main import app
 from app.versions import is_version_question, question_terms
 
@@ -51,7 +51,7 @@ def query(client, **body):
 
 
 def test_health(client):
-    assert client.get("/health").json() == {"database": "ok", "embeddings": "ok", "llm": "ok"}
+    assert client.get("/health").json() == {"database": "ok", "embeddings": "ok", "reranker": "ok", "llm": "ok"}
 
 
 @pytest.mark.parametrize("body", [
@@ -71,7 +71,7 @@ def test_query_version_filter(client):
     chunks = query(client, question="how do I create an index without locking the table", version=17, k=10)
     assert len(chunks) == 10
     assert all(c["version"] == 17 and c["versions"] == [17] for c in chunks)
-    scores = [c["rrf"] for c in chunks]
+    scores = [c["rerank"] for c in chunks]
     assert scores == sorted(scores, reverse=True)
 
 
@@ -124,6 +124,13 @@ def test_embedding_server_down_returns_503(client, monkeypatch):
     resp = client.post("/query", json={"question": "anything"})
     assert resp.status_code == 503
     assert "embedding server unavailable" in resp.json()["detail"]
+
+
+def test_reranker_down_returns_503(client, monkeypatch):
+    monkeypatch.setattr(rerank, "RERANK_URL", "http://localhost:1/v1/rerank")
+    resp = client.post("/query", json={"question": "anything", "generate": False})
+    assert resp.status_code == 503
+    assert "reranker unavailable" in resp.json()["detail"]
 
 
 def test_version_question_detection_and_terms():
