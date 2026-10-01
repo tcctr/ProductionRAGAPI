@@ -91,3 +91,13 @@ CREATE TABLE IF NOT EXISTS rate_buckets (
     updated_at TIMESTAMPTZ NOT NULL,
     PRIMARY KEY (key_id, scope)
 );
+
+-- /query responses by request (app/cache.py): a repeated question is answered from here instead of
+-- the reranker and the LLM. Emptied whenever the chunks change (/ingest, embed_ingest.py); entries
+-- older than CACHE_TTL_DAYS are ignored and deleted.
+CREATE TABLE IF NOT EXISTS answer_cache (
+    key        TEXT        PRIMARY KEY,               -- SHA-256 of the request and the pipeline settings
+    response   JSONB       NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS answer_cache_created_at ON answer_cache (created_at);

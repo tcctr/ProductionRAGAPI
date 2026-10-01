@@ -55,6 +55,8 @@ class QueryResponse(BaseModel):
     version_presence: dict[str, list[int]] | None = Field(
         description="When comparing versions: each identifier from the question and the versions whose "
         "documentation contains it; null otherwise")
+    cached: bool = Field(description="True when this response was stored for an earlier identical request "
+                         "(same question up to whitespace and same options) instead of being computed now")
 
 
 class IngestRequest(BaseModel):

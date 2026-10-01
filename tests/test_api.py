@@ -8,7 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 import embed_ingest
-from app import generate, ratelimit, rerank
+from app import cache, generate, ratelimit, rerank
 from app import main as api
 from app.auth import create_key, revoke_key, set_limits
 from app.main import app
@@ -38,6 +38,15 @@ def delete_test_page() -> None:
     with psycopg.connect(embed_ingest.DATABASE_URL) as conn:
         conn.execute("DELETE FROM documents WHERE page = %s", (TEST_PAGE,))
         embed_ingest.refresh_bm25_stats(conn)
+        embed_ingest.clear_answer_cache(conn)
+
+
+@pytest.fixture(autouse=True)
+def empty_cache():
+    """Each test starts with an empty /query cache: the database is shared between test runs,
+    and a response cached earlier would skip the failure a test sets up (e.g. a server down)."""
+    with psycopg.connect(embed_ingest.DATABASE_URL) as conn:
+        embed_ingest.clear_answer_cache(conn)
 
 
 def delete_test_keys() -> None:
@@ -224,14 +233,18 @@ def test_ingest_lifecycle(client):
     top = query(client, question="What does zorblax_frobnicate do?", k=1)[0]
     assert top["page"] == TEST_PAGE
 
-    # Unchanged page: nothing to embed.
+    # Unchanged page: nothing to embed, and the cached responses stay.
     again = client.post("/ingest", json=page(sections=6)).json()
     assert again["chunks_embedded"] == 0 and again["chunks_deleted"] == 0
+    zorblax = {"question": "What does zorblax_frobnicate do?", "k": 1, "generate": False}
+    assert client.post("/query", json=zorblax).json()["cached"]
 
-    # Shrunk page: fewer chunks, the stale ones are deleted.
+    # Shrunk page: fewer chunks, the stale ones are deleted, and so are the cached responses
+    # (the one above cited a chunk that may be gone).
     shrunk = client.post("/ingest", json=page(sections=0)).json()
     assert shrunk["chunks_total"] == 1
     assert shrunk["chunks_deleted"] == first["chunks_total"] - 1
+    assert not client.post("/query", json=zorblax).json()["cached"]
 
 
 def test_ingest_rejects_bad_page_name(client):
@@ -251,6 +264,43 @@ def test_reranker_down_returns_503(client, monkeypatch):
     resp = client.post("/query", json={"question": "anything", "generate": False})
     assert resp.status_code == 503
     assert "reranker unavailable" in resp.json()["detail"]
+
+
+def test_repeated_query_is_cached(client):
+    body = {"question": "How do I round a number?", "k": 3, "generate": False}
+    first = client.post("/query", json=body).json()
+    assert first["cached"] is False
+    # Same question up to whitespace: answered from the cache, echoing the question as asked.
+    spaced = body | {"question": "  How do I   round a number? "}
+    second = client.post("/query", json=spaced).json()
+    assert second["cached"] is True
+    assert second["question"] == spaced["question"]
+    assert second | {"question": body["question"], "cached": False} == first
+    # Different options are a different request.
+    assert client.post("/query", json=body | {"k": 4}).json()["cached"] is False
+
+
+def test_cached_answer_skips_the_pipeline(client, monkeypatch):
+    calls = []
+    monkeypatch.setattr(api.llm, "generate", lambda q, chunks, presence: calls.append(q) or "Use round() [1].")
+    body = {"question": "How do I round a number?", "k": 1}
+    first = client.post("/query", json=body)
+    assert first.status_code == 200 and calls == [body["question"]]
+    # With the embedding server gone, only a cache hit can still answer.
+    monkeypatch.setattr(embed_ingest, "EMBED_URL", "http://localhost:1/v1/embeddings")
+    second = client.post("/query", json=body)
+    assert second.status_code == 200, second.text
+    assert second.json()["cached"] and second.json()["answer"] == "Use round() [1]."
+    assert len(calls) == 1
+
+
+def test_cache_key():
+    def key(**body):
+        return cache.cache_key(api.QueryRequest(**({"question": "Which version added AT LOCAL?"} | body)))
+    assert key() == key(question=" Which  version added\tAT LOCAL? ")
+    # Case is kept: ALL-CAPS words are looked up as SQL keywords (question_terms).
+    assert key() != key(question="which version added at local?")
+    assert key() != key(version=17) != key(generate=False)
 
 
 def test_version_question_detection_and_terms():

@@ -156,6 +156,16 @@ def refresh_bm25_stats(conn: psycopg.Connection) -> None:
     conn.execute("REFRESH MATERIALIZED VIEW chunk_terms")
     conn.execute("REFRESH MATERIALIZED VIEW corpus_stats")  # built from chunk_terms
 
+
+def clear_answer_cache(conn: psycopg.Connection) -> None:
+    """Drop the API's cached /query responses (app/cache.py), which were answered from the old chunks.
+
+    Call it whenever the searchable chunks change: after upserting (deleted chunks are gone at
+    once) and after embedding (new chunks are searched only once they have a vector).
+    """
+    conn.execute("DELETE FROM answer_cache")
+
+
 def embed_pending(conn: psycopg.Connection, batch_size: int, ids: list[str] | None = None) -> int:
     """Embed every chunk (or every chunk in ids) lacking a vector from EMBED_MODEL, committing after each batch."""
     with conn.cursor() as cur:
@@ -222,9 +232,11 @@ def main() -> None:
         doc_ids = upsert_documents(conn, docs)
         upsert_chunks(conn, chunks, doc_ids)
         refresh_bm25_stats(conn)
+        clear_answer_cache(conn)
         conn.commit()
 
         embed_pending(conn, args.batch_size)
+        clear_answer_cache(conn)
 
         with conn.cursor() as cur:
             cur.execute("SELECT count(*), count(embedding) FROM chunks")

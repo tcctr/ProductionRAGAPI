@@ -21,14 +21,15 @@ import requests
 from fastapi import Depends, FastAPI, HTTPException, Request
 from psycopg_pool import ConnectionPool, PoolTimeout
 
+from app import cache
 from app import generate as llm
 from app import rerank as reranker
 from app.auth import require_scope
 from app.models import IngestRequest, IngestResponse, QueryRequest, QueryResponse
 from app.versions import retrieve
 from chunk_docs import MAX_TOKENS, TARGET_TOKENS, TokenCounter, chunk_record
-from embed_ingest import (DATABASE_URL, EMBED_URL, QUERY_PREFIX, embed, embed_pending, refresh_bm25_stats,
-                          to_pgvector, upsert_chunks, upsert_documents)
+from embed_ingest import (DATABASE_URL, EMBED_URL, QUERY_PREFIX, clear_answer_cache, embed, embed_pending,
+                          refresh_bm25_stats, to_pgvector, upsert_chunks, upsert_documents)
 
 
 log = logging.getLogger(__name__)
@@ -76,6 +77,13 @@ def llm_unavailable(e: Exception) -> HTTPException:
 
 @app.post("/query", response_model=QueryResponse, dependencies=[Depends(require_scope("query"))])
 def query(req: QueryRequest, request: Request):
+    # A repeated request is answered from the cache (app/cache.py); it still took a rate-limit token.
+    key = cache.cache_key(req)
+    with request.app.state.pool.connection() as conn:
+        hit = cache.get(conn, key)
+    if hit is not None:
+        return hit | {"question": req.question, "cached": True}
+
     try:
         # One attempt: a user is waiting, so fail fast instead of embed()'s backoff retries.
         qvec = to_pgvector(embed([QUERY_PREFIX + req.question], retries=1)[0])
@@ -100,7 +108,15 @@ def query(req: QueryRequest, request: Request):
             raise llm_unavailable(e)
         finally:
             llm_slots.release()
-    return {"question": req.question, "answer": answer, "chunks": chunks, "version_presence": presence}
+    response = {"question": req.question, "answer": answer, "chunks": chunks, "version_presence": presence}
+    # Errors raised above are never cached; neither is an empty result, which an /ingest may fill.
+    if chunks:
+        try:
+            with request.app.state.pool.connection() as conn:
+                cache.put(conn, key, response)
+        except psycopg.Error as e:
+            log.warning("query: caching the response failed: %s", e)  # the answer is still good
+    return response | {"cached": False}
 
 
 @app.post("/ingest", response_model=IngestResponse, dependencies=[Depends(require_scope("ingest"))])
@@ -117,11 +133,17 @@ def ingest(req: IngestRequest, request: Request, conn: psycopg.Connection = Depe
     doc_ids = upsert_documents(conn, [rec], prune=False)
     deleted = upsert_chunks(conn, chunks, doc_ids)
     refresh_bm25_stats(conn)
+    # Cached answers may cite deleted chunks; new and changed ones count once embedded (below).
+    # An unchanged page clears nothing.
+    if deleted:
+        clear_answer_cache(conn)
     conn.commit()
     try:
         embedded = embed_pending(conn, batch_size=32, ids=[c["id"] for c in chunks])
     except (requests.RequestException, ValueError) as e:
         raise embedding_unavailable(e)
+    if embedded:
+        clear_answer_cache(conn)  # committed by get_conn
     return {"id": f"{req.version}:{req.page}", "chunks_total": len(chunks),
             "chunks_embedded": embedded, "chunks_deleted": deleted}
 
