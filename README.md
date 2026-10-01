@@ -35,7 +35,8 @@ question ──embed + keywords──▶ hybrid search ──────┘─�
 | Reranking (cross-encoder) | Done |
 | Auth (API keys with scopes) and rate limiting | Done |
 | Caching | Done |
-| Observability, A/B testing | Planned |
+| Observability (per-stage timings, request IDs, query log) | Done |
+| A/B testing | Planned |
 
 ## Design decisions
 
@@ -68,6 +69,8 @@ question ──embed + keywords──▶ hybrid search ──────┘─�
 **Rate limiting.** Each key has a token bucket per scope: it holds up to `burst` tokens (10 for queries, 20 for ingests by default), refills at `per_minute` (10 and 20) and each request takes one, so a client can send a short burst and then a steady rate. Simpler fixed windows ("30 per minute, reset on the minute") let a client send twice the limit across a window boundary. Buckets live in Postgres rather than in process memory, so they survive restarts and stay correct with several uvicorn workers; a request costs one upsert that computes the refill since the last request and takes a token only if one is there, and the row lock lets exactly 5 of 20 simultaneous requests through a bucket of 5 (tested). Responses carry `RateLimit-Limit` and `RateLimit-Remaining`; a request over the limit gets 429 with `Retry-After`. A rate limit doesn't bound how many answers wait for the LLM at once across keys, and the LLM server answers one at a time, so `/query` also lets at most `LLM_MAX_PENDING` (4) answers be pending and returns 503 with `Retry-After` beyond that instead of queueing for minutes. `/health` needs no key, so it reports only `ok` or `error` per service; the details, which include internal addresses, go to the server log.
 
 **Caching.** A `/query` answer takes ~6 s, almost all of it the reranker (~0.8 s) and the LLM, which answers one request at a time. Responses are cached in Postgres by an exact key: the question with its whitespace collapsed, the request options, and the settings that shape the answer (embedding model, search and rerank constants, LLM server and model, prompt text), so changing one of those makes old entries stop matching. A repeated question takes ~6 ms instead of ~6 s (measured through uvicorn, with and without an answer) and never reaches the LLM. Case is kept in the key: ALL-CAPS words are searched as SQL keywords, so "AT LOCAL" and "at local" can get different answers. There is no semantic cache (reusing the answer of a *similar* question): "Which version added X?" questions about different features embed almost identically, and cosine similarity already failed to tell out-of-scope questions apart, so a similarity threshold would serve confidently wrong answers. The cache is emptied whenever the searchable chunks change (deleted by `/ingest` or `embed_ingest.py`, or newly embedded), and entries expire after `CACHE_TTL_DAYS` (7). Errors and empty results are never cached, a cache hit still takes a rate-limit token, and responses carry `cached: true/false`. Postgres rather than an in-process dict or Redis: it survives restarts, is shared by uvicorn workers, and adds no service. The evals call the pipeline directly and never see the cache.
+
+**Observability.** Every request gets an ID and a record of how long each stage took: `auth` (key check and rate limit), `cache_get`, `embed`, `search` (the SQL), `rerank`, `terms` (the version comparison's text scan), `llm` and `cache_put`. The record is reported three ways. A log line per request (`/query 200 key=demo cached=false compared=true chunks=4 prompt_tokens=1796 ... embed=17 search=60 rerank=2109 llm=2561 total=4783`), with the request ID on every log line written during the request. The `X-Request-ID` and `Server-Timing` response headers: browser devtools draw `Server-Timing` as a timeline, and a client's own `X-Request-ID` is reused so a request can be followed across services. And a `query_log` table, one row per authenticated `/query` (errors and cache hits included) with the question, options, status, short error cause, stage timings and the LLM's token counts, so latency questions become SQL (`percentile_cont(0.95) WITHIN GROUP (ORDER BY (timings->>'rerank')::float)`). The first measurement already showed something: for a "which version" question, reranking takes 2.1 s, as long as the LLM, because each version's 20 candidates are scored separately. The stages are timed with a context variable holding the current request's record: the pipeline code calls `timed("rerank")` without passing anything through its functions, and outside a request (the eval scripts) it does nothing. Unauthenticated requests are logged but not stored, so anyone who can reach the API can't fill the table. Postgres and logs rather than Prometheus or tracing (OpenTelemetry, Langfuse): one user and one server don't need another service yet, and the table is where A/B test results will go.
 
 **One database.** pgvector keeps vectors, metadata and keyword search in Postgres. Chunks carry `version` and `doc_type` directly, so filtered searches need no join. An HNSW index serves vector search, and a generated `tsvector` column (stemmed words without stop words) feeds the BM25 word index. A `content_hash` per chunk lets re-ingestion skip unchanged text.
 
@@ -262,7 +265,7 @@ Interactive docs at http://localhost:8000/docs (the Authorize button takes an AP
 Every `/query` and `/ingest` request needs an API key. Create one (it's printed once; only its hash is stored):
 
 ```bash
-docker exec -i ragapi-db psql -U rag -d rag < db/schema.sql   # once, on a database created before API keys and caching
+docker exec -i ragapi-db psql -U rag -d rag < db/schema.sql   # once, on a database created before API keys, caching and the query log
 export RAG_API_KEY=$(python manage_keys.py create my-laptop --scopes query ingest)
 python manage_keys.py list                                     # names, status, limits; never the keys
 python manage_keys.py limit my-laptop query --per-minute 30 --burst 15
@@ -278,6 +281,12 @@ python manage_keys.py revoke my-laptop
 ```bash
 curl -s localhost:8000/query -H "Authorization: Bearer $RAG_API_KEY" -H 'content-type: application/json' \
   -d '{"question": "how do I create an index without locking the table", "version": 17}'
+```
+
+Every response carries `X-Request-ID` and `Server-Timing` (per-stage milliseconds, `curl -i` shows them), each request is logged with its stage timings, and every authenticated `/query` is stored in `query_log`:
+
+```bash
+docker exec -it ragapi-db psql -U rag -d rag -c "SELECT created_at, status, cached, total_ms, timings, question FROM query_log ORDER BY id DESC LIMIT 10"
 ```
 
 Tests run against the local database and the embedding, reranker and LLM servers; the ingest test adds and removes a made-up page, and the auth tests create and delete their own keys:
@@ -297,13 +306,14 @@ pytest
 | `manage_keys.py` | `create NAME --scopes query ingest`, `list`, `limit NAME SCOPE --per-minute N --burst N`, `revoke NAME`; env `DATABASE_URL` |
 | API (`app/main.py`) | env `LLM_MAX_PENDING` (4 answers generating or queued at the LLM) |
 | API (`app/cache.py`) | env `CACHE_TTL_DAYS` (7) |
+| API (`app/observability.py`) | env `LOG_LEVEL` (INFO; successful `/health` checks log at DEBUG) |
 | API (`app/generate.py`) | env `LLM_URL` (default `http://localhost:8082/v1/chat/completions`), `LLM_MODEL`, `LLM_TIMEOUT` (120 s) |
 | API (`app/rerank.py`) | env `RERANK_URL` (default `http://localhost:8083/v1/rerank`), `RERANK_TIMEOUT` (30 s) |
 
 ## Repository layout
 
 ```
-app/                  FastAPI app (main.py), API keys (auth.py), rate limits (ratelimit.py), response cache (cache.py), request/response models, shared hybrid search and reranking, version comparison, answer generation
+app/                  FastAPI app (main.py), API keys (auth.py), rate limits (ratelimit.py), response cache (cache.py), timings and query log (observability.py), request/response models, shared hybrid search and reranking, version comparison, answer generation
 tests/                API tests
 fetch_parse_docs.py   crawl postgresql.org and convert pages to markdown
 chunk_docs.py         split pages into embedding-sized chunks
@@ -315,7 +325,7 @@ judge_answers.py      grade saved answers with an LLM judge and citation checks
 hand_grade.py         blind hand-grading page and agreement with the judge
 manage_keys.py        create, list, limit and revoke API keys
 data/eval/            eval questions, saved retrieval results, answers, judgments and hand grades
-db/schema.sql         tables, indexes, the BM25 word index, API keys, rate-limit buckets and the response cache
+db/schema.sql         tables, indexes, the BM25 word index, API keys, rate-limit buckets, the response cache and the query log
 docker-compose.yml    Postgres + pgvector
 data/parsed/          parsed corpus (docs.jsonl)
 ```

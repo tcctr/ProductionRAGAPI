@@ -101,3 +101,26 @@ CREATE TABLE IF NOT EXISTS answer_cache (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS answer_cache_created_at ON answer_cache (created_at);
+
+-- One row per /query request with a known API key (app/observability.py), errors and cache hits
+-- included: what was asked, how it went and where the time went. Timings are ms per stage, e.g.
+-- {"auth": 3.1, "embed": 14.2, "search": 21.0, "rerank": 812.4, "llm": 4105.3}; a cache hit has only
+-- auth and cache_get. key_name is text, not a reference, so the history outlives deleted keys.
+CREATE TABLE IF NOT EXISTS query_log (
+    id                BIGSERIAL   PRIMARY KEY,
+    created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+    request_id        TEXT        NOT NULL,           -- also in the log lines and the X-Request-ID header
+    key_name          TEXT        NOT NULL,
+    status            INT         NOT NULL,
+    error             TEXT,                           -- short cause for 4xx/5xx, e.g. "reranker unavailable"
+    question          TEXT,                           -- NULL when rejected before the body was read (403, 429)
+    params            JSONB,                          -- k, version, doc_type, compare_versions, generate
+    compared          BOOLEAN,                        -- compare mode actually used (per-version search)
+    cached            BOOLEAN,
+    n_chunks          INT,
+    timings           JSONB       NOT NULL,
+    total_ms          FLOAT8      NOT NULL,
+    prompt_tokens     INT,
+    completion_tokens INT
+);
+CREATE INDEX IF NOT EXISTS query_log_created_at ON query_log (created_at);

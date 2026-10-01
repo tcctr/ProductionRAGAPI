@@ -12,6 +12,7 @@ import os
 
 import requests
 
+from app.observability import note
 from app.versions import VERSIONS
 
 LLM_URL = os.getenv("LLM_URL", "http://localhost:8082/v1/chat/completions")
@@ -105,9 +106,12 @@ def generate(question: str, chunks: list[dict], presence: dict[str, list[int]] |
     })
     resp.raise_for_status()
     try:
-        answer = resp.json()["choices"][0]["message"]["content"]
+        data = resp.json()
+        answer = data["choices"][0]["message"]["content"]
     except (KeyError, IndexError, TypeError) as e:
         raise ValueError(f"unexpected LLM response: {resp.text[:200]}") from e
+    usage = data.get("usage") or {}
+    note(prompt_tokens=usage.get("prompt_tokens"), completion_tokens=usage.get("completion_tokens"))
     if not answer or not answer.strip():
         raise ValueError("LLM returned an empty answer")
     return answer.strip()

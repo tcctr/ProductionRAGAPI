@@ -2,6 +2,7 @@
 import psycopg
 from psycopg.rows import dict_row
 
+from app.observability import timed
 from app.rerank import rerank
 
 # Without a version filter, fetch this many times k so k distinct results remain after merging
@@ -101,7 +102,7 @@ def search(conn: psycopg.Connection, qvec: str, k: int, version: int | None = No
 
     columns = ("id, version, doc_type, page, section_title, heading_path, url, content, "
                "1 - (embedding <=> %(q)s::vector) AS similarity")
-    with conn.transaction(), conn.cursor(row_factory=dict_row) as cur:
+    with timed("search"), conn.transaction(), conn.cursor(row_factory=dict_row) as cur:
         # HNSW returns at most ef_search rows and applies filters after the index scan;
         # iterative_scan keeps scanning until LIMIT rows pass the filters.
         # JIT off: the planner overestimates the BM25 query's cost (~280M) and compiled it to
@@ -141,7 +142,8 @@ def search(conn: psycopg.Connection, qvec: str, k: int, version: int | None = No
     for r in results:
         r["versions"].sort()
     if rerank_pool:
-        results = rerank(query_text, results[:rerank_pool])
+        with timed("rerank"):
+            results = rerank(query_text, results[:rerank_pool])
     return results[:k]
 
 

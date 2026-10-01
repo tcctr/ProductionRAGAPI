@@ -9,6 +9,9 @@ psycopg and requests calls (including the seconds-long LLM call) don't stall oth
 
 /query and /ingest need an API key with the matching scope and take a token from the key's
 rate limit (app/auth.py, app/ratelimit.py, manage_keys.py); /health is open, for monitoring.
+
+Every request is timed by stage and logged with a request ID; /query requests also go to
+the query_log table (app/observability.py).
 """
 import logging
 import os
@@ -23,15 +26,18 @@ from psycopg_pool import ConnectionPool, PoolTimeout
 
 from app import cache
 from app import generate as llm
+from app import observability
 from app import rerank as reranker
 from app.auth import require_scope
 from app.models import IngestRequest, IngestResponse, QueryRequest, QueryResponse
+from app.observability import note, timed
 from app.versions import retrieve
 from chunk_docs import MAX_TOKENS, TARGET_TOKENS, TokenCounter, chunk_record
 from embed_ingest import (DATABASE_URL, EMBED_URL, QUERY_PREFIX, clear_answer_cache, embed, embed_pending,
                           refresh_bm25_stats, to_pgvector, upsert_chunks, upsert_documents)
 
 
+observability.setup_logging()
 log = logging.getLogger(__name__)
 
 # Answers being generated or waiting for the LLM. The LLM server answers one request at a time
@@ -59,6 +65,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="PostgreSQL Docs RAG API", lifespan=lifespan)
+app.middleware("http")(observability.middleware)
 
 
 def get_conn(request: Request) -> Iterator[psycopg.Connection]:
@@ -67,26 +74,37 @@ def get_conn(request: Request) -> Iterator[psycopg.Connection]:
         yield conn
 
 
+def unavailable(cause: str, e: Exception) -> HTTPException:
+    """503 for a server the request needs; the short cause goes to query_log, the details to the log."""
+    note(error=cause)
+    log.warning("%s: %s", cause, e)
+    return HTTPException(503, f"{cause}: {e}")
+
+
 def embedding_unavailable(e: Exception) -> HTTPException:
-    return HTTPException(503, f"embedding server unavailable: {e}")
+    return unavailable("embedding server unavailable", e)
 
 
 def llm_unavailable(e: Exception) -> HTTPException:
-    return HTTPException(503, f"LLM server unavailable: {e}")
+    return unavailable("LLM server unavailable", e)
 
 
 @app.post("/query", response_model=QueryResponse, dependencies=[Depends(require_scope("query"))])
 def query(req: QueryRequest, request: Request):
     # A repeated request is answered from the cache (app/cache.py); it still took a rate-limit token.
+    note(question=req.question, params=req.model_dump(exclude={"question"}))
     key = cache.cache_key(req)
-    with request.app.state.pool.connection() as conn:
+    with timed("cache_get"), request.app.state.pool.connection() as conn:
         hit = cache.get(conn, key)
     if hit is not None:
+        note(cached=True, chunks=len(hit["chunks"]))
         return hit | {"question": req.question, "cached": True}
+    note(cached=False)
 
     try:
         # One attempt: a user is waiting, so fail fast instead of embed()'s backoff retries.
-        qvec = to_pgvector(embed([QUERY_PREFIX + req.question], retries=1)[0])
+        with timed("embed"):
+            qvec = to_pgvector(embed([QUERY_PREFIX + req.question], retries=1)[0])
     except (requests.RequestException, ValueError) as e:
         raise embedding_unavailable(e)
     # Not get_conn, which holds the connection until the response is sent: give it back to the
@@ -96,14 +114,17 @@ def query(req: QueryRequest, request: Request):
             chunks, presence = retrieve(conn, req.question, qvec, req.k, req.version, req.doc_type,
                                         req.compare_versions)
         except (requests.RequestException, ValueError) as e:
-            raise HTTPException(503, f"reranker unavailable: {e}")
+            raise unavailable("reranker unavailable", e)
+    note(compared=presence is not None, chunks=len(chunks))
     answer = None
     if req.generate and chunks:
         if not llm_slots.acquire(blocking=False):
+            note(error="LLM busy")
             raise HTTPException(503, f"LLM busy: {LLM_MAX_PENDING} answers already pending, retry shortly",
                                 headers={"Retry-After": "5"})
         try:
-            answer = llm.generate(req.question, chunks, presence)
+            with timed("llm"):
+                answer = llm.generate(req.question, chunks, presence)
         except (requests.RequestException, ValueError) as e:
             raise llm_unavailable(e)
         finally:
@@ -112,7 +133,7 @@ def query(req: QueryRequest, request: Request):
     # Errors raised above are never cached; neither is an empty result, which an /ingest may fill.
     if chunks:
         try:
-            with request.app.state.pool.connection() as conn:
+            with timed("cache_put"), request.app.state.pool.connection() as conn:
                 cache.put(conn, key, response)
         except psycopg.Error as e:
             log.warning("query: caching the response failed: %s", e)  # the answer is still good
@@ -144,6 +165,7 @@ def ingest(req: IngestRequest, request: Request, conn: psycopg.Connection = Depe
         raise embedding_unavailable(e)
     if embedded:
         clear_answer_cache(conn)  # committed by get_conn
+    note(page=f"{req.version}:{req.page}", chunks=len(chunks), embedded=embedded, deleted=deleted)
     return {"id": f"{req.version}:{req.page}", "chunks_total": len(chunks),
             "chunks_embedded": embedded, "chunks_deleted": deleted}
 

@@ -13,6 +13,7 @@ from fastapi import HTTPException, Request, Response, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app import ratelimit
+from app.observability import note, timed
 
 SCOPES = ("query", "ingest")
 PREFIX = "rag_"  # makes keys recognizable, e.g. by secret scanners when one is committed by mistake
@@ -59,24 +60,28 @@ def require_scope(scope: str):
 
     def check(request: Request, response: Response,
               creds: HTTPAuthorizationCredentials | None = Security(bearer)) -> str:
-        if creds is None:
-            raise unauthorized("missing API key: send 'Authorization: Bearer <key>'")
-        with request.app.state.pool.connection() as conn:
-            row = conn.execute("SELECT id, name, scopes, rate_limits FROM api_keys "
-                               "WHERE key_hash = %s AND revoked_at IS NULL",
-                               (hash_key(creds.credentials),)).fetchone()
-            if row is None:
-                raise unauthorized("invalid or revoked API key")
-            key_id, name, scopes, overrides = row
-            if scope not in scopes:
-                raise HTTPException(403, f"API key '{name}' lacks the '{scope}' scope")
-            taken = ratelimit.take(conn, key_id, scope, ratelimit.limits_for(scope, overrides))
-        # Lets clients pace themselves; `response`'s headers are copied onto the endpoint's response.
-        headers = {"RateLimit-Limit": str(taken.burst), "RateLimit-Remaining": str(taken.remaining)}
-        if taken.retry_after:
-            raise HTTPException(429, f"rate limit exceeded for '{name}' ({scope}): retry in {taken.retry_after} s",
-                                headers=headers | {"Retry-After": str(taken.retry_after)})
-        response.headers.update(headers)
-        return name
+        with timed("auth"):
+            if creds is None:
+                raise unauthorized("missing API key: send 'Authorization: Bearer <key>'")
+            with request.app.state.pool.connection() as conn:
+                row = conn.execute("SELECT id, name, scopes, rate_limits FROM api_keys "
+                                   "WHERE key_hash = %s AND revoked_at IS NULL",
+                                   (hash_key(creds.credentials),)).fetchone()
+                if row is None:
+                    raise unauthorized("invalid or revoked API key")
+                key_id, name, scopes, overrides = row
+                note(key=name)
+                if scope not in scopes:
+                    note(error="missing scope")
+                    raise HTTPException(403, f"API key '{name}' lacks the '{scope}' scope")
+                taken = ratelimit.take(conn, key_id, scope, ratelimit.limits_for(scope, overrides))
+            # Lets clients pace themselves; `response`'s headers are copied onto the endpoint's response.
+            headers = {"RateLimit-Limit": str(taken.burst), "RateLimit-Remaining": str(taken.remaining)}
+            if taken.retry_after:
+                note(error="rate limited")
+                raise HTTPException(429, f"rate limit exceeded for '{name}' ({scope}): retry in {taken.retry_after} s",
+                                    headers=headers | {"Retry-After": str(taken.retry_after)})
+            response.headers.update(headers)
+            return name
 
     return check

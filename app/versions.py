@@ -14,6 +14,7 @@ from typing import get_args
 import psycopg
 
 from app.models import Version
+from app.observability import timed
 from app.search import body, search
 
 VERSIONS: tuple[int, ...] = get_args(Version)
@@ -114,4 +115,6 @@ def retrieve(conn: psycopg.Connection, question: str, qvec: str, k: int, version
     if not compare_versions or version is not None:
         return search(conn, qvec, k, version, doc_type, query_text=question), None
     chunks = search_per_version(conn, question, qvec, k, doc_type)
-    return chunks, term_presence(conn, question_terms(question))
+    with timed("terms"):
+        presence = term_presence(conn, question_terms(question))
+    return chunks, presence

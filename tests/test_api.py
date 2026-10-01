@@ -1,14 +1,16 @@
 """API tests against the real local database, embedding server and LLM server (see README setup)."""
+import logging
 import re
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
 import psycopg
 import pytest
+from psycopg.rows import dict_row
 from fastapi.testclient import TestClient
 
 import embed_ingest
-from app import cache, generate, ratelimit, rerank
+from app import cache, generate, observability, ratelimit, rerank
 from app import main as api
 from app.auth import create_key, revoke_key, set_limits
 from app.main import app
@@ -52,6 +54,7 @@ def empty_cache():
 def delete_test_keys() -> None:
     with psycopg.connect(embed_ingest.DATABASE_URL) as conn:
         conn.execute("DELETE FROM api_keys WHERE name = ANY(%s)", (list(TEST_KEYS),))
+        conn.execute("DELETE FROM query_log WHERE key_name = ANY(%s)", (list(TEST_KEYS),))
 
 
 @pytest.fixture(scope="module")
@@ -81,6 +84,18 @@ def client(keys):
     with TestClient(app, headers=bearer(keys["pytest-admin"])) as c:
         yield c
     delete_test_page()
+
+
+def logged(resp) -> dict | None:
+    """The query_log row of a response, found by its X-Request-ID."""
+    with psycopg.connect(embed_ingest.DATABASE_URL, row_factory=dict_row) as conn:
+        return conn.execute("SELECT * FROM query_log WHERE request_id = %s",
+                            (resp.headers["X-Request-ID"],)).fetchone()
+
+
+def stages(resp) -> set[str]:
+    """Stage names in the Server-Timing header ("embed;dur=14.2, total;dur=30.1")."""
+    return {part.split(";")[0].strip() for part in resp.headers["Server-Timing"].split(",")}
 
 
 def query(client, **body):
@@ -133,6 +148,7 @@ def test_rate_limit(client, keys):
         assert resp.headers["RateLimit-Limit"] == "2" and resp.headers["RateLimit-Remaining"] == str(remaining)
     resp = ask()
     assert resp.status_code == 429
+    assert logged(resp)["error"] == "rate limited" and logged(resp)["question"] is None
     assert 1 <= int(resp.headers["Retry-After"]) <= 60  # 1 per minute: the next token is < 60 s away
     assert resp.headers["RateLimit-Remaining"] == "0"
 
@@ -264,6 +280,9 @@ def test_reranker_down_returns_503(client, monkeypatch):
     resp = client.post("/query", json={"question": "anything", "generate": False})
     assert resp.status_code == 503
     assert "reranker unavailable" in resp.json()["detail"]
+    row = logged(resp)
+    assert row["status"] == 503 and row["error"] == "reranker unavailable" and row["question"] == "anything"
+    assert "rerank" in row["timings"]
 
 
 def test_repeated_query_is_cached(client):
@@ -346,6 +365,9 @@ def test_query_answers_with_citations(client):
     first = re.split(r"(?<=[.!?])\s", answer, maxsplit=1)[0]
     assert "17" in first and "18" not in first and "16" not in first, answer
     assert re.search(r"\[\d+\]", answer), answer
+    row = logged(resp)
+    assert row["compared"] and "llm" in row["timings"] and "terms" in row["timings"]
+    assert row["prompt_tokens"] > 0 and row["completion_tokens"] > 0
 
 
 def test_merged_chunk_lists_all_versions_in_prompt():
@@ -360,3 +382,49 @@ def test_llm_server_down_returns_503(client, monkeypatch):
     resp = client.post("/query", json={"question": "anything"})
     assert resp.status_code == 503
     assert "LLM server unavailable" in resp.json()["detail"]
+
+
+def test_query_is_timed_and_logged(client, caplog):
+    body = {"question": "How do I round a number?", "k": 3, "generate": False}
+    with caplog.at_level(logging.INFO, logger="app.request"):
+        resp = client.post("/query", json=body)
+    assert resp.status_code == 200, resp.text
+    pipeline = {"auth", "cache_get", "embed", "search", "rerank", "cache_put"}
+    assert stages(resp) == pipeline | {"total"}
+    [line] = [r.getMessage() for r in caplog.records if r.name == "app.request"]
+    assert line.startswith("/query 200 key=pytest-admin") and "rerank=" in line and "round" not in line
+
+    row = logged(resp)
+    assert row["key_name"] == "pytest-admin" and row["status"] == 200 and row["error"] is None
+    assert row["question"] == body["question"] and row["params"]["k"] == 3
+    assert row["cached"] is False and row["compared"] is False and row["n_chunks"] == 3
+    assert set(row["timings"]) == pipeline
+    assert sum(row["timings"].values()) <= row["total_ms"]
+    assert row["prompt_tokens"] is None  # no answer generated
+
+    # The repeat is a cache hit: only the key check and the lookup.
+    hit = client.post("/query", json=body)
+    assert stages(hit) == {"auth", "cache_get", "total"}
+    assert logged(hit)["cached"] is True and logged(hit)["n_chunks"] == 3
+
+
+def test_request_id(client):
+    sent = client.post("/query", json={"question": "x", "generate": False}, headers={"X-Request-ID": "trace-42.a"})
+    assert sent.headers["X-Request-ID"] == "trace-42.a"
+    # Not ID-like (could carry anything into logs): replaced by a fresh one.
+    bad = client.post("/query", json={"question": "x", "generate": False}, headers={"X-Request-ID": "a b\nc"})
+    assert re.fullmatch(r"[0-9a-f]{32}", bad.headers["X-Request-ID"])
+
+
+def test_unauthenticated_requests_are_not_stored(client):
+    resp = client.post("/query", json={"question": "x"}, headers={"Authorization": ""})
+    assert resp.status_code == 401
+    assert "auth;dur=" in resp.headers["Server-Timing"]
+    assert logged(resp) is None
+
+
+def test_timing_outside_a_request_does_nothing():
+    # Eval scripts call search() in-process, outside any request.
+    with observability.timed("search"):
+        observability.note(cached=False)
+    assert observability.current_request_id() is None

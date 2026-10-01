@@ -19,6 +19,7 @@ Settings (environment variables):
 import argparse
 import hashlib
 import json
+import logging
 import os
 import time
 import psycopg
@@ -29,6 +30,8 @@ DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://rag:rag@localhost:5433/ra
 EMBED_URL = os.getenv("EMBED_URL", "http://localhost:8081/v1/embeddings")
 EMBED_MODEL = os.getenv("EMBED_MODEL", "nomic-embed-text-v1.5.Q8_0")
 EMBED_DIM = 768
+
+log = logging.getLogger(__name__)
 
 # nomic-embed-text task prefixes
 DOC_PREFIX = "search_document: "
@@ -54,7 +57,7 @@ def embed(texts: list[str], retries: int = 3) -> list[list[float]]:
         except (requests.RequestException, ValueError) as e:
             if attempt == retries:
                 raise
-            print(f"  embed failed ({e}), retry {attempt}/{retries - 1}")
+            log.warning(f"  embed failed ({e}), retry {attempt}/{retries - 1}")
             time.sleep(2 ** attempt)
     raise AssertionError("unreachable")
 
@@ -98,7 +101,7 @@ def upsert_documents(conn: psycopg.Connection, docs: list[dict], prune: bool = T
             removed = cur.rowcount
         cur.execute("SELECT version, page, id FROM documents WHERE version || ':' || page = ANY(%s)", (keys,))
         ids = {(v, p): i for v, p, i in cur.fetchall()}
-    print(f"documents: {len(rows)} upserted, {removed} removed")
+    log.info(f"documents: {len(rows)} upserted, {removed} removed")
     return ids
 
 
@@ -142,7 +145,7 @@ def upsert_chunks(conn: psycopg.Connection, chunks: list[dict], doc_ids: dict[tu
             """,
             rows,
         )
-    print(f"chunks: {len(rows)} upserted, {removed} removed")
+    log.info(f"chunks: {len(rows)} upserted, {removed} removed")
     return removed
 
 
@@ -177,10 +180,10 @@ def embed_pending(conn: psycopg.Connection, batch_size: int, ids: list[str] | No
         )
         pending = cur.fetchall()
     if not pending:
-        print("embeddings: all chunks up to date")
+        log.info("embeddings: all chunks up to date")
         return 0
 
-    print(f"embeddings: {len(pending)} chunks to embed (batch size {batch_size})")
+    log.info(f"embeddings: {len(pending)} chunks to embed (batch size {batch_size})")
     start = time.monotonic()
     done = 0
     for i in range(0, len(pending), batch_size):
@@ -196,7 +199,7 @@ def embed_pending(conn: psycopg.Connection, batch_size: int, ids: list[str] | No
         if done == len(pending) or (i // batch_size) % 10 == 0:
             rate = done / (time.monotonic() - start)
             eta = (len(pending) - done) / rate
-            print(f"  {done}/{len(pending)}  {rate:.1f} chunks/s  eta {eta:.0f}s")
+            log.info(f"  {done}/{len(pending)}  {rate:.1f} chunks/s  eta {eta:.0f}s")
     return done
 
 
@@ -213,12 +216,13 @@ def test_search(conn: psycopg.Connection, question: str, k: int = 5) -> None:
             """,
             (qvec, qvec, k),
         )
-        print(f"\ntest search: {question!r}")
+        log.info(f"\ntest search: {question!r}")
         for cid, sim, path in cur.fetchall():
-            print(f"  {sim:.3f}  {cid}  {' > '.join(path)}")
+            log.info(f"  {sim:.3f}  {cid}  {' > '.join(path)}")
 
 
 def main() -> None:
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--docs", type=Path, default=Path("data/parsed/docs.jsonl"))
     ap.add_argument("--chunks", type=Path, default=Path("data/chunks/chunks.jsonl"))
@@ -243,7 +247,7 @@ def main() -> None:
             total, embedded = cur.fetchone()
             cur.execute("ANALYZE chunks")
         conn.commit()
-        print(f"\nchunks in db: {total}, with embeddings: {embedded}")
+        log.info(f"\nchunks in db: {total}, with embeddings: {embedded}")
 
         if args.test_query and embedded:
             test_search(conn, args.test_query)
