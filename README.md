@@ -191,6 +191,8 @@ Hybrid search cut wrong answers from 6 to 1. MERGE ... RETURNING is now right: t
 
 Reranking answers all 14 version questions correctly and fixes `SELECT ... FOR UPDATE` (its passage moves from rank 7 to 1), but the overall score doesn't move. Much of the per-category swing is noise: about half the changed verdicts had the same answering chunks in both runs, so they come from sampling (temperature 0.2) and the judge's correct/partial line. The identifier drop is all of that kind; one run per configuration can't resolve differences of a few questions. Two losses are real retrieval: the `string_agg` passage (a comma-separated string from many rows) and the passage explaining BRIN (BRIN vs B-tree for an append-only log) fell out of the top 5. One is a new failure mode: neither search method finds COALESCE for "a default instead of NULL", and where hybrid search returned unrelated chunks the model declined, the reranker picked JSON `DEFAULT ... ON EMPTY` passages that look relevant, and the model answered wrongly with confidence. A reranker makes the top 5 more convincing whether or not the answer is among the candidates.
 
+**Paired comparison.** `compare_runs.py A.json B.json` pairs two runs question by question (retrieval results or judgments) and reports the difference with a 95% bootstrap interval (10,000 resamples of the questions) and an exact McNemar test on the binary metric (chunk hit@5 or correct); `--a`/`--b` take repeat runs per side and average each question. Reranking vs hybrid alone: retrieval chunk MRR 0.708 → 0.785, +0.077 [+0.014, +0.144], a real gain (21 questions better, 11 worse; hit@5 5 gained, 1 lost, p = 0.22, too few changes to tell). Answers: score (correct 1, partial 0.5) 0.772 → 0.777, +0.005 [−0.054, +0.065]; 11 questions became correct and 11 stopped being correct (p = 1.0). The answer-level difference is indistinguishable from noise with one run per side.
+
 **Checking the judge.** `hand_grade.py` picks 21 judged answers stratified by verdict and category and writes a local web page to grade them blind (question, reference, excerpts and answer, no verdict). Blind agreement with the judge was low: 7/21 (33%), Cohen's kappa 0.08. Most of the gap was the rubric, not the judge: the hand grades marked "declined although the answer exists" as `incorrect` where the rubric says `refused`, and drew the correct/partial line differently. A second page shows each disagreement with both grades and the judge's labels, and the hand grades were settled after reading them. The disagreements and the 9B run also exposed judge bugs (notes counted as contradictions, conflicts with the excerpts graded as wrong answers, clean refusals missed), fixed with the per-claim reference labels and verdict rules above. The current judge agrees with 18/21 settled grades (86%, kappa 0.80), an upper bound since the grades were settled after seeing the judge's reasoning. One remaining judge error: it accepted "a primary key can't prevent overlaps, use EXCLUDE" for a PostgreSQL 18 question whose answer is `PRIMARY KEY (..., WITHOUT OVERLAPS)`.
 
 ## Setup
@@ -248,6 +250,7 @@ python eval_retrieval.py [--filter-version] [--dedup] [--rerank N] [--vector-onl
 # 5. Answer every question with an LLM, then grade the answers (saved in data/eval/answers/, data/eval/judgments/)
 python generate_answers.py --name qwen3.6-35b-a3b --llm-url $LLM_URL
 python judge_answers.py data/eval/answers/<file>.json --judge-url $LLM_URL
+python compare_runs.py <run A>.json <run B>.json   # paired A/B of two retrieval results or two judgments
 
 # 6. Check the judge against hand grades (writes a grading page to data/eval/hand_grades/)
 python hand_grade.py page data/eval/judgments/<file>.json
@@ -303,6 +306,7 @@ pytest
 | `generate_answers.py` | `--name` (required), `--llm-url`, `--k 5`, `--ids`, `--limit` |
 | `judge_answers.py` | answers file, `--judge-url`, `--ids`, `--limit` |
 | `hand_grade.py` | `page` / `review` / `score`, `--seed 0` |
+| `compare_runs.py` | `A.json B.json`, or `--a` / `--b` with repeat runs per side |
 | `manage_keys.py` | `create NAME --scopes query ingest`, `list`, `limit NAME SCOPE --per-minute N --burst N`, `revoke NAME`; env `DATABASE_URL` |
 | API (`app/main.py`) | env `LLM_MAX_PENDING` (4 answers generating or queued at the LLM) |
 | API (`app/cache.py`) | env `CACHE_TTL_DAYS` (7) |
@@ -323,6 +327,7 @@ eval_retrieval.py     retrieval metrics (hit@k, MRR, page- and chunk-level) on t
 generate_answers.py   answer every eval question with an LLM
 judge_answers.py      grade saved answers with an LLM judge and citation checks
 hand_grade.py         blind hand-grading page and agreement with the judge
+compare_runs.py       paired A/B comparison of two eval runs (bootstrap interval, McNemar)
 manage_keys.py        create, list, limit and revoke API keys
 data/eval/            eval questions, saved retrieval results, answers, judgments and hand grades
 db/schema.sql         tables, indexes, the BM25 word index, API keys, rate-limit buckets, the response cache and the query log
