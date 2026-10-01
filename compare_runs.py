@@ -5,6 +5,7 @@ Usage:
     python compare_runs.py data/eval/results/A.json data/eval/results/B.json
     python compare_runs.py data/eval/judgments/A.json data/eval/judgments/B.json
     python compare_runs.py --a A1.json A2.json --b B1.json B2.json   # repeat runs, averaged per question
+    python compare_runs.py A.json B.json --category version_diff     # only the questions a change can affect
 
 Works on eval_retrieval.py results or judge_answers.py judgments (both sides the same kind).
 Answerable questions present on both sides are paired; each gets a score per side:
@@ -81,7 +82,9 @@ def describe(run: dict, path: Path) -> str:
     if kind(run) == "answers":
         return f"{path.name}  ({run['name']}, commit {run['git_commit']})"
     mode = (("filter" if run["filter_version"] else "no filter") + (", dedup" if run["dedup"] else "")
-            + (", hybrid" if run["hybrid"] else ", vector only") + f", rerank {run.get('rerank_pool') or 0}")
+            + (", hybrid" if run["hybrid"] else ", vector only") + f", rerank {run.get('rerank_pool') or 0}"
+            + (f", compare versions (rerank {run['compare_rerank_pool']})" if run.get("compare_versions") else "")
+            + f", k {run['k']}")
     return f"{path.name}  ({mode}, commit {run['git_commit']})"
 
 
@@ -90,6 +93,7 @@ def main() -> None:
     ap.add_argument("pair", nargs="*", type=Path, help="A.json B.json (one run per side)")
     ap.add_argument("--a", nargs="+", type=Path, default=[], help="side A run(s)")
     ap.add_argument("--b", nargs="+", type=Path, default=[], help="side B run(s)")
+    ap.add_argument("--category", nargs="+", help="only questions of these categories")
     args = ap.parse_args()
     if args.pair:
         if len(args.pair) != 2 or args.a or args.b:
@@ -112,6 +116,9 @@ def main() -> None:
     ids = sorted(set(a) & set(b))
     if dropped := sorted(set(a) ^ set(b)):
         print(f"not on both sides, skipped: {', '.join(dropped)}")
+    if args.category:
+        ids = [i for i in ids if a[i]["category"] in args.category]
+        print(f"categories: {', '.join(args.category)}")
     if not ids:
         ap.error("no question is graded on both sides")
 

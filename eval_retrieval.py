@@ -7,6 +7,8 @@ Usage:
     python eval_retrieval.py --dedup          # merge identical sections across versions, like /query
     python eval_retrieval.py --vector-only    # vector search alone (the pre-hybrid baseline)
     python eval_retrieval.py --rerank 0       # hybrid search without reranking (--rerank N: top N)
+    python eval_retrieval.py --compare-versions --filter-version --dedup --k 5   # exactly what /query does
+    python eval_retrieval.py --compare-versions --compare-rerank 10 --k 5        # a smaller per-version pool
 
 For each answerable question, embeds it as a search query, takes the top-k
 chunks from pgvector, and checks whether any comes from an expected page
@@ -22,6 +24,14 @@ Metrics:
   MRR     mean of 1/rank of the first expected page (0 if not in top k)
   cover   cross_page only: share of the distinct expected pages found in top k
 Each is reported page-level and chunk-level ("chunk" lines).
+
+With --compare-versions, "which version ...?" questions (app.versions.is_version_question, as in
+/query) are searched per version: ceil(k/3) chunks from each, oldest version first. Those results
+are ordered by version, not score, so rank is the position within one version's chunks: the oldest
+expected version's, since that's the chunk the answer needs ("JSON_TABLE: 17" needs 17's chunk;
+that 16 lacks it comes from the term scan, not retrieval). A merged chunk counts in every version
+it lists. Use --k 5 to score the 2 chunks per version the LLM sees.
+  version cover   compared questions: share of the expected versions whose chunks include the page
 
 Unanswerable questions are not scored; their top similarity is reported next
 to the answerable ones' as input for a future "I don't know" threshold.
@@ -39,6 +49,7 @@ from statistics import mean, median
 import psycopg
 
 from app.search import RERANK_POOL, search
+from app.versions import COMPARE_RERANK_POOL, is_version_question, search_per_version
 from embed_ingest import DATABASE_URL, EMBED_MODEL, QUERY_PREFIX, embed, to_pgvector
 from validate_questions import evidence_quotes
 
@@ -76,6 +87,10 @@ def main() -> None:
                     help="vector search alone, without the keyword (BM25) side of hybrid search")
     ap.add_argument("--rerank", type=int, default=RERANK_POOL, metavar="N",
                     help=f"hybrid results the reranker reorders (default {RERANK_POOL}, like /query; 0 = none)")
+    ap.add_argument("--compare-versions", action="store_true",
+                    help="search version questions per version, as /query does (rank within the oldest expected version)")
+    ap.add_argument("--compare-rerank", type=int, default=COMPARE_RERANK_POOL, metavar="N",
+                    help=f"with --compare-versions, results reranked per version (default {COMPARE_RERANK_POOL})")
     ap.add_argument("--out-dir", type=Path, default=Path("data/eval/results"))
     ap.add_argument("--show-misses", action="store_true", help="print questions with no hit in top k")
     args = ap.parse_args()
@@ -88,8 +103,14 @@ def main() -> None:
     with psycopg.connect(DATABASE_URL) as conn:
         for q, vec in zip(questions, vectors):
             version = q["version"] if args.filter_version else None
-            top = search(conn, to_pgvector(vec), args.k, version, dedup=args.dedup,
-                         query_text=None if args.vector_only else q["question"], rerank_pool=args.rerank)
+            compared = (args.compare_versions and not args.vector_only and q["version"] is None
+                        and is_version_question(q["question"]))
+            if compared:
+                top = search_per_version(conn, q["question"], to_pgvector(vec), args.k,
+                                         rerank_pool=args.compare_rerank)
+            else:
+                top = search(conn, to_pgvector(vec), args.k, version, dedup=args.dedup,
+                             query_text=None if args.vector_only else q["question"], rerank_pool=args.rerank)
             if q["category"] == "unanswerable":
                 unanswerable.append({"id": q["id"], "top_similarity": top[0]["similarity"]})
                 continue
@@ -97,13 +118,18 @@ def main() -> None:
             keys = [f"{c['version']}:{c['page']}" for c in top]
             # Every version:page each result stands for (several when dedup merged copies).
             covered = [{f"{v}:{c['page']}" for v in c["versions"]} for c in top]
-            rank = next((i + 1 for i, ks in enumerate(covered) if ks & expected), None)
             # Chunk-level: the result must also contain one of its page's evidence quotes. A merged
             # result's text is the same in every version it covers, so one check covers them all.
             answers = [bool(ks & expected)
                        and any(quote in c["content"] for quote in evidence_quotes(q, c["page"]))
                        for c, ks in zip(top, covered)]
-            chunk_rank = next((i + 1 for i, ok in enumerate(answers) if ok), None)
+            positions = range(len(top))
+            if compared:
+                # Rank within the chunks of the oldest version that has the feature.
+                oldest = min(int(key.split(":", 1)[0]) for key in expected)
+                positions = [i for i, c in enumerate(top) if oldest in c["versions"]]
+            rank = next((n for n, i in enumerate(positions, 1) if covered[i] & expected), None)
+            chunk_rank = next((n for n, i in enumerate(positions, 1) if answers[i]), None)
             wanted_pages = {key.split(":", 1)[1] for key in expected}
             found_pages = {key.split(":", 1)[1] for ks in covered for key in ks & expected}
             found_chunk_pages = {c["page"] for c, ok in zip(top, answers) if ok}
@@ -114,6 +140,13 @@ def main() -> None:
                 "chunk_coverage": len(found_chunk_pages) / len(wanted_pages),
                 "retrieved": keys,
             })
+            if compared:
+                # Expected versions whose chunks include the page (chunk: and an evidence quote).
+                wanted_versions = {int(key.split(":", 1)[0]) for key in expected}
+                seen = {int(key.split(":", 1)[0]) for ks in covered for key in ks & expected}
+                seen_chunk = {v for c, ok in zip(top, answers) if ok for v in c["versions"]} & wanted_versions
+                results[-1].update(compared=True, version_coverage=len(seen) / len(wanted_versions),
+                                   chunk_version_coverage=len(seen_chunk) / len(wanted_versions))
 
     # Search time only: the questions were embedded before the loop.
     search_seconds = (time.perf_counter() - started) / len(questions)
@@ -125,7 +158,8 @@ def main() -> None:
 
     mode = (("version filter" if args.filter_version else "no filter") + (", dedup" if args.dedup else "")
             + (", vector only" if args.vector_only else ", hybrid")
-            + (f", rerank top {args.rerank}" if args.rerank and not args.vector_only else ""))
+            + (f", rerank top {args.rerank}" if args.rerank and not args.vector_only else "")
+            + (f", compare versions (rerank {args.compare_rerank} per version)" if args.compare_versions else ""))
     print(f"retrieval eval: {len(results)} answerable questions, top {args.k}, {mode}, "
           f"{search_seconds * 1000:.0f} ms per search\n")
     print(f"{'overall':18} {fmt(overall)}")
@@ -143,6 +177,11 @@ def main() -> None:
     if cross:
         print(f"\ncross_page coverage (share of needed pages in top {args.k}): {mean(cross):.2f}"
               f"  chunk: {mean(cross_chunk):.2f}")
+    compared = [r for r in results if r.get("compared")]
+    if compared:
+        print(f"compared ({len(compared)} version questions, rank within the oldest expected version): "
+              f"version cover {mean(r['version_coverage'] for r in compared):.2f}"
+              f"  chunk: {mean(r['chunk_version_coverage'] for r in compared):.2f}")
     answerable_sims = [r["top_similarity"] for r in results]
     unanswerable_sims = [u["top_similarity"] for u in unanswerable]
     if unanswerable_sims:
@@ -173,6 +212,8 @@ def main() -> None:
             "timestamp": stamp, "git_commit": commit, "embed_model": EMBED_MODEL,
             "k": args.k, "filter_version": args.filter_version, "dedup": args.dedup, "hybrid": not args.vector_only,
             "rerank_pool": 0 if args.vector_only else args.rerank, "search_seconds": search_seconds,
+            "compare_versions": args.compare_versions,
+            "compare_rerank_pool": args.compare_rerank if args.compare_versions else None,
             "overall": overall,
             "by_category": {c: score(rs) for c, rs in by_cat.items()},
             "by_doc_type": {d: score(rs) for d, rs in by_type.items()},

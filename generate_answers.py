@@ -25,7 +25,7 @@ import psycopg
 import requests
 
 from app import generate as llm
-from app.versions import retrieve
+from app.versions import COMPARE_RERANK_POOL, retrieve
 from embed_ingest import DATABASE_URL, EMBED_MODEL, QUERY_PREFIX, embed, to_pgvector
 
 # Chunk fields worth keeping: what the LLM saw, plus what grading needs to match pages.
@@ -50,6 +50,8 @@ def main() -> None:
     ap.add_argument("--k", type=int, default=5, help="chunks per answer (/query's default)")
     ap.add_argument("--limit", type=int, help="only the first N questions (for a quick try)")
     ap.add_argument("--ids", nargs="+", help="only these question ids")
+    ap.add_argument("--compare-rerank", type=int, default=COMPARE_RERANK_POOL, metavar="N",
+                    help=f"results reranked per version for version questions (default {COMPARE_RERANK_POOL}, like /query)")
     ap.add_argument("--out-dir", type=Path, default=Path("data/eval/answers"))
     args = ap.parse_args()
 
@@ -66,7 +68,8 @@ def main() -> None:
     records, errors, total_s = [], 0, 0.0
     with psycopg.connect(DATABASE_URL) as conn:
         for i, (q, vec) in enumerate(zip(questions, vectors), start=1):
-            chunks, presence = retrieve(conn, q["question"], to_pgvector(vec), args.k, q["version"])
+            chunks, presence = retrieve(conn, q["question"], to_pgvector(vec), args.k, q["version"],
+                                        compare_rerank_pool=args.compare_rerank)
             rec = {"id": q["id"], "category": q["category"], "question": q["question"],
                    "chunks": [{f: c[f] for f in CHUNK_FIELDS} for c in chunks]}
             if presence is not None:
@@ -95,7 +98,7 @@ def main() -> None:
         f.write(json.dumps({
             "timestamp": stamp, "git_commit": commit, "name": args.name, "served_model": model,
             "llm_url": args.llm_url, "temperature": llm.TEMPERATURE, "embed_model": EMBED_MODEL,
-            "k": args.k, "filter_version": True, "dedup": True,
+            "k": args.k, "filter_version": True, "dedup": True, "compare_rerank_pool": args.compare_rerank,
             "answered": answered, "errors": errors,
             "answers": records,
         }, indent=2, ensure_ascii=False) + "\n")
