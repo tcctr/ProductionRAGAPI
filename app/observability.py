@@ -3,7 +3,8 @@
 Each request gets a record (a dict) in a context variable, created by the middleware:
   - timed("rerank") adds the stage's milliseconds to it (summed when a stage runs more than once,
     as in compare mode, which searches and reranks each version);
-  - note(key=value) adds facts: the API key's name, cached, the LLM's token counts, an error cause.
+  - note(key=value) adds facts: the API key's name, its A/B variant, cached, the LLM's token counts,
+    an error cause.
 When the request ends, the middleware reports the record three ways:
   - one log line: `INFO app.request [<id>] /query 200 key=demo cached=false ... embed=14 rerank=812 total=4961`;
   - response headers X-Request-ID and Server-Timing (browser devtools draw the stages as a timeline);
@@ -99,9 +100,9 @@ def server_timing(timings: dict[str, float]) -> str:
 
 INSERT_SQL = """
 INSERT INTO query_log (request_id, key_name, status, error, question, params, compared, cached,
-                       n_chunks, timings, total_ms, prompt_tokens, completion_tokens)
+                       n_chunks, timings, total_ms, prompt_tokens, completion_tokens, experiment, variant)
 VALUES (%(id)s, %(key)s, %(status)s, %(error)s, %(question)s, %(params)s, %(compared)s, %(cached)s,
-        %(chunks)s, %(timings)s, %(total)s, %(prompt_tokens)s, %(completion_tokens)s)
+        %(chunks)s, %(timings)s, %(total)s, %(prompt_tokens)s, %(completion_tokens)s, %(experiment)s, %(variant)s)
 """
 
 
@@ -118,6 +119,7 @@ def write_query_log(pool, record: dict, status: int) -> None:
                 "chunks": fields.get("chunks"), "timings": Jsonb(timings),
                 "total": round(record["timings"]["total"], 1),
                 "prompt_tokens": fields.get("prompt_tokens"), "completion_tokens": fields.get("completion_tokens"),
+                "experiment": fields.get("experiment"), "variant": fields.get("variant"),
             })
     except psycopg.Error as e:
         log.warning("query_log insert failed: %s", e)

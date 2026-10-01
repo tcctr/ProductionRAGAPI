@@ -10,7 +10,7 @@ from psycopg.rows import dict_row
 from fastapi.testclient import TestClient
 
 import embed_ingest
-from app import cache, generate, observability, ratelimit, rerank
+from app import cache, generate, observability, ratelimit, rerank, search, variants
 from app import main as api
 from app.auth import create_key, revoke_key, set_limits
 from app.main import app
@@ -320,6 +320,10 @@ def test_cache_key():
     # Case is kept: ALL-CAPS words are looked up as SQL keywords (question_terms).
     assert key() != key(question="which version added at local?")
     assert key() != key(version=17) != key(generate=False)
+    # An A/B variant's settings are in the key by their values: the defaults spelled out are the same key.
+    req = api.QueryRequest(question="Which version added AT LOCAL?")
+    assert cache.cache_key(req, {"rerank_pool": search.RERANK_POOL}) == key()
+    assert cache.cache_key(req, {"compare_rerank_pool": 10}) != key()
 
 
 def test_version_question_detection_and_terms():
@@ -428,3 +432,47 @@ def test_timing_outside_a_request_does_nothing():
     with observability.timed("search"):
         observability.note(cached=False)
     assert observability.current_request_id() is None
+
+
+EXPERIMENT = '{"name": "t", "variants": {"control": {"weight": 3}, "small": {"weight": 1, "compare_rerank_pool": 10}}}'
+
+
+def test_experiment_config():
+    exp = variants.parse(EXPERIMENT)
+    assert [(v.name, v.weight, v.settings) for v in exp.variants] == [
+        ("control", 3.0, {}), ("small", 1.0, {"compare_rerank_pool": 10})]
+    for bad in ['{"variants": {"a": {}, "b": {}}}',                      # no name
+                '{"name": "t", "variants": {"a": {}}}',                  # one variant
+                '{"name": "t", "variants": {"a": {}, "b": {"k": 3}}}',   # not a tunable setting
+                '{"name": "t", "variants": {"a": {}, "b": {"rerank_pool": -1}}}',
+                '{"name": "t", "variants": {"a": {"weight": 0}, "b": {}}}']:
+        with pytest.raises(ValueError):
+            variants.parse(bad)
+
+
+def test_variant_assignment():
+    exp = variants.parse(EXPERIMENT)
+    # Sticky: the same key always gets the same variant.
+    assert variants.assign("some-key", exp) == variants.assign("some-key", exp)
+    # Keys split by weight (3:1).
+    names = [variants.assign(f"key-{i}", exp).name for i in range(4000)]
+    assert 0.72 < names.count("control") / len(names) < 0.78
+    # A new experiment name reshuffles which keys land where.
+    renamed = variants.parse(EXPERIMENT.replace('"t"', '"t2"'))
+    assert names != [variants.assign(f"key-{i}", renamed).name for i in range(4000)]
+    assert variants.assign("some-key", None) is None  # no experiment configured (the test default)
+
+
+def test_query_runs_and_logs_the_keys_variant(client, monkeypatch):
+    # Both variants turn reranking off, so whichever the key lands in, its settings must reach search.
+    exp = variants.parse('{"name": "pytest-ab", "variants": {"a": {"rerank_pool": 0, "compare_rerank_pool": 0},'
+                         ' "b": {"rerank_pool": 0, "compare_rerank_pool": 0}}}')
+    monkeypatch.setattr(variants, "EXPERIMENT", exp)
+    expected = variants.assign("pytest-admin", exp).name
+    for question in ("How do I round a number?", "Which version added the casefold() function?"):
+        resp = client.post("/query", json={"question": question, "generate": False})
+        assert resp.status_code == 200, resp.text
+        assert "rerank" not in stages(resp)
+        assert all(c["rerank"] is None for c in resp.json()["chunks"])
+        row = logged(resp)
+        assert (row["experiment"], row["variant"]) == ("pytest-ab", expected)

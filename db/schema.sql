@@ -124,3 +124,8 @@ CREATE TABLE IF NOT EXISTS query_log (
     completion_tokens INT
 );
 CREATE INDEX IF NOT EXISTS query_log_created_at ON query_log (created_at);
+-- A/B experiment and the key's variant in it (app/variants.py); NULL without an experiment and for
+-- requests rejected before the variant is assigned (403, 429).
+ALTER TABLE query_log ADD COLUMN IF NOT EXISTS experiment TEXT;
+ALTER TABLE query_log ADD COLUMN IF NOT EXISTS variant TEXT;
+CREATE INDEX IF NOT EXISTS query_log_experiment ON query_log (experiment, variant) WHERE experiment IS NOT NULL;

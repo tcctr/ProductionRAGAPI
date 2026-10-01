@@ -15,9 +15,13 @@ import psycopg
 
 from app.models import Version
 from app.observability import timed
-from app.search import body, search
+from app.search import RERANK_POOL, body, search
 
 VERSIONS: tuple[int, ...] = get_args(Version)
+
+# Hybrid results reranked per version in compare mode: 3 x 20 chunks is ~2.1 s, as long as the LLM.
+# A/B variants can override it (app/variants.py).
+COMPARE_RERANK_POOL = RERANK_POOL
 
 # "Which (PostgreSQL) version(s) ...", "Since which version ...", "In which versions ...",
 # "When was/were ... added/introduced".
@@ -85,14 +89,15 @@ def term_presence(conn: psycopg.Connection, terms: list[str]) -> dict[str, list[
 
 
 def search_per_version(conn: psycopg.Connection, question: str, qvec: str, k: int,
-                       doc_type: str | None = None) -> list[dict]:
+                       doc_type: str | None = None, rerank_pool: int = COMPARE_RERANK_POOL) -> list[dict]:
     """ceil(k / #versions) chunks from each version, oldest version first; chunks whose text is
     identical across versions are merged into the first, with every version in "versions"."""
     per_version = math.ceil(k / len(VERSIONS))
     results: list[dict] = []
     seen: dict[str, dict] = {}
     for v in VERSIONS:
-        for c in search(conn, qvec, per_version, v, doc_type, dedup=False, query_text=question):
+        for c in search(conn, qvec, per_version, v, doc_type, dedup=False, query_text=question,
+                        rerank_pool=rerank_pool):
             key = body(c["content"])
             if key in seen:
                 seen[key]["versions"].append(v)
@@ -104,17 +109,19 @@ def search_per_version(conn: psycopg.Connection, question: str, qvec: str, k: in
 
 def retrieve(conn: psycopg.Connection, question: str, qvec: str, k: int, version: int | None = None,
              doc_type: str | None = None, compare_versions: bool | None = None,
+             rerank_pool: int = RERANK_POOL, compare_rerank_pool: int = COMPARE_RERANK_POOL,
              ) -> tuple[list[dict], dict[str, list[int]] | None]:
     """The chunks /query answers from, and the term presence when comparing versions (else None).
 
     compare_versions None means detect it from the question; a question limited to one
-    version is never compared.
+    version is never compared. rerank_pool and compare_rerank_pool are the reranked candidates
+    of a plain search and of each version's search (A/B variants change them).
     """
     if compare_versions is None:
         compare_versions = version is None and is_version_question(question)
     if not compare_versions or version is not None:
-        return search(conn, qvec, k, version, doc_type, query_text=question), None
-    chunks = search_per_version(conn, question, qvec, k, doc_type)
+        return search(conn, qvec, k, version, doc_type, query_text=question, rerank_pool=rerank_pool), None
+    chunks = search_per_version(conn, question, qvec, k, doc_type, compare_rerank_pool)
     with timed("terms"):
         presence = term_presence(conn, question_terms(question))
     return chunks, presence

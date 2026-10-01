@@ -28,6 +28,7 @@ from app import cache
 from app import generate as llm
 from app import observability
 from app import rerank as reranker
+from app import variants
 from app.auth import require_scope
 from app.models import IngestRequest, IngestResponse, QueryRequest, QueryResponse
 from app.observability import note, timed
@@ -89,11 +90,16 @@ def llm_unavailable(e: Exception) -> HTTPException:
     return unavailable("LLM server unavailable", e)
 
 
-@app.post("/query", response_model=QueryResponse, dependencies=[Depends(require_scope("query"))])
-def query(req: QueryRequest, request: Request):
-    # A repeated request is answered from the cache (app/cache.py); it still took a rate-limit token.
+@app.post("/query", response_model=QueryResponse)
+def query(req: QueryRequest, request: Request, key_name: str = Depends(require_scope("query"))):
     note(question=req.question, params=req.model_dump(exclude={"question"}))
-    key = cache.cache_key(req)
+    # The key's A/B variant (app/variants.py), if an experiment runs: its settings change retrieval.
+    variant = variants.assign(key_name)
+    settings = variant.settings if variant else {}
+    if variant:
+        note(experiment=variants.EXPERIMENT.name, variant=variant.name)
+    # A repeated request is answered from the cache (app/cache.py); it still took a rate-limit token.
+    key = cache.cache_key(req, settings)
     with timed("cache_get"), request.app.state.pool.connection() as conn:
         hit = cache.get(conn, key)
     if hit is not None:
@@ -112,7 +118,7 @@ def query(req: QueryRequest, request: Request):
     with request.app.state.pool.connection() as conn:
         try:
             chunks, presence = retrieve(conn, req.question, qvec, req.k, req.version, req.doc_type,
-                                        req.compare_versions)
+                                        req.compare_versions, **settings)
         except (requests.RequestException, ValueError) as e:
             raise unavailable("reranker unavailable", e)
     note(compared=presence is not None, chunks=len(chunks))

@@ -25,7 +25,7 @@ import psycopg
 from psycopg.types.json import Jsonb
 
 import embed_ingest
-from app import generate, search
+from app import generate, search, versions
 from app.models import QueryRequest
 
 log = logging.getLogger(__name__)
@@ -38,12 +38,18 @@ def normalize(question: str) -> str:
     return " ".join(question.split())
 
 
-def cache_key(req: QueryRequest) -> str:
-    """SHA-256 of the request and the pipeline settings. Read at call time, so env and test overrides count."""
+def cache_key(req: QueryRequest, overrides: dict[str, int] | None = None) -> str:
+    """SHA-256 of the request and the pipeline settings. Read at call time, so env and test overrides count.
+
+    overrides: the A/B variant's settings (app/variants.py); the key holds the values in effect,
+    so variants with different settings never share entries.
+    """
+    overrides = overrides or {}
     request = req.model_dump() | {"question": normalize(req.question)}
     settings = {
         "embed_model": embed_ingest.EMBED_MODEL,
-        "search": [search.HYBRID_POOL, search.RRF_K, search.RERANK_POOL, search.EF_SEARCH_MIN,
+        "search": [search.HYBRID_POOL, search.RRF_K, overrides.get("rerank_pool", search.RERANK_POOL),
+                   overrides.get("compare_rerank_pool", versions.COMPARE_RERANK_POOL), search.EF_SEARCH_MIN,
                    search.BM25_K1, search.BM25_B],
         # The answer only matters when one is generated: generate=false hits whatever the LLM is.
         "llm": [generate.LLM_URL, generate.LLM_MODEL, generate.TEMPERATURE, generate.MAX_ANSWER_TOKENS,
