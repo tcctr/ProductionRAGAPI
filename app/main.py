@@ -7,9 +7,12 @@ Usage:
 Endpoints are plain `def`s: FastAPI runs them in a thread pool, so the blocking
 psycopg and requests calls (including the seconds-long LLM call) don't stall other requests.
 
-/query and /ingest need an API key with the matching scope (app/auth.py, manage_keys.py);
-/health is open, for monitoring.
+/query and /ingest need an API key with the matching scope and take a token from the key's
+rate limit (app/auth.py, app/ratelimit.py, manage_keys.py); /health is open, for monitoring.
 """
+import logging
+import os
+import threading
 from collections.abc import Iterator
 from contextlib import asynccontextmanager
 
@@ -26,6 +29,15 @@ from app.versions import retrieve
 from chunk_docs import MAX_TOKENS, TARGET_TOKENS, TokenCounter, chunk_record
 from embed_ingest import (DATABASE_URL, EMBED_URL, QUERY_PREFIX, embed, embed_pending, refresh_bm25_stats,
                           to_pgvector, upsert_chunks, upsert_documents)
+
+
+log = logging.getLogger(__name__)
+
+# Answers being generated or waiting for the LLM. The LLM server answers one request at a time
+# and queues the rest, so without a cap a burst of queries would wait there for minutes;
+# beyond the cap, /query answers 503 at once and the client retries later.
+LLM_MAX_PENDING = int(os.getenv("LLM_MAX_PENDING", "4"))
+llm_slots = threading.BoundedSemaphore(LLM_MAX_PENDING)
 
 
 def health_url(api_url: str) -> str:
@@ -79,10 +91,15 @@ def query(req: QueryRequest, request: Request):
             raise HTTPException(503, f"reranker unavailable: {e}")
     answer = None
     if req.generate and chunks:
+        if not llm_slots.acquire(blocking=False):
+            raise HTTPException(503, f"LLM busy: {LLM_MAX_PENDING} answers already pending, retry shortly",
+                                headers={"Retry-After": "5"})
         try:
             answer = llm.generate(req.question, chunks, presence)
         except (requests.RequestException, ValueError) as e:
             raise llm_unavailable(e)
+        finally:
+            llm_slots.release()
     return {"question": req.question, "answer": answer, "chunks": chunks, "version_presence": presence}
 
 
@@ -111,7 +128,10 @@ def ingest(req: IngestRequest, request: Request, conn: psycopg.Connection = Depe
 
 @app.get("/health")
 def health(request: Request):
-    """200 if the database and the embedding, reranker and LLM servers all respond, else 503."""
+    """200 if the database and the embedding, reranker and LLM servers all respond, else 503.
+
+    Open to anyone, so failures say only "error"; the details (addresses, messages) go to the log.
+    """
     status = {}
     try:
         # Not get_conn: when the database is down, fail in 2s instead of the pool's 30s default.
@@ -119,13 +139,15 @@ def health(request: Request):
             conn.execute("SELECT 1")
         status["database"] = "ok"
     except (psycopg.Error, PoolTimeout) as e:
-        status["database"] = f"error: {e}"
+        log.warning("health: database: %s", e)
+        status["database"] = "error"
     for name, url in [("embeddings", EMBED_URL), ("reranker", reranker.RERANK_URL), ("llm", llm.LLM_URL)]:
         try:
             requests.get(health_url(url), timeout=2).raise_for_status()
             status[name] = "ok"
         except requests.RequestException as e:
-            status[name] = f"error: {e}"
+            log.warning("health: %s: %s", name, e)
+            status[name] = "error"
     if any(v != "ok" for v in status.values()):
         raise HTTPException(503, status)
     return status

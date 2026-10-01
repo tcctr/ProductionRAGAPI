@@ -1,18 +1,22 @@
 """API tests against the real local database, embedding server and LLM server (see README setup)."""
 import re
+import threading
+from concurrent.futures import ThreadPoolExecutor
 
 import psycopg
 import pytest
 from fastapi.testclient import TestClient
 
 import embed_ingest
-from app import generate, rerank
-from app.auth import create_key, revoke_key
+from app import generate, ratelimit, rerank
+from app import main as api
+from app.auth import create_key, revoke_key, set_limits
 from app.main import app
 from app.versions import is_version_question, question_terms
 
 TEST_PAGE = "ragapi-test-page.html"
-TEST_KEYS = {"pytest-admin": ["ingest", "query"], "pytest-query": ["query"], "pytest-revoked": ["query"]}
+TEST_KEYS = {"pytest-admin": ["ingest", "query"], "pytest-query": ["query"], "pytest-revoked": ["query"],
+             "pytest-limited": ["query"]}
 
 
 def page_text(sections: int) -> str:
@@ -43,11 +47,15 @@ def delete_test_keys() -> None:
 
 @pytest.fixture(scope="module")
 def keys() -> dict[str, str]:
-    """Test keys by name; pytest-revoked is revoked right after it's created."""
+    """Test keys by name; pytest-revoked is revoked right after it's created. pytest-admin, which
+    the client sends by default, has limits the suite never reaches; pytest-limited allows 2 queries."""
     delete_test_keys()
     with psycopg.connect(embed_ingest.DATABASE_URL) as conn:
         created = {name: create_key(conn, name, scopes) for name, scopes in TEST_KEYS.items()}
         revoke_key(conn, "pytest-revoked")
+        for scope in ("query", "ingest"):
+            set_limits(conn, "pytest-admin", scope, per_minute=1000, burst=1000)
+        set_limits(conn, "pytest-limited", "query", per_minute=1, burst=2)
     yield created
     delete_test_keys()
 
@@ -103,6 +111,63 @@ def test_scopes(client, keys):
     resp = client.post("/ingest", json=page(sections=0), headers=headers)
     assert resp.status_code == 403
     assert "lacks the 'ingest' scope" in resp.json()["detail"]
+
+
+def test_rate_limit(client, keys):
+    def ask():
+        return client.post("/query", json={"question": "round a number", "generate": False, "k": 1},
+                           headers=bearer(keys["pytest-limited"]))
+
+    for remaining in (1, 0):  # burst 2: two requests at once are fine
+        resp = ask()
+        assert resp.status_code == 200, resp.text
+        assert resp.headers["RateLimit-Limit"] == "2" and resp.headers["RateLimit-Remaining"] == str(remaining)
+    resp = ask()
+    assert resp.status_code == 429
+    assert 1 <= int(resp.headers["Retry-After"]) <= 60  # 1 per minute: the next token is < 60 s away
+    assert resp.headers["RateLimit-Remaining"] == "0"
+
+    # A minute later the bucket has refilled one token (moving updated_at back stands in for waiting).
+    with psycopg.connect(embed_ingest.DATABASE_URL) as conn:
+        conn.execute("UPDATE rate_buckets SET updated_at = updated_at - interval '60 seconds' "
+                     "WHERE key_id = (SELECT id FROM api_keys WHERE name = 'pytest-limited')")
+    resp = ask()
+    assert resp.status_code == 200, resp.text
+    assert resp.headers["RateLimit-Remaining"] == "0"
+
+
+def test_rate_limit_holds_under_concurrency(keys):
+    """20 simultaneous requests on a bucket of 5 (separate connections, like separate workers): the
+    row lock lets exactly 5 through."""
+    with psycopg.connect(embed_ingest.DATABASE_URL) as conn:
+        key_id = conn.execute("SELECT id FROM api_keys WHERE name = 'pytest-query'").fetchone()[0]
+        conn.execute("DELETE FROM rate_buckets WHERE key_id = %s", (key_id,))
+    start = threading.Barrier(20)
+
+    def take(_):
+        with psycopg.connect(embed_ingest.DATABASE_URL) as conn:
+            start.wait()
+            return ratelimit.take(conn, key_id, "query", {"per_minute": 0.001, "burst": 5}).retry_after == 0
+
+    with ThreadPoolExecutor(20) as pool:
+        assert sum(pool.map(take, range(20))) == 5
+
+
+def test_llm_busy_returns_503(client, monkeypatch):
+    full = threading.BoundedSemaphore(1)
+    full.acquire()  # every slot taken by other requests
+    monkeypatch.setattr(api, "llm_slots", full)
+    resp = client.post("/query", json={"question": "round a number", "k": 1})
+    assert resp.status_code == 503
+    assert resp.json()["detail"].startswith("LLM busy")
+    assert resp.headers["Retry-After"] == "5"
+
+
+def test_health_hides_error_details(client, monkeypatch):
+    monkeypatch.setattr(rerank, "RERANK_URL", "http://localhost:1/v1/rerank")
+    resp = client.get("/health")
+    assert resp.status_code == 503
+    assert resp.json()["detail"]["reranker"] == "error"
 
 
 def test_health_needs_no_key(client):

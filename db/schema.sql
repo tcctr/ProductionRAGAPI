@@ -78,3 +78,16 @@ CREATE TABLE IF NOT EXISTS api_keys (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     revoked_at TIMESTAMPTZ                           -- set instead of deleting, so the history stays
 );
+-- Per-key limits that replace app/ratelimit.py's defaults, by scope, e.g.
+-- {"query": {"per_minute": 60, "burst": 20}}. Set with `manage_keys.py limit`.
+ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS rate_limits JSONB NOT NULL DEFAULT '{}';
+
+-- Token buckets for rate limiting (app/ratelimit.py): one per key and scope, created on the
+-- key's first request. `tokens` is the count at `updated_at`; refills are computed on the next request.
+CREATE TABLE IF NOT EXISTS rate_buckets (
+    key_id     BIGINT      NOT NULL REFERENCES api_keys(id) ON DELETE CASCADE,
+    scope      TEXT        NOT NULL,
+    tokens     FLOAT8      NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL,
+    PRIMARY KEY (key_id, scope)
+);

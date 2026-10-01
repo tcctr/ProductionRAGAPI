@@ -32,8 +32,8 @@ question ──embed + keywords──▶ hybrid search ──────┘─�
 | Answer evaluation (LLM judge) | Done |
 | Hybrid search (vector + BM25) | Done |
 | Reranking (cross-encoder) | Done |
-| Auth (API keys with scopes) | Done |
-| Rate limiting, caching | Planned |
+| Auth (API keys with scopes) and rate limiting | Done |
+| Caching | Planned |
 | Observability, A/B testing | Planned |
 
 ## Design decisions
@@ -63,6 +63,8 @@ question ──embed + keywords──▶ hybrid search ──────┘─�
 **Reranking.** Both search methods score the question and a chunk separately: a chunk's vector is computed at ingest time, before any question exists, and BM25 only counts shared words. So "How can I lock the rows I read …?" ranked five `LOCK TABLE` passages (full of "lock" and "transaction") above the `SELECT ... FOR UPDATE` clause that answers it, at rank 7. A reranker is a cross-encoder: a small model that reads the question and one chunk together and returns one relevance score, so it can tell that `LOCK TABLE` "deals only with table-level locks" and doesn't answer a question about rows. It is too slow to score the whole corpus at query time, since nothing can be computed in advance, so it reorders only the top 20 hybrid results (after cross-version merging, so each text is scored once), and the top k of those are returned. The model is [bge-reranker-v2-m3](https://huggingface.co/BAAI/bge-reranker-v2-m3) (568M parameters, Q8 GGUF) behind llama.cpp's `/v1/rerank` endpoint, about 40 ms per chunk on an M4 Max. With `/query`'s settings, chunk-level hit@1 rises from 0.61 to 0.71 and MRR from 0.708 to 0.785 (21 questions rank better, 11 worse, mostly by one place), most for version_diff (MRR 0.651 → 0.875), version_specific (0.776 → 0.856) and paraphrase (0.516 → 0.595); the `FOR UPDATE` passage is now first. Reranking 50 candidates instead of 20 raised MRR only a little more (0.784 vs 0.766 on the earlier labels) for 2.5 s instead of 0.8 s per search. The reranker can only reorder what hybrid search finds: when the answering chunk isn't among the 20 (COALESCE for "show a default value instead of NULL"), it doesn't help. Comparing versions reranks each version's candidates separately. The search keeps its database connection during the reranker call (~0.8 s).
 
 **API keys.** `/query` and `/ingest` need an `Authorization: Bearer <key>` header; `/health` stays open for monitoring. Without keys, anyone who could reach the API could write pages into the corpus that the LLM would then quote as documentation, or keep the single-slot LLM busy. Keys are created with `manage_keys.py`, which prints a key once: the database stores only its SHA-256 hash, and a request's key is hashed and looked up, so the server never needs the key itself and a leaked `api_keys` table holds nothing that works as a key. A fast hash is enough because keys are 32 random bytes; slow hashes like bcrypt protect guessable passwords. Each key has scopes (`query`, `ingest`), so a key given to a front end can't ingest. A revoked key is marked, not deleted, and stops working on the next request. A missing, unknown or revoked key gets 401, a key without the endpoint's scope 403, both before the endpoint runs. Keys travel in plain text in each request, so a deployment needs HTTPS (usually a reverse proxy in front of uvicorn).
+
+**Rate limiting.** Each key has a token bucket per scope: it holds up to `burst` tokens (10 for queries, 20 for ingests by default), refills at `per_minute` (10 and 20) and each request takes one, so a client can send a short burst and then a steady rate. Simpler fixed windows ("30 per minute, reset on the minute") let a client send twice the limit across a window boundary. Buckets live in Postgres rather than in process memory, so they survive restarts and stay correct with several uvicorn workers; a request costs one upsert that computes the refill since the last request and takes a token only if one is there, and the row lock lets exactly 5 of 20 simultaneous requests through a bucket of 5 (tested). Responses carry `RateLimit-Limit` and `RateLimit-Remaining`; a request over the limit gets 429 with `Retry-After`. A rate limit doesn't bound how many answers wait for the LLM at once across keys, and the LLM server answers one at a time, so `/query` also lets at most `LLM_MAX_PENDING` (4) answers be pending and returns 503 with `Retry-After` beyond that instead of queueing for minutes. `/health` needs no key, so it reports only `ok` or `error` per service; the details, which include internal addresses, go to the server log.
 
 **One database.** pgvector keeps vectors, metadata and keyword search in Postgres. Chunks carry `version` and `doc_type` directly, so filtered searches need no join. An HNSW index serves vector search, and a generated `tsvector` column (stemmed words without stop words) feeds the BM25 word index. A `content_hash` per chunk lets re-ingestion skip unchanged text.
 
@@ -259,7 +261,8 @@ Every `/query` and `/ingest` request needs an API key. Create one (it's printed 
 ```bash
 docker exec -i ragapi-db psql -U rag -d rag < db/schema.sql   # once, on a database created before API keys
 export RAG_API_KEY=$(python manage_keys.py create my-laptop --scopes query ingest)
-python manage_keys.py list                                     # names, scopes, status; never the keys
+python manage_keys.py list                                     # names, status, limits; never the keys
+python manage_keys.py limit my-laptop query --per-minute 30 --burst 15
 python manage_keys.py revoke my-laptop
 ```
 
@@ -288,14 +291,15 @@ pytest
 | `generate_answers.py` | `--name` (required), `--llm-url`, `--k 5`, `--ids`, `--limit` |
 | `judge_answers.py` | answers file, `--judge-url`, `--ids`, `--limit` |
 | `hand_grade.py` | `page` / `review` / `score`, `--seed 0` |
-| `manage_keys.py` | `create NAME --scopes query ingest`, `list`, `revoke NAME`; env `DATABASE_URL` |
+| `manage_keys.py` | `create NAME --scopes query ingest`, `list`, `limit NAME SCOPE --per-minute N --burst N`, `revoke NAME`; env `DATABASE_URL` |
+| API (`app/main.py`) | env `LLM_MAX_PENDING` (4 answers generating or queued at the LLM) |
 | API (`app/generate.py`) | env `LLM_URL` (default `http://localhost:8082/v1/chat/completions`), `LLM_MODEL`, `LLM_TIMEOUT` (120 s) |
 | API (`app/rerank.py`) | env `RERANK_URL` (default `http://localhost:8083/v1/rerank`), `RERANK_TIMEOUT` (30 s) |
 
 ## Repository layout
 
 ```
-app/                  FastAPI app (main.py), API keys (auth.py), request/response models, shared hybrid search and reranking, version comparison, answer generation
+app/                  FastAPI app (main.py), API keys (auth.py), rate limits (ratelimit.py), request/response models, shared hybrid search and reranking, version comparison, answer generation
 tests/                API tests
 fetch_parse_docs.py   crawl postgresql.org and convert pages to markdown
 chunk_docs.py         split pages into embedding-sized chunks
@@ -305,9 +309,9 @@ eval_retrieval.py     retrieval metrics (hit@k, MRR, page- and chunk-level) on t
 generate_answers.py   answer every eval question with an LLM
 judge_answers.py      grade saved answers with an LLM judge and citation checks
 hand_grade.py         blind hand-grading page and agreement with the judge
-manage_keys.py        create, list and revoke API keys
+manage_keys.py        create, list, limit and revoke API keys
 data/eval/            eval questions, saved retrieval results, answers, judgments and hand grades
-db/schema.sql         tables, indexes, the BM25 word index and API keys
+db/schema.sql         tables, indexes, the BM25 word index, API keys and rate-limit buckets
 docker-compose.yml    Postgres + pgvector
 data/parsed/          parsed corpus (docs.jsonl)
 ```
