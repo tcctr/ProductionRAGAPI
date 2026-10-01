@@ -7,10 +7,12 @@ from fastapi.testclient import TestClient
 
 import embed_ingest
 from app import generate, rerank
+from app.auth import create_key, revoke_key
 from app.main import app
 from app.versions import is_version_question, question_terms
 
 TEST_PAGE = "ragapi-test-page.html"
+TEST_KEYS = {"pytest-admin": ["ingest", "query"], "pytest-query": ["query"], "pytest-revoked": ["query"]}
 
 
 def page_text(sections: int) -> str:
@@ -34,10 +36,32 @@ def delete_test_page() -> None:
         embed_ingest.refresh_bm25_stats(conn)
 
 
+def delete_test_keys() -> None:
+    with psycopg.connect(embed_ingest.DATABASE_URL) as conn:
+        conn.execute("DELETE FROM api_keys WHERE name = ANY(%s)", (list(TEST_KEYS),))
+
+
 @pytest.fixture(scope="module")
-def client():
+def keys() -> dict[str, str]:
+    """Test keys by name; pytest-revoked is revoked right after it's created."""
+    delete_test_keys()
+    with psycopg.connect(embed_ingest.DATABASE_URL) as conn:
+        created = {name: create_key(conn, name, scopes) for name, scopes in TEST_KEYS.items()}
+        revoke_key(conn, "pytest-revoked")
+    yield created
+    delete_test_keys()
+
+
+def bearer(key: str) -> dict[str, str]:
+    return {"Authorization": f"Bearer {key}"}
+
+
+@pytest.fixture(scope="module")
+def client(keys):
     delete_test_page()
-    with TestClient(app) as c:  # `with` runs the lifespan: opens the pool, loads the tokenizer
+    # `with` runs the lifespan: opens the pool, loads the tokenizer. Requests send the admin key
+    # unless a test passes its own headers.
+    with TestClient(app, headers=bearer(keys["pytest-admin"])) as c:
         yield c
     delete_test_page()
 
@@ -52,6 +76,37 @@ def query(client, **body):
 
 def test_health(client):
     assert client.get("/health").json() == {"database": "ok", "embeddings": "ok", "reranker": "ok", "llm": "ok"}
+
+
+@pytest.mark.parametrize("headers", [
+    {"Authorization": ""},  # overrides the client's default key: no key at all
+    bearer("rag_not-a-real-key"),
+    {"Authorization": "Basic dXNlcjpwYXNz"},  # not a Bearer key
+])
+def test_query_rejects_missing_or_unknown_key(client, headers):
+    resp = client.post("/query", json={"question": "x", "generate": False}, headers=headers)
+    assert resp.status_code == 401, resp.text
+    assert resp.headers["WWW-Authenticate"] == "Bearer"
+
+
+def test_revoked_key_is_rejected(client, keys):
+    resp = client.post("/query", json={"question": "x", "generate": False}, headers=bearer(keys["pytest-revoked"]))
+    assert resp.status_code == 401
+    assert resp.json()["detail"] == "invalid or revoked API key"
+
+
+def test_scopes(client, keys):
+    headers = bearer(keys["pytest-query"])
+    resp = client.post("/query", json={"question": "round a number", "generate": False, "k": 1}, headers=headers)
+    assert resp.status_code == 200, resp.text
+    # Rejected before the endpoint runs: nothing is ingested.
+    resp = client.post("/ingest", json=page(sections=0), headers=headers)
+    assert resp.status_code == 403
+    assert "lacks the 'ingest' scope" in resp.json()["detail"]
+
+
+def test_health_needs_no_key(client):
+    assert client.get("/health", headers={"Authorization": ""}).status_code in (200, 503)
 
 
 @pytest.mark.parametrize("body", [

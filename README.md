@@ -32,7 +32,8 @@ question ──embed + keywords──▶ hybrid search ──────┘─�
 | Answer evaluation (LLM judge) | Done |
 | Hybrid search (vector + BM25) | Done |
 | Reranking (cross-encoder) | Done |
-| Auth, rate limiting, caching | Planned |
+| Auth (API keys with scopes) | Done |
+| Rate limiting, caching | Planned |
 | Observability, A/B testing | Planned |
 
 ## Design decisions
@@ -60,6 +61,8 @@ question ──embed + keywords──▶ hybrid search ──────┘─�
 **Hybrid search.** Vector search matches meaning but blurs exact names: `jsonb_set` and `jsonb_insert` embed almost alike, and a made-up identifier like `zorblax_frobnicate` scored only 0.48 against its own page. So `/query` also ranks chunks by keyword with BM25 and merges the two top-50 lists by reciprocal rank fusion: each list adds 1/(60 + rank) to a chunk's score, so a chunk both lists rank well wins, and scores on different scales are never compared. Postgres's own ranking (`ts_rank_cd`) came first and made retrieval worse (chunk-level MRR 0.585 vs 0.665). It has no notion of how rare a word is, so in "What is a BRIN index good for?" `index` (in 784 chunks) counted as much as `brin` (in 32), and its keyword list alone had the answering chunk in the top 10 for only 48% of questions. BM25 weights each word by its rarity (IDF), gives diminishing returns for repeats and normalizes by chunk length. Postgres has no built-in BM25, so a materialized view `chunk_terms` serves as an inverted index: one row per word and chunk with the word's count and the chunk's length (267k rows, 22 MB), refreshed in about 0.3 s after every ingest, so a query reads only its own words' rows. Words in more than half the chunks (`postgresql`, in every breadcrumb) are skipped. The keyword query takes a few ms; the first version took 220 ms, almost all of it JIT compilation triggered by a badly overestimated plan cost, so search transactions turn JIT off. With `/query`'s settings, chunk-level hit@1 rises from 0.55 to 0.60 and MRR from 0.665 to 0.700 (21 questions rank better, 12 worse), most for paraphrase and version_specific questions. The losses are mostly identifiers the English tokenizer splits into common words (`JSON_TABLE` → `json`, `tabl`; the `AT` of `AT LOCAL` is a stop word) and cross-page questions.
 
 **Reranking.** Both search methods score the question and a chunk separately: a chunk's vector is computed at ingest time, before any question exists, and BM25 only counts shared words. So "How can I lock the rows I read …?" ranked five `LOCK TABLE` passages (full of "lock" and "transaction") above the `SELECT ... FOR UPDATE` clause that answers it, at rank 7. A reranker is a cross-encoder: a small model that reads the question and one chunk together and returns one relevance score, so it can tell that `LOCK TABLE` "deals only with table-level locks" and doesn't answer a question about rows. It is too slow to score the whole corpus at query time, since nothing can be computed in advance, so it reorders only the top 20 hybrid results (after cross-version merging, so each text is scored once), and the top k of those are returned. The model is [bge-reranker-v2-m3](https://huggingface.co/BAAI/bge-reranker-v2-m3) (568M parameters, Q8 GGUF) behind llama.cpp's `/v1/rerank` endpoint, about 40 ms per chunk on an M4 Max. With `/query`'s settings, chunk-level hit@1 rises from 0.61 to 0.71 and MRR from 0.708 to 0.785 (21 questions rank better, 11 worse, mostly by one place), most for version_diff (MRR 0.651 → 0.875), version_specific (0.776 → 0.856) and paraphrase (0.516 → 0.595); the `FOR UPDATE` passage is now first. Reranking 50 candidates instead of 20 raised MRR only a little more (0.784 vs 0.766 on the earlier labels) for 2.5 s instead of 0.8 s per search. The reranker can only reorder what hybrid search finds: when the answering chunk isn't among the 20 (COALESCE for "show a default value instead of NULL"), it doesn't help. Comparing versions reranks each version's candidates separately. The search keeps its database connection during the reranker call (~0.8 s).
+
+**API keys.** `/query` and `/ingest` need an `Authorization: Bearer <key>` header; `/health` stays open for monitoring. Without keys, anyone who could reach the API could write pages into the corpus that the LLM would then quote as documentation, or keep the single-slot LLM busy. Keys are created with `manage_keys.py`, which prints a key once: the database stores only its SHA-256 hash, and a request's key is hashed and looked up, so the server never needs the key itself and a leaked `api_keys` table holds nothing that works as a key. A fast hash is enough because keys are 32 random bytes; slow hashes like bcrypt protect guessable passwords. Each key has scopes (`query`, `ingest`), so a key given to a front end can't ingest. A revoked key is marked, not deleted, and stops working on the next request. A missing, unknown or revoked key gets 401, a key without the endpoint's scope 403, both before the endpoint runs. Keys travel in plain text in each request, so a deployment needs HTTPS (usually a reverse proxy in front of uvicorn).
 
 **One database.** pgvector keeps vectors, metadata and keyword search in Postgres. Chunks carry `version` and `doc_type` directly, so filtered searches need no join. An HNSW index serves vector search, and a generated `tsvector` column (stemmed words without stop words) feeds the BM25 word index. A `content_hash` per chunk lets re-ingestion skip unchanged text.
 
@@ -249,20 +252,29 @@ python hand_grade.py score data/eval/judgments/<file>.json <downloaded grades>.j
 uvicorn app.main:app --reload    # needs the database, embedding, reranker and LLM servers running
 ```
 
-Interactive docs at http://localhost:8000/docs.
+Interactive docs at http://localhost:8000/docs (the Authorize button takes an API key).
+
+Every `/query` and `/ingest` request needs an API key. Create one (it's printed once; only its hash is stored):
+
+```bash
+docker exec -i ragapi-db psql -U rag -d rag < db/schema.sql   # once, on a database created before API keys
+export RAG_API_KEY=$(python manage_keys.py create my-laptop --scopes query ingest)
+python manage_keys.py list                                     # names, scopes, status; never the keys
+python manage_keys.py revoke my-laptop
+```
 
 | Endpoint | Does |
 |---|---|
-| `POST /query` | `{"question", "version"?, "doc_type"?, "k"?, "generate"?, "compare_versions"?}` → an answer citing the chunks as `[n]`, plus the top-k chunks with URL, heading path, scores (`similarity`, `bm25`, the fused `rrf` that picks the reranker's candidates, and the `rerank` score they're ordered by) and the versions they apply to. `"generate": false` skips the LLM and returns chunks only. For "which version …?" questions (or `"compare_versions": true`), chunks come from each version and `version_presence` lists the versions whose docs contain each identifier in the question |
-| `POST /ingest` | One page (`version`, `doc_type`, `section_title`, `page`, `url`, `text` as markdown) → chunked, upserted, new or changed chunks embedded. Re-sending an unchanged page is a no-op |
-| `GET /health` | 200 if the database and the embedding, reranker and LLM servers respond, else 503 |
+| `POST /query` (scope `query`) | `{"question", "version"?, "doc_type"?, "k"?, "generate"?, "compare_versions"?}` → an answer citing the chunks as `[n]`, plus the top-k chunks with URL, heading path, scores (`similarity`, `bm25`, the fused `rrf` that picks the reranker's candidates, and the `rerank` score they're ordered by) and the versions they apply to. `"generate": false` skips the LLM and returns chunks only. For "which version …?" questions (or `"compare_versions": true`), chunks come from each version and `version_presence` lists the versions whose docs contain each identifier in the question |
+| `POST /ingest` (scope `ingest`) | One page (`version`, `doc_type`, `section_title`, `page`, `url`, `text` as markdown) → chunked, upserted, new or changed chunks embedded. Re-sending an unchanged page is a no-op |
+| `GET /health` | No key needed. 200 if the database and the embedding, reranker and LLM servers respond, else 503 |
 
 ```bash
-curl -s localhost:8000/query -H 'content-type: application/json' \
+curl -s localhost:8000/query -H "Authorization: Bearer $RAG_API_KEY" -H 'content-type: application/json' \
   -d '{"question": "how do I create an index without locking the table", "version": 17}'
 ```
 
-Tests run against the local database and the embedding, reranker and LLM servers; the ingest test adds and removes a made-up page:
+Tests run against the local database and the embedding, reranker and LLM servers; the ingest test adds and removes a made-up page, and the auth tests create and delete their own keys:
 
 ```bash
 pytest
@@ -276,13 +288,14 @@ pytest
 | `generate_answers.py` | `--name` (required), `--llm-url`, `--k 5`, `--ids`, `--limit` |
 | `judge_answers.py` | answers file, `--judge-url`, `--ids`, `--limit` |
 | `hand_grade.py` | `page` / `review` / `score`, `--seed 0` |
+| `manage_keys.py` | `create NAME --scopes query ingest`, `list`, `revoke NAME`; env `DATABASE_URL` |
 | API (`app/generate.py`) | env `LLM_URL` (default `http://localhost:8082/v1/chat/completions`), `LLM_MODEL`, `LLM_TIMEOUT` (120 s) |
 | API (`app/rerank.py`) | env `RERANK_URL` (default `http://localhost:8083/v1/rerank`), `RERANK_TIMEOUT` (30 s) |
 
 ## Repository layout
 
 ```
-app/                  FastAPI app (main.py), request/response models, shared hybrid search and reranking, version comparison, answer generation
+app/                  FastAPI app (main.py), API keys (auth.py), request/response models, shared hybrid search and reranking, version comparison, answer generation
 tests/                API tests
 fetch_parse_docs.py   crawl postgresql.org and convert pages to markdown
 chunk_docs.py         split pages into embedding-sized chunks
@@ -292,8 +305,9 @@ eval_retrieval.py     retrieval metrics (hit@k, MRR, page- and chunk-level) on t
 generate_answers.py   answer every eval question with an LLM
 judge_answers.py      grade saved answers with an LLM judge and citation checks
 hand_grade.py         blind hand-grading page and agreement with the judge
+manage_keys.py        create, list and revoke API keys
 data/eval/            eval questions, saved retrieval results, answers, judgments and hand grades
-db/schema.sql         tables, indexes and the BM25 word index
+db/schema.sql         tables, indexes, the BM25 word index and API keys
 docker-compose.yml    Postgres + pgvector
 data/parsed/          parsed corpus (docs.jsonl)
 ```

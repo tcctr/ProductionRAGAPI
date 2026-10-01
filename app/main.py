@@ -6,6 +6,9 @@ Usage:
 
 Endpoints are plain `def`s: FastAPI runs them in a thread pool, so the blocking
 psycopg and requests calls (including the seconds-long LLM call) don't stall other requests.
+
+/query and /ingest need an API key with the matching scope (app/auth.py, manage_keys.py);
+/health is open, for monitoring.
 """
 from collections.abc import Iterator
 from contextlib import asynccontextmanager
@@ -17,6 +20,7 @@ from psycopg_pool import ConnectionPool, PoolTimeout
 
 from app import generate as llm
 from app import rerank as reranker
+from app.auth import require_scope
 from app.models import IngestRequest, IngestResponse, QueryRequest, QueryResponse
 from app.versions import retrieve
 from chunk_docs import MAX_TOKENS, TARGET_TOKENS, TokenCounter, chunk_record
@@ -58,7 +62,7 @@ def llm_unavailable(e: Exception) -> HTTPException:
     return HTTPException(503, f"LLM server unavailable: {e}")
 
 
-@app.post("/query", response_model=QueryResponse)
+@app.post("/query", response_model=QueryResponse, dependencies=[Depends(require_scope("query"))])
 def query(req: QueryRequest, request: Request):
     try:
         # One attempt: a user is waiting, so fail fast instead of embed()'s backoff retries.
@@ -82,7 +86,7 @@ def query(req: QueryRequest, request: Request):
     return {"question": req.question, "answer": answer, "chunks": chunks, "version_presence": presence}
 
 
-@app.post("/ingest", response_model=IngestResponse)
+@app.post("/ingest", response_model=IngestResponse, dependencies=[Depends(require_scope("ingest"))])
 def ingest(req: IngestRequest, request: Request, conn: psycopg.Connection = Depends(get_conn)):
     """Add or update one page: chunk it, upsert it, and embed its new or changed chunks.
 

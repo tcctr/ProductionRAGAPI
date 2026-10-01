@@ -66,3 +66,15 @@ CREATE INDEX IF NOT EXISTS chunk_terms_word ON chunk_terms (word);
 CREATE MATERIALIZED VIEW IF NOT EXISTS corpus_stats AS
     SELECT count(*) AS n_chunks, avg(length)::float8 AS avg_length
     FROM (SELECT DISTINCT chunk_id, length FROM chunk_terms) AS per_chunk;
+
+-- API keys (app/auth.py, manage_keys.py). Only the SHA-256 hash of a key is stored: the key is
+-- shown once when created, and a request's key is hashed and looked up here. Keys are long
+-- random strings, so a fast hash is safe (slow hashes like bcrypt are for guessable passwords).
+CREATE TABLE IF NOT EXISTS api_keys (
+    id         BIGSERIAL PRIMARY KEY,
+    name       TEXT        NOT NULL UNIQUE,          -- who holds it, e.g. "demo-frontend"
+    key_hash   TEXT        NOT NULL UNIQUE,
+    scopes     TEXT[]      NOT NULL CHECK (cardinality(scopes) > 0 AND scopes <@ ARRAY['query', 'ingest']),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    revoked_at TIMESTAMPTZ                           -- set instead of deleting, so the history stays
+);
