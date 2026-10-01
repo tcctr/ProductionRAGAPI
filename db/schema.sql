@@ -49,16 +49,52 @@ CREATE INDEX IF NOT EXISTS chunks_embedding_hnsw
 CREATE INDEX IF NOT EXISTS chunks_tsv_gin      ON chunks USING gin (tsv);
 CREATE INDEX IF NOT EXISTS chunks_version_type ON chunks (version, doc_type);
 
+-- Whole identifiers for keyword search, which the text-search parser splits at underscores and
+-- strips of stop words: JSON_TABLE becomes json + tabl (tabl is in over half the chunks, so BM25
+-- drops it), any_value becomes valu, AT LOCAL becomes local. Returns, once per occurrence:
+--   identifiers with an underscore, lowercased: JSON_TABLE -> json_table
+--   adjacent ALL-CAPS words (2+ letters, separated by spaces or tabs only), lowercased:
+--     AT LOCAL -> 'at local'; overlapping, so CREATE INDEX CONCURRENTLY gives two pairs.
+--     Case-sensitive, so prose ("look at local files") gives none.
+-- Neither can collide with a tsvector word (those never contain "_" or " "). Used on both the
+-- chunks (chunk_terms) and the question (app/search.py BM25_SQL), so both sides match.
+CREATE OR REPLACE FUNCTION ident_terms(doc text) RETURNS SETOF text
+LANGUAGE sql IMMUTABLE PARALLEL SAFE AS $$
+    SELECT lower(m[1]) FROM regexp_matches(doc, '\m([A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)+)', 'g') AS m
+    UNION ALL
+    SELECT lower(prev || ' ' || tok) FROM (
+        -- Words and single punctuation or newline characters, in order: a pair must be adjacent words.
+        SELECT m[1] AS tok, lag(m[1]) OVER (ORDER BY n) AS prev
+        FROM regexp_matches(doc, '([A-Za-z0-9_]+|[^A-Za-z0-9_ \t])', 'g') WITH ORDINALITY AS t(m, n)
+    ) AS pairs
+    WHERE prev ~ '^[A-Z]{2,}$' AND tok ~ '^[A-Z]{2,}$'
+$$;
+
+-- chunk_terms built before ident_terms existed: rebuild it (and corpus_stats, built from it) below.
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_matviews WHERE matviewname = 'chunk_terms' AND definition NOT LIKE '%ident_terms%') THEN
+        DROP MATERIALIZED VIEW chunk_terms CASCADE;
+    END IF;
+END $$;
+
 -- Inverted index for BM25 keyword search (app/search.py): one row per (word, chunk) with how
 -- often the chunk uses the word (tf) and the chunk's length in words (after stop-word
 -- removal), so a query reads only its own words' rows instead of unpacking every matching
--- chunk's tsv. Refreshed after ingesting (embed_ingest.refresh_bm25_stats); until then new
--- chunks are found by vector search only.
+-- chunk's tsv. Words are the tsv's stemmed words plus ident_terms(). Refreshed after ingesting
+-- (embed_ingest.refresh_bm25_stats); until then new chunks are found by vector search only.
+-- public.ident_terms: refreshes run with search_path = pg_catalog, pg_temp.
 CREATE MATERIALIZED VIEW IF NOT EXISTS chunk_terms AS
-    SELECT u.lexeme AS word, ch.id AS chunk_id,
-           coalesce(array_length(u.positions, 1), 1) AS tf,
-           sum(coalesce(array_length(u.positions, 1), 1)) OVER (PARTITION BY ch.id) AS length
-    FROM chunks ch, unnest(ch.tsv) AS u;
+    WITH words AS (
+        SELECT ch.id AS chunk_id, u.lexeme AS word, coalesce(array_length(u.positions, 1), 1) AS tf
+        FROM chunks ch, unnest(ch.tsv) AS u
+        UNION ALL
+        SELECT ch.id, i.word, count(*)
+        FROM chunks ch, public.ident_terms(ch.content) AS i(word)
+        GROUP BY ch.id, i.word
+    )
+    SELECT word, chunk_id, tf, sum(tf) OVER (PARTITION BY chunk_id) AS length
+    FROM words;
 CREATE INDEX IF NOT EXISTS chunk_terms_word ON chunk_terms (word);
 
 -- Number of chunks and their average length, for BM25's IDF and length normalization.

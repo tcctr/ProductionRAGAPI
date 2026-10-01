@@ -32,7 +32,8 @@ BM25_K1 = 1.2
 BM25_B = 0.75
 
 # Keyword ranking by BM25, from the chunk_terms inverted index (db/schema.sql, refreshed after
-# ingesting). terms: the question's words, stemmed and without stop words, each weighted by its
+# ingesting). terms: the question's words, stemmed and without stop words, plus its whole
+# identifiers and ALL-CAPS word pairs (ident_terms(): json_table, 'at local'), each weighted by its
 # IDF, higher the fewer chunks contain it. Words in more than half the chunks
 # ("postgresql" is in every breadcrumb) weigh almost nothing and would make every chunk a
 # candidate, so they're dropped. A chunk scores, per term it contains,
@@ -42,7 +43,9 @@ BM25_B = 0.75
 # how many words a question has).
 BM25_SQL = f"""
     WITH question AS (
-        SELECT DISTINCT unnest(tsvector_to_array(to_tsvector('english', %(text)s))) AS word
+        SELECT unnest(tsvector_to_array(to_tsvector('english', %(text)s))) AS word
+        UNION
+        SELECT ident_terms(%(text)s)
     ), terms AS MATERIALIZED (
         SELECT ct.word, ln(1 + (c.n_chunks - count(*) + 0.5) / (count(*) + 0.5)) AS idf
         FROM question JOIN chunk_terms ct USING (word), corpus_stats c
