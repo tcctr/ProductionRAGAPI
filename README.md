@@ -233,6 +233,14 @@ Start the database (listens on host port 5433; the schema is applied on first st
 docker compose up -d --wait
 ```
 
+To stop everything, press Ctrl+C in each `llama-server` terminal (and in the `uvicorn` one), then stop the database:
+
+```bash
+docker compose stop    # keeps the data volume; `docker compose up -d --wait` resumes without re-ingesting
+```
+
+`docker compose down` also removes the container but keeps the volume. `docker compose down -v` deletes the volume too, so you have to run `embed_ingest.py` again afterwards.
+
 ## Pipeline
 
 ```bash
