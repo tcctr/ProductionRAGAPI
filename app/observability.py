@@ -15,8 +15,13 @@ thread, which gets a copy of the request's context. The copy still points at the
 in the thread only mutates it (never set()s the variable) and the middleware sees what it wrote.
 Outside a request (eval scripts calling search() in-process) there is no record and these do nothing.
 
+query_log keeps QUERY_LOG_RETENTION_DAYS of rows: after an insert, older ones are deleted, at most
+once an hour per process (the delete runs before the response is sent, so not on every request).
+Longer than the cache's 7 days because A/B experiments (ab_report.py) are read from this table.
+
 Settings (environment variables):
-    LOG_LEVEL  default INFO; /health requests that succeed are logged at DEBUG (monitors poll it)
+    LOG_LEVEL                 default INFO; /health requests that succeed are logged at DEBUG (monitors poll it)
+    QUERY_LOG_RETENTION_DAYS  default 30; 0 keeps every row
 """
 import logging
 import os
@@ -33,6 +38,10 @@ from psycopg.types.json import Jsonb
 from starlette.concurrency import run_in_threadpool
 
 log = logging.getLogger("app.request")
+
+QUERY_LOG_RETENTION_DAYS = float(os.getenv("QUERY_LOG_RETENTION_DAYS", "30"))
+PRUNE_EVERY_S = 3600
+_last_prune = 0.0  # time.monotonic() of this process's last delete of old query_log rows
 
 _record: ContextVar[dict | None] = ContextVar("request_record", default=None)
 
@@ -107,7 +116,9 @@ VALUES (%(id)s, %(key)s, %(status)s, %(error)s, %(question)s, %(params)s, %(comp
 
 
 def write_query_log(pool, record: dict, status: int) -> None:
-    """One query_log row; a failure is logged, never raised (the response is already built)."""
+    """One query_log row, then expired rows (see prune_query_log()); a failure is logged, never
+    raised (the response is already built)."""
+    global _last_prune
     fields = record["fields"]
     timings = {stage: round(ms, 1) for stage, ms in record["timings"].items() if stage != "total"}
     try:
@@ -121,8 +132,21 @@ def write_query_log(pool, record: dict, status: int) -> None:
                 "prompt_tokens": fields.get("prompt_tokens"), "completion_tokens": fields.get("completion_tokens"),
                 "experiment": fields.get("experiment"), "variant": fields.get("variant"),
             })
+            # Not thread-safe by design: two threads pruning at once only delete the same rows twice.
+            if QUERY_LOG_RETENTION_DAYS > 0 and time.monotonic() - _last_prune >= PRUNE_EVERY_S:
+                _last_prune = time.monotonic()
+                prune_query_log(conn)
     except psycopg.Error as e:
         log.warning("query_log insert failed: %s", e)
+
+
+def prune_query_log(conn: psycopg.Connection) -> int:
+    """Delete query_log rows older than QUERY_LOG_RETENTION_DAYS; returns how many."""
+    cur = conn.execute("DELETE FROM query_log WHERE created_at < now() - interval '1 day' * %s",
+                       (QUERY_LOG_RETENTION_DAYS,))
+    if cur.rowcount:
+        log.info("query_log: deleted %d rows older than %g days", cur.rowcount, QUERY_LOG_RETENTION_DAYS)
+    return cur.rowcount
 
 
 # Stored in query_log but kept out of the log line (long, and logs get copied around more freely).

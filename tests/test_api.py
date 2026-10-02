@@ -476,3 +476,16 @@ def test_query_runs_and_logs_the_keys_variant(client, monkeypatch):
         assert all(c["rerank"] is None for c in resp.json()["chunks"])
         row = logged(resp)
         assert (row["experiment"], row["variant"]) == ("pytest-ab", expected)
+
+
+def test_query_log_retention(client, monkeypatch):
+    # An expired row and a recent one, both from a test key (deleted in teardown either way).
+    with psycopg.connect(embed_ingest.DATABASE_URL) as conn:
+        ids = [conn.execute("INSERT INTO query_log (request_id, key_name, status, timings, total_ms, created_at) "
+                            "VALUES ('pytest-retention', 'pytest-admin', 200, '{}', 1, now() - interval '1 day' * %s) "
+                            "RETURNING id", (age,)).fetchone()[0] for age in (31, 29)]
+    monkeypatch.setattr(observability, "_last_prune", 0.0)  # the hourly prune is due
+    assert client.post("/query", json={"question": "How do I round a number?", "generate": False}).status_code == 200
+    with psycopg.connect(embed_ingest.DATABASE_URL) as conn:
+        kept = [r[0] for r in conn.execute("SELECT id FROM query_log WHERE id = ANY(%s)", (ids,))]
+    assert kept == [ids[1]]
