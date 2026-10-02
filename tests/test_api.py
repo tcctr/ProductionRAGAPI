@@ -10,7 +10,7 @@ from psycopg.rows import dict_row
 from fastapi.testclient import TestClient
 
 import embed_ingest
-from app import cache, generate, observability, ratelimit, rerank, search, variants
+from app import cache, generate, observability, ratelimit, rerank, search, variants, versions
 from app import main as api
 from app.auth import create_key, revoke_key, set_limits
 from app.main import app
@@ -323,7 +323,7 @@ def test_cache_key():
     # An A/B variant's settings are in the key by their values: the defaults spelled out are the same key.
     req = api.QueryRequest(question="Which version added AT LOCAL?")
     assert cache.cache_key(req, {"rerank_pool": search.RERANK_POOL}) == key()
-    assert cache.cache_key(req, {"compare_rerank_pool": 10}) != key()
+    assert cache.cache_key(req, {"compare_rerank_pool": versions.COMPARE_RERANK_POOL + 5}) != key()
 
 
 def test_version_question_detection_and_terms():

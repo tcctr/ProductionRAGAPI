@@ -19,9 +19,13 @@ from app.search import RERANK_POOL, body, search
 
 VERSIONS: tuple[int, ...] = get_args(Version)
 
-# Hybrid results reranked per version in compare mode: 3 x 20 chunks is ~2.1 s, as long as the LLM.
-# A/B variants can override it (app/variants.py).
-COMPARE_RERANK_POOL = RERANK_POOL
+# Hybrid results reranked per version in compare mode, 3 x this many chunks per question. 10 instead
+# of RERANK_POOL's 20 cut the compare-mode median from 2.36 s to 1.27 s (A/B through /query) with no
+# measurable loss: the same answering chunks on the 14 version questions, answer score 0.929 vs 0.952
+# over 3 runs each, 95% CI [-0.060, 0.000], the differences being correct/partial flips. Safe only
+# since identifiers are indexed whole (db/schema.sql ident_terms()): before, 17's JSON_TABLE
+# chunk was hybrid rank 11. A/B variants can override it (app/variants.py).
+COMPARE_RERANK_POOL = 10
 
 # "Which (PostgreSQL) version(s) ...", "Since which version ...", "In which versions ...",
 # "When was/were ... added/introduced".
